@@ -5,7 +5,7 @@
 // ============================================================
 
 const API = (() => {
-  const BASE_URL = window.EDUHOME_API_URL || '';
+  const BASE_URL = window.EDUHOME_API_URL || 'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
 
   // Get current session role (injected at call time)
   function currentRole() {
@@ -22,10 +22,14 @@ const API = (() => {
     } catch(e) { return {}; }
   }
 
-  async function get(action, params = {}) {
+async function get(action, params = {}) {
     const url = new URL(BASE_URL);
     url.searchParams.set('action', action);
-    url.searchParams.set('role', currentRole());
+    
+    // Jangan kirim role kalau login
+    if (action !== 'login') {
+      url.searchParams.set('role', currentRole());
+    }
 
     // Inject mentor context for scoping
     const user = currentUser();
@@ -56,7 +60,7 @@ const API = (() => {
     login: (username, password) => get('login', { username, password })
   };
 
-  // MURID
+  // MURIDs
   const murid = {
     getAll:  (params = {}) => get('getMurid', params),
     getById: (id) => get('getMurid', { id }),
