@@ -1,7 +1,3 @@
-// ============================================================
-// EduHome Murid (Student) Module — js/murid.js
-// ============================================================
-
 const MuridPage = (() => {
   let allData = [];
   const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
@@ -95,36 +91,37 @@ const MuridPage = (() => {
       </label>`).join('');
   }
 
-  async function openEdit(id) {
-    const m = allData.find(x => x.id === id);
-    if (!m) return;
+async function openEdit(id) {
+    const res = await API.murid.getById(id);
+    if (res.status !== 'OK') return;
+    const m = res.data;
 
     document.getElementById('murid-modal-title').textContent = 'Edit Data Murid';
     document.getElementById('murid-id-field').value = m.id;
-    document.getElementById('murid-nama').value   = m.nama;
-    document.getElementById('murid-jk').value     = m.jk;
-    document.getElementById('murid-kelas').value  = m.kelas;
-    document.getElementById('murid-program').value = m.program;
-    document.getElementById('murid-tgl').value    = m.tgl_mulai;
-    document.getElementById('murid-status').value = m.status;
+    document.getElementById('murid-nama').value     = m.nama;
+    document.getElementById('murid-jk').value       = m.jk;
+    document.getElementById('murid-kelas').value    = m.kelas;
+    document.getElementById('murid-program').value  = m.program;
+    document.getElementById('murid-tgl').value      = m.tgl_mulai;
+    document.getElementById('murid-status').value   = m.status;
 
-    renderDayCheckboxes();
+    renderDayCheckboxes(); 
 
-    // Load existing schedule
     const jadwalRes = await API.jadwal.getByMurid(id);
-    if (jadwalRes.status === 'OK') {
-      const hariSet = new Set(jadwalRes.data.map(j => j.hari));
-      document.querySelectorAll('#day-checkboxes input[name="hari"]').forEach(cb => {
-        cb.checked = hariSet.has(cb.value);
-      });
-      if (jadwalRes.data.length > 0) {
+    if (jadwalRes.status === 'OK' && jadwalRes.data.length > 0) {
+        const hariSet = new Set(jadwalRes.data.map(j => j.hari));
+        
+        document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => {
+            cb.checked = hariSet.has(cb.value);
+        });
+
         document.getElementById('murid-jam').value = jadwalRes.data[0].jam;
-      }
     }
 
-    document.getElementById('murid-schedule-section').style.display = 'none'; // hide on edit
+    document.getElementById('murid-schedule-section').style.display = 'block';
+
     UI.openModal('modal-murid');
-  }
+}
 
   function clearForm() {
     ['murid-nama','murid-jk','murid-kelas','murid-program','murid-tgl','murid-mentor','murid-jam'].forEach(id => {
@@ -144,17 +141,36 @@ const MuridPage = (() => {
     const program = document.getElementById('murid-program').value.trim();
     const tgl     = document.getElementById('murid-tgl').value;
     const status  = document.getElementById('murid-status').value;
-    const jam     = document.getElementById('murid-jam').value;
-    const mentor  = document.getElementById('murid-mentor').value;
 
-    if (!nama || !program) { UI.toast('Nama dan program wajib diisi', 'error'); return; }
+    if (!nama || !program) { 
+      UI.toast('Nama dan program wajib diisi', 'error'); 
+      return; 
+    }
 
-    const hariChecked = [...document.querySelectorAll('#day-checkboxes input[name="hari"]:checked')].map(c => c.value);
+    const jadwalData = [];
+    document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
+      const day = cb.value;
+      const timeSelect = document.getElementById(`time-${day}`);
+      if (timeSelect && timeSelect.value) {
+        jadwalData.push({ hari: day, jam: timeSelect.value });
+      }
+    });
 
-    const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status, jam, mentor, hari: hariChecked };
+    const payload = { 
+      nama, 
+      jk, 
+      kelas, 
+      program, 
+      tgl_mulai: tgl, 
+      status, 
+      jadwal: jadwalData // Mengirim daftar jadwal lengkap
+    };
 
     const btn = document.getElementById('murid-save-btn');
-    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    if (btn) {
+      btn.disabled = true; 
+      btn.textContent = 'Menyimpan...';
+    }
 
     try {
       let res;
@@ -167,14 +183,17 @@ const MuridPage = (() => {
       if (res.status === 'OK') {
         UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
         UI.closeModal('modal-murid');
-        load();
+        load(); // Refresh tabel murid agar data terbaru muncul
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
     } catch(e) {
       UI.toast('Error: ' + e.message, 'error');
     } finally {
-      btn.disabled = false; btn.textContent = 'Simpan';
+      if (btn) {
+        btn.disabled = false; 
+        btn.textContent = 'Simpan';
+      }
     }
   }
 
@@ -210,5 +229,50 @@ const MuridPage = (() => {
   }
 
   // Expose
-  return { load, search, openAdd, openEdit, saveForm, deleteMurid, viewSchedule };
+  return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule };
 })();
+
+function renderDayCheckboxes() {
+    const container = document.getElementById('day-checkboxes');
+    if (!container) return;
+    container.innerHTML = ''; 
+
+    // Daftar slot jam pilihan kamu
+    const timeSlots = [
+      '08.30-09.00', '09.00-09.30', '09.30-10.00', '10.00-10.30', '10.30-11.00', '11.00-11.30', '11.30-12.00',
+      '12.00-12.30', '12.30-13.00', '13.00-13.30', '13.30-14.00', '14.00-14.30', '14.30-15.00', '15.00-15.30', 
+      '15.30-16.00', '16.00-16.30', '16.30-17.00', '17.00-17.30', '17.30-18.00', '18.00-18.30', '18.30-19.00', '19.00-19.30',
+    ];
+
+    // Kita pakai variabel DAYS yang sudah kamu buat di baris 8
+    DAYS.forEach(day => {
+      const div = document.createElement('div');
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.marginBottom = '8px';
+      div.style.gap = '10px';
+      
+      let timeOptions = timeSlots.map(slot => `<option value="${slot}">${slot}</option>`).join('');
+
+      div.innerHTML = `
+        <label style="min-width: 80px;">
+          <input type="checkbox" name="hari" value="${day.toUpperCase()}" onchange="MuridPage.toggleTimeInput('${day.toUpperCase()}')"> 
+          ${day}
+        </label>
+        <select id="time-${day.toUpperCase()}" class="time-input-small" style="display:none; flex:1; padding:4px;">
+          <option value="">-- Pilih Jam --</option>
+          ${timeOptions}
+        </select>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function toggleTimeInput(day) {
+    const cb = document.querySelector(`input[value="${day}"]`);
+    const select = document.getElementById(`time-${day}`);
+    if (select) {
+      select.style.display = cb.checked ? 'block' : 'none';
+      if (!cb.checked) select.value = "";
+    }
+  }
