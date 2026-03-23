@@ -46,6 +46,9 @@ async function post(body) {
     const res = await fetch(BASE_URL, {
       method: 'POST',
       mode: 'no-cors', 
+      headers: {
+        'Content-Type': 'text/plain', // Gunakan text/plain untuk memancing CORS
+      },
       body: JSON.stringify(payload)
     });
 
