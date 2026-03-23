@@ -79,6 +79,7 @@ const MuridPage = (() => {
     document.getElementById('murid-modal-title').textContent = 'Tambah Murid Baru';
     document.getElementById('murid-id-field').value = '';
     renderDayCheckboxes();
+    MuridPage.renderDayCheckboxes();
     UI.openModal('modal-murid');
   }
 
