@@ -1,7 +1,6 @@
 const API = (() => {
   const BASE_URL = window.EDUHOME_API_URL || 'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
 
-  // Get current session role (injected at call time)
   function currentRole() {
     try {
       const s = sessionStorage.getItem('eduhome_user');
@@ -20,12 +19,10 @@ async function get(action, params = {}) {
     const url = new URL(BASE_URL);
     url.searchParams.set('action', action);
     
-    // Jangan kirim role kalau login
     if (action !== 'login') {
       url.searchParams.set('role', currentRole());
     }
 
-    // Inject mentor context for scoping
     const user = currentUser();
     if (user.role === 'MENTOR') {
       if (user.username) url.searchParams.set('mentor_name', user.username);
@@ -37,16 +34,22 @@ async function get(action, params = {}) {
     return res.json();
   }
 
-  async function post(body) {
+async function post(body) {
+    const user = currentUser();
+    
+    const payload = {
+      ...body,
+      username: user.username || '',
+      role: currentRole()
+    };
+
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...body,
-        role: currentRole()   // always inject role
-      })
+      mode: 'no-cors', 
+      body: JSON.stringify(payload)
     });
-    return res.json();
+
+    return { status: 'OK', message: 'Data sedang diproses oleh sistem' };
   }
 
   // AUTH
