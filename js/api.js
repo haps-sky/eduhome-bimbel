@@ -1,9 +1,3 @@
-// ============================================================
-// EduHome API Layer — js/api.js
-// All requests automatically inject the current user's role.
-// Backend validates role on every call.
-// ============================================================
-
 const API = (() => {
   const BASE_URL = window.EDUHOME_API_URL || 'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
 
