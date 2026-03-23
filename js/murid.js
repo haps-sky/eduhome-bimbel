@@ -88,27 +88,29 @@ const MuridPage = (() => {
     container.innerHTML = ''; 
 
     const timeSlots = [
-      '08.30-09.00', '09.00-09.30', '09.30-10.00', '10.00-10.30', '10.30-11.00', '11.00-11.30', '11.30-12.00',
-      '12.00-12.30', '12.30-13.00', '13.00-13.30', '13.30-14.00', '14.00-14.30', '14.30-15.00', '15.00-15.30', 
-      '15.30-16.00', '16.00-16.30', '16.30-17.00', '17.00-17.30', '17.30-18.00', '18.00-18.30', '18.30-19.00', '19.00-19.30'
+      '08.30-09.00', '09.00-09.30', '09.30-10.00', '10.00-10.30', '10.30-11.00', 
+      '11.00-11.30', '11.30-12.00', '12.00-12.30', '12.30-13.00', '13.00-13.30', 
+      '13.30-14.00', '14.00-14.30', '14.30-15.00', '15.00-15.30', '15.30-16.00', 
+      '16.00-16.30', '16.30-17.00', '17.00-17.30', '17.30-18.00', '18.00-18.30', 
+      '18.30-19.00', '19.00-19.30'
     ];
 
     DAYS.forEach(day => {
+      const dayVal = day.toUpperCase();
       const div = document.createElement('div');
-      div.style.display = 'flex';
-      div.style.alignItems = 'center';
-      div.style.marginBottom = '8px';
-      div.style.gap = '10px';
+      div.className = 'day-card';
+      div.id = `card-${dayVal}`;
       
       let timeOptions = timeSlots.map(slot => `<option value="${slot}">${slot}</option>`).join('');
 
       div.innerHTML = `
-        <label style="min-width: 80px;">
-          <input type="checkbox" name="hari" value="${day.toUpperCase()}" onchange="MuridPage.toggleTimeInput('${day.toUpperCase()}')"> 
-          ${day}
+        <label>
+          <input type="checkbox" name="hari" value="${dayVal}" 
+                 onchange="MuridPage.toggleTimeInput('${dayVal}')"> 
+          <span>${dayVal}</span>
         </label>
-        <select id="time-${day.toUpperCase()}" class="time-input-small" style="display:none; flex:1; padding:4px;">
-          <option value="">-- Pilih Jam --</option>
+        <select id="time-${dayVal}" class="time-select-card" style="display:none">
+          <option value="">-- Jam --</option>
           ${timeOptions}
         </select>
       `;
@@ -116,6 +118,23 @@ const MuridPage = (() => {
     });
   }
 
+  // Fungsi toggle yang disesuaikan dengan kartu
+  function toggleTimeInput(day) {
+    const cb = document.querySelector(`input[value="${day}"]`);
+    const select = document.getElementById(`time-${day}`);
+    const card = document.getElementById(`card-${day}`);
+    
+    if (select && card) {
+      if (cb.checked) {
+        select.style.display = 'block';
+        card.classList.add('active');
+      } else {
+        select.style.display = 'none';
+        card.classList.remove('active');
+        select.value = "";
+      }
+    }
+  }
   function toggleTimeInput(day) {
     const cb = document.querySelector(`input[value="${day}"]`);
     const select = document.getElementById(`time-${day}`);
@@ -179,7 +198,10 @@ const MuridPage = (() => {
     const tgl     = document.getElementById('murid-tgl').value;
     const status  = document.getElementById('murid-status').value;
 
-    if (!nama || !program) { UI.toast('Nama dan program wajib diisi', 'error'); return; }
+    if (!nama || !program) { 
+      UI.toast('Nama dan program wajib diisi', 'error'); 
+      return; 
+    }
 
     const jadwalData = [];
     document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
@@ -190,19 +212,13 @@ const MuridPage = (() => {
       }
     });
 
-    const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status, jadwal: jadwalData };
-    const btn = document.getElementById('murid-save-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
-
-    try {
-      let res = id ? await API.murid.update({ id, ...payload }) : await API.murid.add(payload);
-      if (res.status === 'OK') {
-        UI.toast(id ? 'Data diperbarui' : 'Murid ditambahkan', 'success');
-        UI.closeModal('modal-murid');
-        load();
-      } else { UI.toast(res.message || 'Gagal', 'error'); }
-    } catch(e) { UI.toast('Error: ' + e.message, 'error'); } 
-    finally { if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; } }
+    const payload = { 
+      nama, jk, kelas, program, 
+      tgl_mulai: tgl, 
+      status, 
+      mentor: '', // Kirim kosong saja ke database
+      jadwal: jadwalData 
+    };
   }
 
   async function deleteMurid(id, nama) {
