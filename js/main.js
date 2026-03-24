@@ -380,6 +380,39 @@ const UI = {
   }
 };
 
+async function handleSaveStudent(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (!btn) return;
+
+  const originalHTML = btn.innerHTML;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Menyimpan...';
+
+  try {
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    const res = data.id ? await API.murid.update(data) : await API.murid.add(data);
+    
+    if (res.status === 'OK') {
+      UI.toast('Berhasil disimpan!', 'success');
+      UI.closeAllModals();
+      App.navigate('murid');
+    } else {
+      UI.toast(res.message || 'Gagal menyimpan', 'error');
+    }
+  } catch (err) {
+    UI.toast('Gagal: ' + err.message, 'error');
+  } finally {
+  
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    lucide.createIcons({ nodes: [btn] });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
   document.querySelectorAll('.modal').forEach(modal => {
