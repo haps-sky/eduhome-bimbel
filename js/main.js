@@ -109,19 +109,14 @@ const App = (() => {
     state.user = null;
   }
 
-  // ── Build role-scoped sidebar ───────────────────────────
-  function buildSidebar(role) {
-    const nav   = document.getElementById('sidebar-nav');
+function buildSidebar(role) {
+    const nav = document.getElementById('sidebar-nav');
     const brand = document.getElementById('sidebar-role-label');
     if (!nav) return;
-
+    
     const groups = RBAC.groups[role] || [];
-    const badge  = RBAC.badges[role] || { cls: '', label: role };
-
-    if (brand) {
-      brand.textContent = badge.label;
-      brand.className   = 'role-badge ' + badge.cls;
-    }
+    const badge = RBAC.badges[role] || { cls: '', label: role };
+    if (brand) { brand.textContent = badge.label; brand.className = 'role-badge ' + badge.cls; }
 
     nav.innerHTML = groups.map(g => `
       <div class="nav-section-label">${g.label}</div>
@@ -132,9 +127,13 @@ const App = (() => {
         </div>`).join('')}
     `).join('');
 
-    // Re-attach click listeners
+
     nav.querySelectorAll('.nav-item').forEach(el => {
-      el.addEventListener('click', () => navigate(el.dataset.page));
+      el.addEventListener('click', () => {
+        navigate(el.dataset.page);
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.remove('open');
+      });
     });
 
     lucide.createIcons({ nodes: [nav] });
