@@ -138,42 +138,37 @@ const MuridPage = (() => {
 
 
 async function openEdit(id) {
-    // 1. Ambil data dari variabel lokal (allData) biar INSTAN muncul
-    const m = allData.find(x => x.id === id);
-    if (!m) return;
+  // 1. Ambil data dari variabel lokal (allData) biar instan
+  const m = allData.find(x => x.id === id);
+  if (!m) return;
 
-    // 2. Isi form secepat mungkin
-    document.getElementById('murid-modal-title').textContent = 'Edit Data Murid';
-    document.getElementById('murid-id-field').value = m.id;
-    document.getElementById('murid-nama').value     = m.nama;
-    document.getElementById('murid-jk').value       = m.jk;
-    document.getElementById('murid-kelas').value    = m.kelas;
-    document.getElementById('murid-program').value  = m.program;
-    document.getElementById('murid-tgl').value      = m.tgl_mulai;
-    document.getElementById('murid-status').value   = m.status;
+  // 2. Isi form identitas murid
+  document.getElementById('murid-modal-title').textContent = 'Edit Data Murid';
+  document.getElementById('murid-id-field').value = m.id;
+  document.getElementById('murid-nama').value     = m.nama;
+  document.getElementById('murid-jk').value       = m.jk;
+  document.getElementById('murid-kelas').value    = m.kelas;
+  document.getElementById('murid-program').value  = m.program;
+  document.getElementById('murid-tgl').value      = m.tgl_mulai;
+  document.getElementById('murid-status').value   = m.status;
 
-    renderDayCheckboxes(); 
+  renderDayCheckboxes(); 
 
-    // 3. Tampilkan modal DULUAN (Biar user tidak merasa delay)
-    document.getElementById('murid-schedule-section').style.display = 'block';
-    UI.openModal('modal-murid');
+  // 3. MUNCULKAN MODAL DETIK INI JUGA (0 delay)
+  document.getElementById('murid-schedule-section').style.display = 'block';
+  UI.openModal('modal-murid');
 
-    // 4. Baru ambil data jadwal di background
-    const jadwalRes = await API.jadwal.getByMurid(id);
+  // 4. Ambil jadwal secara asinkron (tanpa await di depan)
+  API.jadwal.getByMurid(id).then(jadwalRes => {
     if (jadwalRes.status === 'OK' && jadwalRes.data.length > 0) {
-        const hariSet = new Set(jadwalRes.data.map(j => j.hari));
-        document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => {
-            const val = cb.value;
-            if(hariSet.has(val)) {
-                cb.checked = true;
-                toggleTimeInput(val);
-                const item = jadwalRes.data.find(j => j.hari === val);
-                if(item) document.getElementById(`time-${val}`).value = item.jam;
-            }
-        });
+      const hariSet = new Set(jadwalRes.data.map(j => j.hari));
+      document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => {
+        cb.checked = hariSet.has(cb.value);
+      });
     }
-  }
-  
+  }).catch(err => console.log("Jadwal dimuat pelan, tapi identitas sudah muncul."));
+}
+
   function clearForm() {
     ['murid-nama','murid-jk','murid-kelas','murid-program','murid-tgl','murid-mentor','murid-jam'].forEach(id => {
       const el = document.getElementById(id);

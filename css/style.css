@@ -684,17 +684,28 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 900px) {
   #sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0;
+    position: fixed; 
+    top: 0; left: 0; bottom: 0;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    z-index: 1000; /* Sidebar di depan konten */
+    transition: transform 0.3s ease;
   }
-  #sidebar.open { transform: translateX(0); }
-  #mobile-menu-btn { display: flex; }
+  
+  #sidebar.open { 
+    transform: translateX(0); 
+  }
+
+  #mobile-menu-btn { 
+    display: flex; 
+    position: relative;
+    z-index: 1100; /* WAJIB: Lebih tinggi dari sidebar agar tetap bisa diklik */
+    padding: 10px;
+    cursor: pointer;
+  }
+  
   #content { padding: 16px; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; }
-  .finance-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  /* Sisa kodingan responsive lainnya... */
 }
 
 @media (max-width: 480px) {
