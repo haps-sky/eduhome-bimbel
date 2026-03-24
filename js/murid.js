@@ -215,8 +215,7 @@ const MuridPage = (() => {
     const payload = { 
       nama, jk, kelas, program, 
       tgl_mulai: tgl, 
-      status, 
-      mentor: '', // Kirim kosong saja ke database
+      status,
       jadwal: jadwalData 
     };
   }
