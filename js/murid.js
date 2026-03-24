@@ -189,7 +189,7 @@ const MuridPage = (() => {
     document.getElementById('murid-schedule-section').style.display = 'block';
   }
 
-  async function saveForm() {
+async function saveForm() {
     const id      = document.getElementById('murid-id-field').value;
     const nama    = document.getElementById('murid-nama').value.trim();
     const jk      = document.getElementById('murid-jk').value;
@@ -218,12 +218,31 @@ const MuridPage = (() => {
       status,
       jadwal: jadwalData 
     };
-  }
 
-  async function deleteMurid(id, nama) {
-    if (!confirm(`Hapus murid "${nama}"?`)) return;
-    const res = await API.murid.delete(id);
-    if (res.status === 'OK') { UI.toast('Murid dihapus', 'success'); load(); }
+    const btn = document.getElementById('murid-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+
+    try {
+      let res;
+      // Sekarang ID dan Payload bisa terbaca karena sudah di dalam satu fungsi
+      if (id) {
+        res = await API.murid.update({ id, ...payload });
+      } else {
+        res = await API.murid.add(payload);
+      }
+
+      if (res.status === 'OK') {
+        UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
+        UI.closeModal('modal-murid');
+        load(); // Refresh tabel
+      } else {
+        UI.toast(res.message || 'Gagal menyimpan', 'error');
+      }
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+    }
   }
 
   async function viewSchedule(id, nama) {
