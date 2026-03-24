@@ -113,7 +113,7 @@ function buildSidebar(role) {
     const nav = document.getElementById('sidebar-nav');
     const brand = document.getElementById('sidebar-role-label');
     if (!nav) return;
-    
+
     const groups = RBAC.groups[role] || [];
     const badge = RBAC.badges[role] || { cls: '', label: role };
     if (brand) { brand.textContent = badge.label; brand.className = 'role-badge ' + badge.cls; }
@@ -254,25 +254,7 @@ function showApp(user) {
 
     buildSidebar(user.role);
     applyPageVisibility(user.role);
-  }
-
-
-function buildSidebar(role) {
-    const nav   = document.getElementById('sidebar-nav');
-
-    nav.innerHTML = groups.map(g => ` ... `).join(''); 
-
-    nav.querySelectorAll('.nav-item').forEach(el => {
-      el.addEventListener('click', () => {
-        navigate(el.dataset.page);
-        
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.remove('open');
-      });
-    });
-
-    lucide.createIcons({ nodes: [nav] });
-  }
+}
 
   function applyPageVisibility(role) {
     const adminBtns = [
