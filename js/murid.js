@@ -118,7 +118,7 @@ const MuridPage = (() => {
     });
   }
 
-  // Fungsi toggle yang disesuaikan dengan kartu
+
   function toggleTimeInput(day) {
     const cb = document.querySelector(`input[value="${day}"]`);
     const select = document.getElementById(`time-${day}`);
@@ -135,14 +135,7 @@ const MuridPage = (() => {
       }
     }
   }
-  function toggleTimeInput(day) {
-    const cb = document.querySelector(`input[value="${day}"]`);
-    const select = document.getElementById(`time-${day}`);
-    if (select) {
-      select.style.display = cb.checked ? 'block' : 'none';
-      if (!cb.checked) select.value = "";
-    }
-  }
+  
 
   async function openEdit(id) {
     const res = await API.murid.getById(id);
@@ -223,8 +216,7 @@ async function saveForm() {
     if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
 
     try {
-      let res;
-      // Sekarang ID dan Payload bisa terbaca karena sudah di dalam satu fungsi
+      let res; 
       if (id) {
         res = await API.murid.update({ id, ...payload });
       } else {
@@ -243,6 +235,12 @@ async function saveForm() {
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
     }
+  }
+
+  async function deleteMurid(id, nama) {
+    if (!confirm(`Hapus murid "${nama}"?`)) return;
+    const res = await API.murid.delete(id);
+    if (res.status === 'OK') { UI.toast('Murid dihapus', 'success'); load(); }
   }
 
   async function viewSchedule(id, nama) {
