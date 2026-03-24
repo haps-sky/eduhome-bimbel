@@ -220,23 +220,26 @@ const App = (() => {
     UI.toast('Berhasil keluar', 'info');
   }
 
-  function showApp(user) {
+function showApp(user) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-shell').style.display = 'flex';
 
-    // User info in sidebar footer
+    const el = document.getElementById('current-date');
+    if (el) {
+      el.textContent = new Date().toLocaleDateString('id-ID', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+    }
+
     const badge = RBAC.badges[user.role] || { cls: '', label: user.role };
     document.getElementById('user-display').innerHTML =
-      `<strong>${user.username}</strong><span class="role-badge ${badge.cls}">${badge.label}</span>`;
+      `<strong>${user.username}</strong><span class="role-badge ${badge.cls}">${badge.label}</span>`; 
 
-    // Avatar initial
+
     const av = document.getElementById('user-avatar');
     if (av) av.textContent = (user.username || '?')[0].toUpperCase();
 
-    // Build role-scoped sidebar
-    buildSidebar(user.role);
-
-    // Show/hide sections that exist in the DOM based on role
+    buildSidebar(user.role); 
     applyPageVisibility(user.role);
   }
 
