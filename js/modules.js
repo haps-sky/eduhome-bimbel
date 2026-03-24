@@ -5,11 +5,24 @@
 const MentorPage = (() => {
   let allData = [];
 
-  async function load() {
-    const res = await API.mentor.getAll();
-    if (res.status !== 'OK') { UI.toast('Gagal memuat mentor', 'error'); return; }
-    allData = res.data || [];
-    renderTable(allData);
+async function load() {
+    const tbody = document.getElementById('mentor-tbody'); // Pastikan ID ini sesuai di index.html
+    
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data mentor...</td></tr>';
+    }
+
+    try {
+      const res = await API.mentor.getAll();
+      if (res.status === 'OK') {
+        allData = res.data || [];
+        renderTable(allData);
+        updateSummary(allData);
+      }
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+    }
   }
 
   function renderTable(data) {
