@@ -234,7 +234,7 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
         UI.closeModal('modal-murid');
-        load(); // Refresh tabel
+        load();
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
