@@ -318,7 +318,7 @@ const SPPPage = (() => {
     renderTable(allData);
   }
 
-  function populateMurid(murid) {
+function populateMurid(murid) {
     const sel = document.getElementById('spp-murid');
     if (!sel) return;
     sel.innerHTML = '<option value="">-- Pilih Murid --</option>' +
