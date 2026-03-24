@@ -135,7 +135,7 @@ const MuridPage = (() => {
       }
     }
   }
-  
+
 
   async function openEdit(id) {
     const res = await API.murid.getById(id);
