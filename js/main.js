@@ -305,21 +305,37 @@ function showApp(user) {
   return { init, navigate, state, RBAC };
 })();
 
-// ── Global UI Utilities ────────────────────────────────────
+
 const UI = {
-  toast(message, type = 'info') {
+toast(message, type = 'info') {
     const container = document.getElementById('toast-container');
+    if (!container) return; 
+
     const toast = document.createElement('div');
-    toast.className = 'toast toast-' + type;
-    const icons = { success: 'check-circle', error: 'x-circle', info: 'info', warning: 'alert-triangle' };
+    toast.className = `toast toast-${type}`;
+    
+    const icons = { 
+      success: 'check-circle', 
+      error: 'x-circle', 
+      info: 'info', 
+      warning: 'alert-triangle' 
+    };
+
     toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${message}</span>`;
     container.appendChild(toast);
     lucide.createIcons({ nodes: [toast] });
-    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => toast.classList.add('show'), 10);
+
     setTimeout(() => {
       toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+      
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, 300);
+    }, 3500); 
   },
 
   formatCurrency(val) {

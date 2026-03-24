@@ -396,41 +396,57 @@
 
 <div id="modal-murid" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3 id="murid-modal-title">Tambah Murid Baru</h3><button class="modal-close" onclick="UI.closeModal('modal-murid')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="murid-id-field">
-      <div class="form-row">
-        <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="murid-nama" placeholder="Nama murid"></div>
-        <div class="form-group"><label>Jenis Kelamin</label><select id="murid-jk"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+    <form id="form-murid" onsubmit="handleSaveStudent(event)">
+      
+      <div class="modal-header">
+        <h3 id="murid-modal-title">Tambah Murid Baru</h3>
+        <button type="button" class="modal-close" onclick="UI.closeModal('modal-murid')">✕</button>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Kelas</label><input type="text" id="murid-kelas" placeholder="Contoh: 7A, X IPA"></div>
-        <div class="form-group"><label>Program *</label><input type="text" id="murid-program" placeholder="Matematika, Bahasa, dll"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="murid-tgl"></div>
-        <div class="form-group"><label>Status</label><select id="murid-status"><option value="AKTIF">Aktif</option><option value="NONAKTIF">Non-Aktif</option></select></div>
-      </div>
-      <div id="murid-schedule-section">
-        <hr class="divider">
-        <div class="section-label">Jadwal Belajar</div>
-        <div class="form-group">
-        <label>Jadwal Belajar (Pilih Hari & Jam)</label><div id="day-checkboxes" class="schedule-grid-container"></div>
+
+      <div class="modal-body">
+        <input type="hidden" id="murid-id-field" name="id"> <div class="form-row">
+          <div class="form-group">
+            <label>Nama Lengkap *</label>
+            <input type="text" id="murid-nama" name="nama" placeholder="Nama murid" required> </div>
+          <div class="form-group">
+            <label>Jenis Kelamin</label>
+            <select id="murid-jk" name="jk">
+              <option value="L">Laki-laki</option>
+              <option value="P">Perempuan</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Kelas</label><input type="text" id="murid-kelas" name="kelas" placeholder="Contoh: 7A, X IPA"></div>
+          <div class="form-group"><label>Program *</label><input type="text" id="murid-program" name="program" placeholder="Matematika, Bahasa, dll" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="murid-tgl" name="tgl_mulai"></div>
+          <div class="form-group"><label>Status</label>
+            <select id="murid-status" name="status">
+              <option value="AKTIF">Aktif</option>
+              <option value="NONAKTIF">Non-Aktif</option>
+            </select>
+          </div>
+        </div>
+        <div id="murid-schedule-section">
+          <hr class="divider">
+          <div class="section-label">Jadwal Belajar</div>
+          <div class="form-group">
+            <label>Jadwal Belajar (Pilih Hari & Jam)</label>
+            <div id="day-checkboxes" class="schedule-grid-container"></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-murid')">Batal</button>
-      <button class="btn btn-primary" id="murid-save-btn" onclick="MuridPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
-    </div>
-  </div>
-</div>
 
-<div id="modal-schedule" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="schedule-modal-title">Jadwal Murid</h3><button class="modal-close" onclick="UI.closeModal('modal-schedule')">✕</button></div>
-    <div class="modal-body"><div id="schedule-detail-list"></div></div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="UI.closeModal('modal-schedule')">Tutup</button></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-murid')">Batal</button>
+        <button type="submit" class="btn btn-primary" id="murid-save-btn">
+          <i data-lucide="save"></i> Simpan
+        </button>
+      </div>
+
+    </form>
   </div>
 </div>
 

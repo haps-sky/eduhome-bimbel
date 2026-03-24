@@ -122,6 +122,7 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .form-control:focus, input:focus, select:focus, textarea:focus {
@@ -912,4 +913,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   border-radius: 6px;
   font-size: 0.75rem;
   outline: none;
+}
+
+.day-card:active {
+  transform: scale(0.95);
+}
+
+.day-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
