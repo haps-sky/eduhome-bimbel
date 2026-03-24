@@ -191,18 +191,24 @@ function buildSidebar(role) {
       if (res.status === 'OK') {
         setSession(res.data);
         showApp(res.data);
-        navigate(RBAC.defaultPage[res.data.role] || 'dashboard');
+        
+        // 1. Tentukan halaman tujuan
+        const startPage = RBAC.defaultPage[res.data.role] || 'dashboard';
+        
+        // 2. Ambil data SEKARANG (Biar nggak delay)
+        loadPage(startPage); 
+        
+        // 3. Pindah halaman
+        navigate(startPage);
+        
         UI.toast('Selamat datang, ' + res.data.username + '!', 'success');
       } else {
+        // JIKA GAGAL: Cukup kasih tau user, jangan dipindah halamannya!
         UI.toast(res.message || 'Login gagal', 'error');
       }
     } catch(err) {
       UI.toast('Koneksi gagal. Periksa URL API.', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="log-in"></i> Masuk';
-      lucide.createIcons({ nodes: [btn] });
-    }
+   }
   }
 
 function handleLogout() {
