@@ -237,12 +237,18 @@ function showApp(user) {
     }
 
     const badge = RBAC.badges[user.role] || { cls: '', label: user.role };
-    document.getElementById('user-display').innerHTML =
-      `<strong>${user.username}</strong><span class="role-badge ${badge.cls}">${badge.label}</span>`; 
-
+    const userDisplay = document.getElementById('user-display');
+    if (userDisplay) {
+      userDisplay.innerHTML = `<strong>${user.username}</strong><span class="role-badge ${badge.cls}">${badge.label}</span>`;
+    }
 
     const av = document.getElementById('user-avatar');
     if (av) av.textContent = (user.username || '?')[0].toUpperCase();
+
+    buildSidebar(user.role);
+    applyPageVisibility(user.role);
+  }
+
 
 function buildSidebar(role) {
     const nav   = document.getElementById('sidebar-nav');
@@ -261,7 +267,7 @@ function buildSidebar(role) {
     lucide.createIcons({ nodes: [nav] });
   }
 
-  function applyPageVisibility(role) 
+  function applyPageVisibility(role) {
     const adminBtns = [
       'btn-tambah-murid', 'btn-tambah-mentor',
       'btn-tambah-presensi', 'btn-buat-spp', 'btn-bayar-gaji'
@@ -448,38 +454,36 @@ async function handleSaveStudent(e) {
 
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
+
   document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', e => {
       if (e.target === modal) UI.closeAllModals();
     });
-
-    document.getElementById('main-area').addEventListener('click', () => {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar.classList.contains('open')) {
-      sidebar.classList.remove('open');
-    }
-  
   });
 
-  const updateTopbarDate = () => {
+  const mainArea = document.getElementById('main-area');
+  if (mainArea) {
+    mainArea.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+      }
+    });
+  }
+
+  const updateDate = () => {
     const el = document.getElementById('current-date');
-    if (el) {
-      el.textContent = new Date().toLocaleDateString('id-ID', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-      });
-    }
+    if (el) el.textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   };
-  updateTopbarDate();
+  updateDate();
 
-  const sekarang = new Date();
-  const offset = sekarang.getTimezoneOffset() * 60000;
-  const localISOTime = (new Date(sekarang - offset)).toISOString().split('T')[0];
-
+  const skrg = new Date();
+  const offset = skrg.getTimezoneOffset() * 60000;
+  const localDate = (new Date(skrg - offset)).toISOString().split('T')[0];
   ['presensi-tanggal','pay-tanggal','gaji-tgl','murid-tgl','mentor-presensi-tanggal'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = localISOTime;
+    if (el) el.value = localDate;
   });
 
   lucide.createIcons();
 });
-
