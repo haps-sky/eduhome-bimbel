@@ -1,12 +1,6 @@
-// ============================================================
-// EduHome Dashboard Module — js/dashboard.js
-// Role-aware: MENTOR sees personal stats only, no finance.
-// ADMIN/OWNER see full analytics + finance.
-// ============================================================
+const Dashboard = (() => { 
 
-const Dashboard = (() => {
-
-  async function load() {
+async function load() {
     const user = API.currentUser();
     const role = user.role || 'ADMIN';
 
@@ -31,6 +25,13 @@ const Dashboard = (() => {
       renderMentorPerformance(d.mentor_performance);
       renderRecentActivity(d.recent_attendance);
       renderLowSessions(d.low_sessions);
+
+      const dateEl = document.getElementById('current-date');
+      if (dateEl) {
+        dateEl.textContent = new Date().toLocaleDateString('id-ID', { 
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+      }
 
     } catch(e) {
       UI.toast('Error dashboard: ' + e.message, 'error');
