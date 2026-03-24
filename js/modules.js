@@ -5,7 +5,33 @@
 const MentorPage = (() => {
   let allData = [];
 
-async function load() {
+  async function load() {
+    const tbody = document.getElementById('mentor-tbody');
+    if (!tbody) return;
+
+    // 1. TAMPILKAN MEMORI DULU (Biar ga delay)
+    if (allData && allData.length > 0) {
+      renderTable(allData);
+      updateSummary(allData);
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data mentor...</td></tr>';
+    }
+
+    try {
+      // 2. AMBIL DATA DARI SERVER
+      const res = await API.mentor.getAll();
+      if (res.status === 'OK') {
+        allData = (res.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        renderTable(allData);
+        updateSummary(allData);
+      }
+    } catch (e) {
+      console.error(e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+      }
+    }
+  }
 
   function renderTable(data) {
     const rows = data.map(m => `
@@ -31,11 +57,10 @@ async function load() {
     UI.renderTable('mentor-tbody', rows, 'Belum ada data mentor');
     lucide.createIcons();
   }
-}
+
   function updateSummary(data) {
     const totalEl = document.getElementById('mentor-total-count');
     const aktifEl = document.getElementById('mentor-active-count');
-
     if (totalEl) totalEl.textContent = data.length;
     if (aktifEl) {
       const aktif = data.filter(m => m.status === 'AKTIF').length;
@@ -43,6 +68,7 @@ async function load() {
     }
   }
 
+  // --- Fungsi openAdd, openEdit, saveForm, deleteMentor biarkan seperti yang kamu punya ---
   function openAdd() {
     ['mentor-id-field','mentor-nama','mentor-program','mentor-fee-anak','mentor-fee-harian'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -72,12 +98,9 @@ async function load() {
     const status     = document.getElementById('mentor-status').value;
     const fee_anak   = parseFloat(document.getElementById('mentor-fee-anak').value) || 0;
     const fee_harian = parseFloat(document.getElementById('mentor-fee-harian').value) || 0;
-
     if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
-
     const payload = { nama, program, status, fee_anak, fee_harian };
     const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
-
     if (res.status === 'OK') {
       UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
       UI.closeModal('modal-mentor');
