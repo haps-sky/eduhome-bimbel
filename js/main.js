@@ -1,5 +1,13 @@
-
-
+const API = {
+  auth: {
+    login: (u, p) => fetch(window.EDUHOME_API_URL + '?action=login&u=' + u + '&p=' + p).then(r => r.json())
+  },
+  murid: {
+    load: () => fetch(window.EDUHOME_API_URL + '?action=getMurid').then(r => r.json()),
+    add: (d) => fetch(window.EDUHOME_API_URL + '?action=addMurid', { method: 'POST', body: JSON.stringify(d) }).then(r => r.json()),
+    update: (d) => fetch(window.EDUHOME_API_URL + '?action=updateMurid', { method: 'POST', body: JSON.stringify(d) }).then(r => r.json())
+  }
+};
 
 const RBAC = {
   
