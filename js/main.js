@@ -1,9 +1,6 @@
-// ============================================================
-// EduHome Main App Controller — js/main.js
-// RBAC Edition: role-scoped navigation, page guards, UI control
-// ============================================================
 
-// ── Role definitions ────────────────────────────────────────
+
+
 const RBAC = {
   
   pages: {
@@ -213,10 +210,18 @@ const App = (() => {
     }
   }
 
-  function handleLogout() {
+function handleLogout() {
     clearSession();
+    
+    const userField = document.getElementById('login-username');
+    const passField = document.getElementById('login-password');
+    
+    if (userField) userField.value = '';
+    if (passField) passField.value = '';
+    
     document.getElementById('app-shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
+    
     UI.toast('Berhasil keluar', 'info');
   }
 
@@ -239,12 +244,24 @@ function showApp(user) {
     const av = document.getElementById('user-avatar');
     if (av) av.textContent = (user.username || '?')[0].toUpperCase();
 
-    buildSidebar(user.role); 
-    applyPageVisibility(user.role);
+function buildSidebar(role) {
+    const nav   = document.getElementById('sidebar-nav');
+
+    nav.innerHTML = groups.map(g => ` ... `).join(''); 
+
+    nav.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => {
+        navigate(el.dataset.page);
+        
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.remove('open');
+      });
+    });
+
+    lucide.createIcons({ nodes: [nav] });
   }
 
-  function applyPageVisibility(role) {
-    // ── Admin-only action buttons ────────────────────────
+  function applyPageVisibility(role) 
     const adminBtns = [
       'btn-tambah-murid', 'btn-tambah-mentor',
       'btn-tambah-presensi', 'btn-buat-spp', 'btn-bayar-gaji'
@@ -435,6 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.addEventListener('click', e => {
       if (e.target === modal) UI.closeAllModals();
     });
+
+    document.getElementById('main-area').addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+    }
+  
   });
 
   const updateTopbarDate = () => {
