@@ -78,7 +78,7 @@ const MuridPage = (() => {
     clearForm();
     document.getElementById('murid-modal-title').textContent = 'Tambah Murid Baru';
     document.getElementById('murid-id-field').value = '';
-    renderDayCheckboxes(); // Panggil fungsi di bawah
+    renderDayCheckboxes();
     UI.openModal('modal-murid');
   }
 
