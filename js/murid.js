@@ -137,11 +137,12 @@ const MuridPage = (() => {
   }
 
 
-  async function openEdit(id) {
-    const res = await API.murid.getById(id);
-    if (res.status !== 'OK') return;
-    const m = res.data;
+async function openEdit(id) {
+    // 1. Ambil data dari variabel lokal (allData) biar INSTAN muncul
+    const m = allData.find(x => x.id === id);
+    if (!m) return;
 
+    // 2. Isi form secepat mungkin
     document.getElementById('murid-modal-title').textContent = 'Edit Data Murid';
     document.getElementById('murid-id-field').value = m.id;
     document.getElementById('murid-nama').value     = m.nama;
@@ -153,10 +154,14 @@ const MuridPage = (() => {
 
     renderDayCheckboxes(); 
 
+    // 3. Tampilkan modal DULUAN (Biar user tidak merasa delay)
+    document.getElementById('murid-schedule-section').style.display = 'block';
+    UI.openModal('modal-murid');
+
+    // 4. Baru ambil data jadwal di background
     const jadwalRes = await API.jadwal.getByMurid(id);
     if (jadwalRes.status === 'OK' && jadwalRes.data.length > 0) {
         const hariSet = new Set(jadwalRes.data.map(j => j.hari));
-        
         document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => {
             const val = cb.value;
             if(hariSet.has(val)) {
@@ -167,11 +172,8 @@ const MuridPage = (() => {
             }
         });
     }
-
-    document.getElementById('murid-schedule-section').style.display = 'block';
-    UI.openModal('modal-murid');
   }
-
+  
   function clearForm() {
     ['murid-nama','murid-jk','murid-kelas','murid-program','murid-tgl','murid-mentor','murid-jam'].forEach(id => {
       const el = document.getElementById(id);
