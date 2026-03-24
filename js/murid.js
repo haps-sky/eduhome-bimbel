@@ -278,17 +278,34 @@ async function saveForm() {
     if (res.status === 'OK') { UI.toast('Murid dihapus', 'success'); load(); }
   }
 
-  async function viewSchedule(id, nama) {
+async function viewSchedule(id, nama) {
+
+  const list = document.getElementById('schedule-detail-list');
+
+  // 1. buka modal langsung
+  document.getElementById('schedule-modal-title').textContent = 'Jadwal: ' + nama;
+  list.innerHTML = '<div class="empty-feed">Memuat jadwal...</div>';
+  UI.openModal('modal-schedule');
+
+  try {
+    // 2. baru ambil data di background
     const res = await API.jadwal.getByMurid(id);
-    const list = document.getElementById('schedule-detail-list');
-    document.getElementById('schedule-modal-title').textContent = 'Jadwal: ' + nama;
+
     if (res.status !== 'OK' || res.data.length === 0) {
       list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
     } else {
-      list.innerHTML = res.data.map(j => `<div class="schedule-row"><span>${j.hari}</span> <span>${j.jam}</span></div>`).join('');
+      list.innerHTML = res.data.map(j => `
+        <div class="schedule-row">
+          <span>${j.hari}</span>
+          <span>${j.jam}</span>
+        </div>
+      `).join('');
     }
-    UI.openModal('modal-schedule');
+
+  } catch(e) {
+    list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
   }
+}
 
   return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule };
 })();
