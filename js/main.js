@@ -297,11 +297,12 @@ function showApp(user) {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('open');
-    });
+    document.getElementById('mobile-menu-btn').addEventListener('click', (e) => {
+  e.stopPropagation(); // TAMBAHKAN INI: Agar klik tidak "tembus" ke bawah
+  document.getElementById('sidebar').classList.toggle('open');
+});
   }
-
+  
   return { init, navigate, state, RBAC };
 })();
 
