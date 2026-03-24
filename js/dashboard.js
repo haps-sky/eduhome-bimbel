@@ -45,8 +45,8 @@ async function load() {
       { id: 'kpi-spp',        val: d.spp.active },
       { id: 'kpi-presensi',   val: d.attendance.today }
     ];
+    
 
-    // Finance KPIs only for ADMIN/OWNER
     if (role !== 'MENTOR' && d.payments) {
       cards.push({ id: 'kpi-pembayaran', val: UI.formatCurrency(d.payments.today) });
       cards.push({ id: 'kpi-unpaid',     val: d.spp.unpaid });
