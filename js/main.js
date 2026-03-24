@@ -5,14 +5,14 @@
 
 // ── Role definitions ────────────────────────────────────────
 const RBAC = {
-  // Pages accessible per role
+  
   pages: {
     OWNER:  ['dashboard', 'owner-finance', 'murid', 'presensi', 'spp', 'gaji', 'logs'],
     ADMIN:  ['dashboard', 'murid', 'mentor', 'presensi', 'pembayaran', 'spp', 'buku', 'gaji'],
     MENTOR: ['dashboard', 'mentor-students', 'mentor-presensi']
   },
 
-  // Human-readable page titles
+
   titles: {
     'dashboard':        'Dashboard',
     'owner-finance':    'Laporan Keuangan',
@@ -69,7 +69,7 @@ const RBAC = {
     'mentor-presensi': 'calendar-check'
   },
 
-  // Role badge styling
+
   badges: {
     OWNER:  { cls: 'role-owner',  label: 'Owner' },
     ADMIN:  { cls: 'role-admin',  label: 'Admin' },
@@ -385,15 +385,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Current date in topbar
-  document.getElementById('current-date').textContent =
-    new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const updateTopbarDate = () => {
+    const el = document.getElementById('current-date');
+    if (el) {
+      el.textContent = new Date().toLocaleDateString('id-ID', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+    }
+  };
+  updateTopbarDate();
 
-  // Default dates
-  const today = new Date().toISOString().split('T')[0];
+  const sekarang = new Date();
+  const offset = sekarang.getTimezoneOffset() * 60000;
+  const localISOTime = (new Date(sekarang - offset)).toISOString().split('T')[0];
+
   ['presensi-tanggal','pay-tanggal','gaji-tgl','murid-tgl','mentor-presensi-tanggal'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = today;
+    if (el) el.value = localISOTime;
   });
 
   lucide.createIcons();
