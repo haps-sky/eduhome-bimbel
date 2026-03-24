@@ -2,16 +2,41 @@ const MuridPage = (() => {
   let allData = [];
   const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
-  async function load() {
-    try {
-      const [muridRes, mentorRes] = await Promise.all([API.murid.getAll(), API.mentor.getAll()]);
-      if (muridRes.status !== 'OK') { UI.toast('Gagal memuat data murid', 'error'); return; }
-      allData = muridRes.data || [];
+async function load() {
+    const tbody = document.getElementById('murid-tbody');
+    
+    // 1. CEK MEMORI: Jika data sudah ada (hasil loadPage saat login), TAMPILKAN INSTAN!
+    if (allData && allData.length > 0) {
       renderTable(allData);
-      populateMentorDropdown(mentorRes.data || []);
       updateSummary(allData);
+    } else if (tbody) {
+      // Jika benar-benar kosong (misal baru pertama kali buka), kasih loading
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner"></div> Memuat data murid...</td></tr>';
+    }
+
+    try {
+      // 2. Ambil data fresh di background (Tetap jalankan keduanya)
+      const [muridRes, mentorRes] = await Promise.all([
+        API.murid.getAll(), 
+        API.mentor.getAll()
+      ]);
+
+      if (muridRes.status === 'OK') {
+        allData = muridRes.data || [];
+        // 3. Update tabel secara halus dengan data paling baru
+        renderTable(allData);
+        updateSummary(allData);
+      }
+      
+      if (mentorRes.status === 'OK') {
+        populateMentorDropdown(mentorRes.data || []);
+      }
     } catch(e) {
-      UI.toast('Error: ' + e.message, 'error');
+      console.error("Background update gagal:", e);
+      // Jangan kasih toast error kalau allData sudah tampil (biar user gak keganggu)
+      if (!allData || allData.length === 0) {
+        UI.toast('Gagal memuat data: ' + e.message, 'error');
+      }
     }
   }
 
@@ -159,14 +184,27 @@ async function openEdit(id) {
   UI.openModal('modal-murid');
 
   // 4. Ambil jadwal secara asinkron (tanpa await di depan)
+// 4. Ambil jadwal di background (Tanpa await = Tanpa delay!)
   API.jadwal.getByMurid(id).then(jadwalRes => {
     if (jadwalRes.status === 'OK' && jadwalRes.data.length > 0) {
       const hariSet = new Set(jadwalRes.data.map(j => j.hari));
+      
       document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => {
-        cb.checked = hariSet.has(cb.value);
+        const val = cb.value;
+        if(hariSet.has(val)) {
+          cb.checked = true;
+          
+          // --- PENTING: Munculkan input jam & isi waktunya ---
+          toggleTimeInput(val); 
+          const item = jadwalRes.data.find(j => j.hari === val);
+          if(item) {
+            const timeInput = document.getElementById(`time-${val}`);
+            if (timeInput) timeInput.value = item.jam;
+          }
+        }
       });
     }
-  }).catch(err => console.log("Jadwal dimuat pelan, tapi identitas sudah muncul."));
+  }).catch(err => console.log("Gagal ambil jadwal, tapi modal identitas aman."));
 }
 
   function clearForm() {
