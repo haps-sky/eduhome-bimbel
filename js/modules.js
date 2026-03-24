@@ -50,6 +50,17 @@ async function load() {
     lucide.createIcons();
   }
 
+  function updateSummary(data) {
+    const totalEl = document.getElementById('mentor-total-count');
+    const aktifEl = document.getElementById('mentor-active-count');
+
+    if (totalEl) totalEl.textContent = data.length;
+    if (aktifEl) {
+      const aktif = data.filter(m => m.status === 'AKTIF').length;
+      aktifEl.textContent = aktif;
+    }
+  }
+
   function openAdd() {
     ['mentor-id-field','mentor-nama','mentor-program','mentor-fee-anak','mentor-fee-harian'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -101,7 +112,7 @@ async function load() {
     else UI.toast(res.message || 'Gagal', 'error');
   }
 
-  return { load, openAdd, openEdit, saveForm, deleteMentor };
+  return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
 })();
 
 // ============================================================
