@@ -732,3 +732,37 @@ const MentorPresensiPage = (() => {
 
   return { load, saveForm };
 })();
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("mentor-tbody")) {
+    MentorPage.load();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  if (document.getElementById("mentor-tbody")) {
+    MentorPage.load();
+  }
+
+  if (document.getElementById("presensi-tbody")) {
+    PresensiPage.load();
+  }
+
+  if (document.getElementById("pay-tbody")) {
+    PembayaranPage.load();
+  }
+
+  if (document.getElementById("spp-tbody")) {
+    SPPPage.load();
+  }
+
+  if (document.getElementById("buku-tbody")) {
+    BukuPage.load();
+  }
+
+  if (document.getElementById("gaji-tbody")) {
+    GajiPage.load();
+  }
+
+});
