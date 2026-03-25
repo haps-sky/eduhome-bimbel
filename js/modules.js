@@ -202,17 +202,18 @@ const PresensiPage = (() => {
     } 
 
     // 2. CEK APAKAH SUDAH PERNAH FETCH? 
-    // Jika sudah pernah fetch dan data sudah ada, jangan tarik API lagi (stop di sini)
     if (isFetched && allData.length > 0) {
       return; 
     }
 
-    // 3. TAMPILKAN SPINNER (Hanya jika benar-benar pertama kali dan data kosong)
+    // 3. SPINNER HANYA MUNCUL JIKA BENAR-BENAR KOSONG DI MEMORI
+    // Kalau sudah ada data di memori (Poin 1), jangan kasih spinner lagi biar gak "kedip"
     if (allData.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
     }
 
     try {
+      // 4. AMBIL DATA FRESH DI BACKGROUND
       const [presRes, muridRes, mentorRes] = await Promise.all([
         API.presensi.getAll(),
         API.murid.getAll(),
@@ -221,23 +222,25 @@ const PresensiPage = (() => {
       
       if (presRes.status === 'OK') {
         allData = presRes.data || [];
-        isFetched = true; // Tandai bahwa data sudah berhasil diambil dari server
+        isFetched = true; 
         
         const muridSel = document.getElementById('presensi-murid');
         if (muridSel && muridSel.options.length <= 1) { 
           populateDropdowns(muridRes.data || [], mentorRes.data || []);
         }
         
+        // Render ulang dengan data terbaru dari server
         renderTable(allData.slice(-50).reverse()); 
       }
     } catch (e) {
       console.error("Gagal update presensi:", e);
+      // Hanya tampilkan error jika di layar memang tidak ada data sama sekali
       if (allData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
       }
     }
   }
-
+  
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
     if (ms) ms.innerHTML = '<option value="">-- Pilih Murid --</option>' +
