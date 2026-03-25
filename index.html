@@ -236,23 +236,44 @@
         </div>
       </section>
 
-      <section id="page-mentor" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="user-check"></i> Data Mentor</h2>            
-          <button type="button" class="btn btn-primary" id="mentor-save-btn" onclick="MentorPage.saveForm()"></button>
-            <i data-lucide="plus"></i> Tambah Mentor
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="user-check"></i> Daftar Mentor</div></div>
-          <div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr><th>ID</th><th>Nama</th><th>Program</th><th>Status</th><th>Fee/Anak</th><th>Fee/Sesi</th><th>Aksi</th></tr></thead>
-              <tbody id="mentor-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+<section id="page-mentor" class="page-section">
+  <div class="page-header">
+    <h2><i data-lucide="user-check"></i> Data Mentor</h2>
+    
+    
+<button type="button" 
+            class="btn btn-primary" 
+            id="btn-tambah-mentor" 
+            onclick="MentorPage.openAdd()" 
+            style="display:none">
+      <i data-lucide="plus"></i> Tambah Mentor
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <div class="table-title"><i data-lucide="user-check"></i> Daftar Mentor</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>Program</th>
+            <th>Status</th>
+            <th>Fee/Anak</th>
+            <th>Fee/Sesi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="mentor-tbody">
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
       <section id="page-presensi" class="page-section">
         <div class="page-header">
