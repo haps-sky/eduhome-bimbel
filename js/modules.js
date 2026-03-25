@@ -320,7 +320,7 @@ const SPPPage = (() => {
     initLiveCount();
   }
 
-function initLiveCount() {
+  function initLiveCount() {
     const inputs = ['spp-murid', 'spp-mulai', 'spp-akhir'];
     inputs.forEach(id => {
       const el = document.getElementById(id);
@@ -364,7 +364,7 @@ function initLiveCount() {
     }
   }
 
-function populateMurid(murid) {
+  function populateMurid(murid) {
     const sel = document.getElementById('spp-murid');
     if (!sel) return;
     sel.innerHTML = '<option value="">-- Pilih Murid --</option>' +
@@ -396,7 +396,7 @@ function populateMurid(murid) {
     UI.renderTable('spp-tbody', rows, 'Belum ada paket SPP');
   }
 
-async function saveForm() {
+  async function saveForm() {
     const muridSel = document.getElementById('spp-murid');
     const mulai    = document.getElementById('spp-mulai').value;
     const akhir    = document.getElementById('spp-akhir').value;
@@ -423,16 +423,15 @@ async function saveForm() {
     if (res.status === 'OK') {
       UI.toast(`Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`, 'success');
       UI.closeModal('modal-spp');
-      load(); // Refresh tabel
+      load(); 
     } else {
       UI.toast(res.message || 'Gagal membuat paket', 'error');
     }
   }
 
-  })();
 
-  // JANGAN LUPA: Daftarkan fungsi preview di return agar bisa dipakai
   return { load, saveForm, initLiveCount, calculateLiveSessions };
+})();
 
 // ============================================================
 // Buku Module
