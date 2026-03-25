@@ -1,6 +1,6 @@
   const MuridPage = (() => {
     const DAYS = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU'];
-    
+
   let allData = [];
   let isFetched = false;
 
@@ -280,11 +280,50 @@ async function saveForm() {
     }
 }
 
-  async function deleteMurid(id, nama) {
-    if (!confirm(`Hapus murid "${nama}"?`)) return;
-    const res = await API.murid.delete(id);
-    if (res.status === 'OK') { UI.toast('Murid dihapus', 'success'); load(); }
-  }
+async function deleteMurid(id, nama) {
+    // 1. Konfirmasi dulu
+    if (!confirm(`Hapus murid "${nama}"? Semua jadwal terkait akan ikut terhapus.`)) return;
+
+    // 2. Cari tombol yang diklik (biar loading-nya muncul di situ)
+    // Kita cari button yang punya fungsi deleteMurid dengan ID ini
+    const btn = document.querySelector(`button[onclick*="deleteMurid('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : ''; // Simpan icon sampah aslinya
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            // Kita ganti icon sampah jadi spinner + teks
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            btn.style.width = 'auto'; // Biar muat teksnya
+            btn.style.padding = '0 10px';
+        }
+
+        const res = await API.murid.delete(id);
+
+        if (res.status === 'OK') {
+            UI.toast(`Data "${nama}" berhasil dihapus`, 'success');
+            
+            // --- RESET CACHE AGAR TABEL REFRESH ---
+            allData = [];
+            isFetched = false;
+            load(); 
+        } else {
+            UI.toast(res.message || 'Gagal menghapus', 'error');
+            // Balikin tombol kalau gagal
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+}
 
 async function viewSchedule(id, nama) {
 
