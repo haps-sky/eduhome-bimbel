@@ -297,7 +297,7 @@
       <section id="page-spp" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="package"></i> Paket SPP</h2>
-          <button class="btn btn-primary" id="btn-buat-spp" onclick="UI.openModal('modal-spp')" style="display:none">
+          <button class="btn btn-primary" id="btn-buat-spp" onclick="SPPPage.openAdd()" style="display:none">
             <i data-lucide="plus"></i> Buat Paket SPP
           </button>
         </div>
@@ -305,7 +305,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="package"></i> Daftar Paket SPP</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>ID</th><th>Murid</th><th>Program</th><th>Periode</th><th>Total</th><th>Hadir/Sisa</th><th>Progress</th><th>Status</th><th>Harga</th><th>Terbayar</th><th>Bayar</th></tr></thead>
+              <thead><tr><th>ID</th><th>Murid</th><th>Program</th><th>Periode</th><th>Total</th><th>Hadir/Sisa</th><th>Progress</th><th>Status</th><th>Harga</th><th>Terbayar</th><th>Bayar</th><th>AKSI</th></tr></thead>
               <tbody id="spp-tbody"></tbody>
             </table>
           </div>
@@ -546,7 +546,7 @@
 <div id="modal-spp" class="modal">
   <div class="modal-content">
     <div class="modal-header"><h3>Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body"><input type="hidden" id="spp-id-field">
       <div class="form-group"><label>Murid *</label><select id="spp-murid"><option value="">-- Pilih Murid --</option></select></div>
       <div class="form-row">
         <div class="form-group"><label>Periode Mulai *</label><input type="date" id="spp-mulai"></div>

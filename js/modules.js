@@ -391,8 +391,19 @@ const SPPPage = (() => {
         <td>${UI.formatCurrency(s.harga)}</td>
         <td>${UI.formatCurrency(s.terbayar)}</td>
         <td>${UI.statusBadge(s.status_bayar)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon btn-warning" onclick="SPPPage.openEdit('${s.id}')" title="Edit">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="btn-icon btn-danger" onclick="SPPPage.deleteSPP('${s.id}')" title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </td>
       </tr>`);
     UI.renderTable('spp-tbody', rows, 'Belum ada paket SPP');
+    lucide.createIcons();
   }
 
   async function saveForm() {
@@ -428,8 +439,55 @@ const SPPPage = (() => {
     }
   }
 
+  function openAdd() {
+    document.getElementById('spp-modal-title').textContent = 'Buat Paket SPP';
+    document.getElementById('spp-id-field').value = ''; // Kosongkan ID (tanda buat baru)
+    
+    // Reset form lainnya
+    const muridSel = document.getElementById('spp-murid');
+    muridSel.value = '';
+    muridSel.disabled = false; // Aktifkan lagi dropdown murid
+    
+    document.getElementById('spp-mulai').value = '';
+    document.getElementById('spp-akhir').value = '';
+    document.getElementById('spp-harga').value = '';
+    document.getElementById('spp-count-preview').textContent = 'Total: 0 Sesi';
+    
+    UI.openModal('modal-spp');
+  }
 
-  return { load, saveForm, initLiveCount, calculateLiveSessions };
+  function openEdit(id) {
+    const s = allData.find(x => x.id === id);
+    if (!s) return;
+
+    document.getElementById('spp-modal-title').textContent = 'Edit Paket SPP';
+    document.getElementById('spp-id-field').value = s.id; // Simpan ID paket
+    
+    const muridSel = document.getElementById('spp-murid');
+    muridSel.value = s.id_murid;
+    muridSel.disabled = true; // Kunci murid agar tidak bisa diganti saat edit
+    
+    document.getElementById('spp-mulai').value = s.periode_mulai;
+    document.getElementById('spp-akhir').value = s.periode_akhir;
+    document.getElementById('spp-harga').value = s.harga;
+    
+    UI.openModal('modal-spp');
+    calculateLiveSessions(); // Langsung hitung ulang sesi
+  }
+
+  async function deleteSPP(id) {
+  if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
+  
+  const res = await API.spp.delete(id);
+  if (res.status === 'OK') {
+    UI.toast('Paket berhasil dihapus', 'success');
+    load();
+  } else {
+    UI.toast(res.message || 'Gagal menghapus', 'error');
+  }
+}
+
+  return { load, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions };
 })();
 
 // ============================================================

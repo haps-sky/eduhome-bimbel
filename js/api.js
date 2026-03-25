@@ -55,12 +55,10 @@ async function post(body) {
   }
 }
 
-  // AUTH
   const auth = {
     login: (username, password) => get('login', { username, password })
   };
 
-  // MURIDs
   const murid = {
     getAll:  (params = {}) => get('getMurid', params),
     getById: (id) => get('getMurid', { id }),
@@ -85,11 +83,13 @@ async function post(body) {
     getByMurid: (id_murid) => get('getJadwal', { id_murid })
   };
 
-  // SPP
+  
   const spp = {
     getAll:     () => get('getSPP'),
     getByMurid: (id_murid) => get('getSPP', { id_murid }),
-    create:     (data) => post({ action: 'createSPP', ...data })
+    create:     (data) => post({ action: 'createSPP', ...data }),
+    update:     (data) => post({ action: 'updateSPP', ...data }),
+    delete:     (id)   => post({ action: 'deleteSPP', id })
   };
 
   // PRESENSI
