@@ -195,38 +195,22 @@ async function load() {
   const tbody = document.getElementById('presensi-tbody');
   if (!tbody) return;
 
-  // 1. CEK MEMORI: Tampilkan instan jika sudah ada
+  // JANGAN langsung kasih spinner di sini. 
+  // Biarkan renderTable yang memutuskan mau nampilin data atau tulisan "Kosong".
   if (allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
-  } else {
-    // Spinner HANYA muncul jika benar-benar belum ada data sama sekali
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
-  }
+  } 
 
   try {
-    // 2. TARIK DATA FRESH
-    const [presRes, muridRes, mentorRes] = await Promise.all([
-      API.presensi.getAll(), 
-      API.murid.getAll(), 
-      API.mentor.getAll()
-    ]);
+    const res = await API.presensi.getAll(); // Ambil data
     
-    if (presRes.status === 'OK') {
-      allData = presRes.data || []; // Isi variabel memori
-      
-      const ms = document.getElementById('presensi-murid');
-      if (ms && ms.options.length <= 1) { 
-        populateDropdowns(muridRes.data || [], mentorRes.data || []);
-      }
-      
-      // 3. UPDATE TABEL SECARA HALUS
-      renderTable(allData.slice(-50).reverse()); 
+    if (res.status === 'OK') {
+      allData = res.data || [];
+      renderTable(allData.slice(-50).reverse()); // Render hasil (meskipun [])
     }
-  } catch (e) { 
-    console.error("Gagal load presensi:", e);
-    if (allData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data. Periksa koneksi.</td></tr>';
-    }
+  } catch (e) {
+    // Jika benar-benar error koneksi, baru kasih info gagal
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
   }
 }
 
