@@ -189,33 +189,45 @@ async function saveForm() {
 // ============================================================
 
 const PresensiPage = (() => {
-  let allData = [];
-  let isFetched = false;
+  let allData = []; // Variabel ini aman di dalam closure
 
-  async function load() {
+async function load() {
   const tbody = document.getElementById('presensi-tbody');
   if (!tbody) return;
 
+  // 1. CEK MEMORI: Tampilkan instan jika sudah ada
   if (allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
   } else {
+    // Spinner HANYA muncul jika benar-benar belum ada data sama sekali
     tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
   }
 
   try {
+    // 2. TARIK DATA FRESH
     const [presRes, muridRes, mentorRes] = await Promise.all([
-      API.presensi.getAll(), API.murid.getAll(), API.mentor.getAll()
+      API.presensi.getAll(), 
+      API.murid.getAll(), 
+      API.mentor.getAll()
     ]);
     
     if (presRes.status === 'OK') {
-      allData = presRes.data || [];
+      allData = presRes.data || []; // Isi variabel memori
+      
       const ms = document.getElementById('presensi-murid');
       if (ms && ms.options.length <= 1) { 
         populateDropdowns(muridRes.data || [], mentorRes.data || []);
       }
+      
+      // 3. UPDATE TABEL SECARA HALUS
       renderTable(allData.slice(-50).reverse()); 
     }
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error("Gagal load presensi:", e);
+    if (allData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data. Periksa koneksi.</td></tr>';
+    }
+  }
 }
 
   function populateDropdowns(murid, mentor) {
@@ -282,8 +294,6 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast('Presensi berhasil dicatat', 'success');
         UI.closeModal('modal-presensi');
-        allData = []; 
-        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal mencatat presensi', 'error');
