@@ -231,6 +231,7 @@ async function saveForm() {
       return; 
     }
 
+    // Ambil Data Jadwal
     const jadwalData = [];
     document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
       const day = cb.value;
@@ -248,9 +249,14 @@ async function saveForm() {
     };
 
     const btn = document.getElementById('murid-save-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
 
     try {
+      // --- AFTER: PAKAI INNERHTML BIAR SPINNER GACOR ---
+      if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+      }
+
       let res; 
       if (id) {
         res = await API.murid.update({ id, ...payload });
@@ -261,16 +267,23 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
         UI.closeModal('modal-murid');
-        load();
+        
+        // RESET CACHE & SORTIR OTOMATIS
+        allData = []; 
+        load(); 
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
     } catch(e) {
-      UI.toast('Error: ' + e.message, 'error');
+      UI.toast('Terjadi kesalahan koneksi', 'error');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+      // KEMBALIKAN TOMBOL KE SEMULA
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = 'Simpan'; 
+      }
     }
-  }
+}
 
   async function deleteMurid(id, nama) {
     if (!confirm(`Hapus murid "${nama}"?`)) return;

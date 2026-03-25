@@ -68,7 +68,6 @@ const MentorPage = (() => {
     }
   }
 
-  // --- Fungsi openAdd, openEdit, saveForm, deleteMentor biarkan seperti yang kamu punya ---
   function openAdd() {
     ['mentor-id-field','mentor-nama','mentor-program','mentor-fee-anak','mentor-fee-harian'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -92,54 +91,47 @@ const MentorPage = (() => {
   }
 
 async function saveForm() {
-    // 1. TARIK TOMBOLNYA (Penting!)
-    const btn = document.querySelector('#modal-mentor-presensi .btn-primary');
+    // 1. Ambil tombol modal Mentor (Bukan modal presensi!)
+    const btn = document.querySelector('#modal-mentor .btn-primary');
     
-    const user       = API.currentUser();
-    const tanggal    = document.getElementById('mentor-presensi-tanggal').value;
-    const muridSel   = document.getElementById('mentor-presensi-murid');
-    const status     = document.getElementById('mentor-presensi-status').value;
-    const bintang    = document.getElementById('mentor-presensi-bintang').value;
-    const catatan    = document.getElementById('mentor-presensi-catatan').value;
+    const id         = document.getElementById('mentor-id-field').value;
+    const nama       = document.getElementById('mentor-nama').value.trim();
+    const program    = document.getElementById('mentor-program').value.trim();
+    const status     = document.getElementById('mentor-status').value;
+    const fee_anak   = parseFloat(document.getElementById('mentor-fee-anak').value) || 0;
+    const fee_harian = parseFloat(document.getElementById('mentor-fee-harian').value) || 0;
 
-    if (!tanggal || !muridSel.value) { UI.toast('Tanggal dan murid wajib diisi', 'error'); return; }
-
-    const opt = muridSel.options[muridSel.selectedIndex];
-    const payload = {
-      tanggal,
-      id_murid:    muridSel.value,
-      nama_murid:  opt.dataset.nama,
-      id_mentor:   user.mentor_id || '',
-      nama_mentor: user.username,
-      program:     opt.dataset.program,
-      status, catatan, bintang: parseInt(bintang) || 0
-    };
+    if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
 
     try {
-      // 2. MATIKAN TOMBOL
-      if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+      // 2. EFEK LOADING: Tombol mati & spinner muncul
+      if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+      }
 
-      const res = await API.presensi.add(payload);
+      const payload = { nama, program, status, fee_anak, fee_harian };
+      
+      // 3. PANGGIL API MENTOR (Pastikan ini API Mentor ya!)
+      const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
+      
       if (res.status === 'OK') {
-        UI.toast('Presensi berhasil dicatat', 'success');
-        UI.closeModal('modal-mentor-presensi');
-        load(); // Refresh tampilan "Presensi Hari Ini" milik mentor
+        UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
+        UI.closeModal('modal-mentor');
+        allData = []; // Kosongin cache biar data fresh ditarik
+        load();
       } else {
-        UI.toast(res.message || 'Gagal', 'error');
+        UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
     } catch (e) {
       UI.toast('Gagal terhubung ke server', 'error');
     } finally {
-      // 3. NYALAKAN LAGI
-      if (btn) { btn.disabled = false; btn.textContent = 'Simpan Presensi'; }
+      // 4. BALIKIN TOMBOL: Normal lagi mau sukses atau gagal
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = 'Simpan'; 
+      }
     }
-  }
-
-  async function deleteMentor(id, nama) {
-    if (!confirm(`Hapus mentor "${nama}"?`)) return;
-    const res = await API.mentor.delete(id);
-    if (res.status === 'OK') { UI.toast('Mentor dihapus', 'success'); load(); }
-    else UI.toast(res.message || 'Gagal', 'error');
   }
 
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
@@ -558,7 +550,6 @@ async function load() {
 
   async function saveForm() {
     const id = document.getElementById('spp-id-field').value;
-
     const muridSel = document.getElementById('spp-murid');
     const mulai    = document.getElementById('spp-mulai').value;
     const akhir    = document.getElementById('spp-akhir').value;
@@ -569,6 +560,8 @@ async function load() {
       return; 
     }
 
+    // 1. TANGKAP TOMBOLNYA
+    const btn = document.querySelector('#modal-spp .btn-primary');
     const opt = muridSel.options[muridSel.selectedIndex];
 
     const payload = {
@@ -581,17 +574,34 @@ async function load() {
       harga:         harga
     };
 
-    const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
-    
-    if (res.status === 'OK') {
-      const msg = id ? 'Paket SPP diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
-      UI.toast(msg, 'success');
-      UI.closeModal('modal-spp');
-      load(); 
-    } else {
-      UI.toast(res.message || 'Gagal memproses paket', 'error');
+    try {
+      // 2. AKTIFKAN LOADING & SPINNER
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner"></div> Memproses...';
+      }
+
+      const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
+      
+      if (res.status === 'OK') {
+        const msg = id ? 'Paket SPP diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
+        UI.toast(msg, 'success');
+        UI.closeModal('modal-spp');
+        allData = []; // Reset cache biar list SPP langsung urut & fresh
+        load(); 
+      } else {
+        UI.toast(res.message || 'Gagal memproses paket', 'error');
+      }
+    } catch (e) {
+      UI.toast('Gagal terhubung ke server', 'error');
+    } finally {
+      // 3. KEMBALIKAN TOMBOL KE NORMAL
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Simpan Paket';
+      }
     }
-}
+  }
 
  function openAdd() {
     document.getElementById('spp-modal-title').textContent = 'Buat Paket SPP';
@@ -614,25 +624,43 @@ async function load() {
     UI.openModal('modal-spp');
   }
 
-  function openEdit(id) {
-    const s = allData.find(x => x.id === id);
-    if (!s) return;
-
+  async function openEdit(id) {
+    // 1. LANGSUNG BUKA MODALNYA DULU (Admin seneng karena cepet)
     document.getElementById('spp-modal-title').textContent = 'Edit Paket SPP';
-    document.getElementById('spp-id-field').value = s.id; // Simpan ID paket
+    UI.openModal('modal-spp');
+
+    // 2. CEK DATA: Kalau memori kosong, paksa tarik data fresh
+    if (allData.length === 0) {
+      const display = document.getElementById('spp-count-preview');
+      if (display) display.innerHTML = '<span class="spinner"></span> Memuat data...';
+      await load(); 
+    }
+
+    // 3. CARI DATANYA
+    const s = allData.find(x => x.id === id);
+    if (!s) {
+      UI.toast('Data paket tidak ditemukan', 'error');
+      UI.closeModal('modal-spp');
+      return;
+    }
+
+    // 4. BARU ISI KOTAK-KOTAKNYA (Value)
+    document.getElementById('spp-id-field').value = s.id; 
     
     const muridSel = document.getElementById('spp-murid');
-    muridSel.value = s.id_murid;
-    muridSel.disabled = true; // Kunci murid agar tidak bisa diganti saat edit
+    if (muridSel) {
+      muridSel.value = s.id_murid;
+      muridSel.disabled = true; // Kunci murid pas edit
+    }
     
     document.getElementById('spp-mulai').value = s.periode_mulai;
     document.getElementById('spp-akhir').value = s.periode_akhir;
     document.getElementById('spp-harga').value = s.harga;
     
-    UI.openModal('modal-spp');
-    calculateLiveSessions(); // Langsung hitung ulang sesi
+    // 5. HITUNG ULANG SESI
+    calculateLiveSessions(); 
   }
-
+  
   async function deleteSPP(id) {
   if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
   
@@ -722,28 +750,34 @@ async function saveForm() {
     const btn = document.querySelector('#modal-buku .btn-primary');
     const id = document.getElementById('buku-id-field').value;
     const nama = document.getElementById('buku-nama').value.trim();
-    
-    // INI YANG TADI KURANG: Ambil nilainya dulu dari elemen HTML
-    const jenjang    = document.getElementById('buku-jenjang').value.trim();
-    const program    = document.getElementById('buku-program').value.trim();
+    const jenjang = document.getElementById('buku-jenjang').value.trim();
+    const program = document.getElementById('buku-program').value.trim();
     const keterangan = document.getElementById('buku-ket').value.trim();
 
     if (!nama) { UI.toast('Nama modul wajib diisi', 'error'); return; }
 
     try {
-      if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+      if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; // Sekalian pakai spinner ya!
+      }
 
-      // Sekarang variabel ini sudah ada isinya
-      const jenjang    = document.getElementById('buku-jenjang').value.trim();
-      const program    = document.getElementById('buku-program').value.trim();
-      const keterangan = document.getElementById('buku-ket').value.trim();
+      // --- KUNCI PERBAIKAN: Bungkus data ke dalam variabel payload ---
+      const payload = { 
+        nama, 
+        jenjang, 
+        program, 
+        keterangan 
+      };
+
+      // Sekarang payload sudah ada isinya, gak bakal error lagi!
       const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
       
       if (res.status === 'OK') {
         UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
         UI.closeModal('modal-buku');
-        allData = []; // Bersihkan cache
-        load(); // Refresh tabel
+        allData = []; 
+        load(); 
       } else {
         UI.toast(res.message || 'Gagal', 'error');
       }
@@ -751,9 +785,12 @@ async function saveForm() {
       console.error(e);
       UI.toast('Terjadi kesalahan sistem', 'error');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = 'Simpan'; 
+      }
     }
-  }
+}
 
   async function deleteBuku(id, nama) {
     if (!confirm(`Hapus modul "${nama}"?`)) return;
