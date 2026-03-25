@@ -195,14 +195,16 @@ async function load() {
   const tbody = document.getElementById('presensi-tbody');
   if (!tbody) return;
 
-  // 1. Tampilkan memori instan
+  // 1. TAMPILKAN DARI MEMORI (Gak pake kedip, persis MuridPage)
   if (allData && allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
   } else {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
+    // Spinner cuma muncul kalo bener-bener baru buka pertama kali
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat...</td></tr>';
   }
 
   try {
+    // 2. AMBIL DATA FRESH DI BACKGROUND
     const [presRes, muridRes, mentorRes] = await Promise.all([
       API.presensi.getAll(),
       API.murid.getAll(),
@@ -211,17 +213,19 @@ async function load() {
     
     allData = presRes.data || [];
     
-    // 2. KUNCI: Hanya isi dropdown jika dropdown masih kosong (mencegah kedip)
+    // 3. DROPDOWN: Cukup isi sekali saja biar gak "lompat" pas update
     const muridSel = document.getElementById('presensi-murid');
     if (muridSel && muridSel.options.length <= 1) { 
       populateDropdowns(muridRes.data || [], mentorRes.data || []);
       
-      // Set tanggal hari ini HANYA sekali saat pertama kali menu dibuka
+      // Set tanggal hari ini HANYA JIKA masih kosong
       const tglInput = document.getElementById('presensi-tanggal');
-      if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+      if (tglInput && !tglInput.value) {
+        tglInput.value = new Date().toISOString().split('T')[0];
+      }
     }
     
-    // 3. Update tabel tanpa reset input
+    // 4. UPDATE TABEL SECARA HALUS
     renderTable(allData.slice(-50).reverse()); 
     
   } catch (e) {
@@ -313,7 +317,25 @@ async function saveForm() {
     renderTable(filtered.reverse());
   }
 
-  return { load, saveForm, filterByDate };
+  function openAdd() {
+  // Pastikan tanggal selalu ke hari ini pas mau input baru
+  const tglInput = document.getElementById('presensi-tanggal');
+  if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+
+  // Kosongkan pilihan murid & mentor
+  const ms = document.getElementById('presensi-murid');
+  const mt = document.getElementById('presensi-mentor');
+  if (ms) ms.value = '';
+  if (mt) mt.value = '';
+
+  // Reset catatan & bintang ke default
+  document.getElementById('presensi-catatan').value = '';
+  document.getElementById('presensi-bintang').value = '5';
+
+  UI.openModal('modal-presensi');
+}
+
+  return { load, saveForm, filterByDate, openAdd };
 })();
 
 // ============================================================
