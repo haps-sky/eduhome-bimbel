@@ -91,36 +91,55 @@ const MentorPage = (() => {
     UI.openModal('modal-mentor');
   }
 
-  async function saveForm() {
-    const btn = document.querySelector('#modal-mentor .btn-primary'); // Ambil tombol
-    const id         = document.getElementById('mentor-id-field').value;
-    const nama       = document.getElementById('mentor-nama').value.trim();
-    const program    = document.getElementById('mentor-program').value.trim();
-    const status     = document.getElementById('mentor-status').value;
-    const fee_anak   = parseFloat(document.getElementById('mentor-fee-anak').value) || 0;
-    const fee_harian = parseFloat(document.getElementById('mentor-fee-harian').value) || 0;
+async function saveForm() {
+    // 1. TARIK TOMBOLNYA (Penting!)
+    const btn = document.querySelector('#modal-mentor-presensi .btn-primary');
+    
+    const user       = API.currentUser();
+    const tanggal    = document.getElementById('mentor-presensi-tanggal').value;
+    const muridSel   = document.getElementById('mentor-presensi-murid');
+    const status     = document.getElementById('mentor-presensi-status').value;
+    const bintang    = document.getElementById('mentor-presensi-bintang').value;
+    const catatan    = document.getElementById('mentor-presensi-catatan').value;
 
-    if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
+    if (!tanggal || !muridSel.value) { UI.toast('Tanggal dan murid wajib diisi', 'error'); return; }
+
+    const opt = muridSel.options[muridSel.selectedIndex];
+    const payload = {
+      tanggal,
+      id_murid:    muridSel.value,
+      nama_murid:  opt.dataset.nama,
+      id_mentor:   user.mentor_id || '',
+      nama_mentor: user.username,
+      program:     opt.dataset.program,
+      status, catatan, bintang: parseInt(bintang) || 0
+    };
 
     try {
-      // ANTI DOUBLE CLICK
+      // 2. MATIKAN TOMBOL
       if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
 
-      const payload = { nama, program, status, fee_anak, fee_harian };
-      const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
-      
+      const res = await API.presensi.add(payload);
       if (res.status === 'OK') {
-        UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
-        UI.closeModal('modal-mentor');
-        allData = []; // RESET CACHE biar data terbaru ditarik
-        load();
+        UI.toast('Presensi berhasil dicatat', 'success');
+        UI.closeModal('modal-mentor-presensi');
+        load(); // Refresh tampilan "Presensi Hari Ini" milik mentor
       } else {
-        UI.toast(res.message || 'Gagal menyimpan', 'error');
+        UI.toast(res.message || 'Gagal', 'error');
       }
+    } catch (e) {
+      UI.toast('Gagal terhubung ke server', 'error');
     } finally {
-      // HIDUPKAN TOMBOL LAGI
-      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+      // 3. NYALAKAN LAGI
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan Presensi'; }
     }
+  }
+
+  async function deleteMentor(id, nama) {
+    if (!confirm(`Hapus mentor "${nama}"?`)) return;
+    const res = await API.mentor.delete(id);
+    if (res.status === 'OK') { UI.toast('Mentor dihapus', 'success'); load(); }
+    else UI.toast(res.message || 'Gagal', 'error');
   }
 
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
@@ -355,10 +374,10 @@ async function load() {
     if (el) el.textContent = 'Pembayaran hari ini: ' + UI.formatCurrency(todayTotal);
   }
 
+
   async function saveForm() {
-    // 1. Ambil tombolnya dulu buat dimatiin pas loading
+
     const btn = document.querySelector('#modal-pembayaran .btn-primary');
-    
     const muridSel   = document.getElementById('pay-murid');
     const sppSel     = document.getElementById('pay-spp');
     const tanggal    = document.getElementById('pay-tanggal').value;
@@ -382,7 +401,7 @@ async function load() {
     };
 
     try {
-      // 2. ANTI DOUBLE CLICK: Tombol jadi abu-abu pas lagi proses
+
       if (btn) { 
         btn.disabled = true; 
         btn.textContent = 'Memproses...'; 
@@ -393,17 +412,15 @@ async function load() {
       if (res.status === 'OK') {
         UI.toast('Pembayaran berhasil dicatat', 'success');
         UI.closeModal('modal-pembayaran');
-        
-        // 3. PENTING: Reset memori dulu biar Dashboard narik angka terbaru
-        allData = []; 
+        allData = []; // KOSONGIN CACHE BIAR FRESH
         load(); 
       } else {
-        UI.toast(res.message || 'Gagal menyimpan pembayaran', 'error');
+        UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
     } catch (e) {
-      UI.toast('Terjadi kesalahan koneksi', 'error');
+      UI.toast('Server Error!', 'error');
     } finally {
-      // 4. Balikin tombolnya biar bisa dipake input lagi
+
       if (btn) { 
         btn.disabled = false; 
         btn.textContent = 'Simpan Pembayaran'; 
@@ -438,7 +455,7 @@ async function load() {
       ]);
 
       if (sppRes.status === 'OK') {
-        allData = (sppRes.data || []).reverse(); 
+        allData = (sppRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
         
         populateMurid(muridRes.data || []);
         renderTable(allData);
@@ -651,7 +668,7 @@ async function load() {
     try {
       const res = await API.buku.getAll();
       if (res.status === 'OK') {
-        allData = res.data || [];
+        allData = (res.data || []).sort((a, b) => a.id.localeCompare(b.id));
         renderTable(allData);
       }
     } catch (e) {
@@ -705,23 +722,33 @@ async function saveForm() {
     const btn = document.querySelector('#modal-buku .btn-primary');
     const id = document.getElementById('buku-id-field').value;
     const nama = document.getElementById('buku-nama').value.trim();
+    
+    // INI YANG TADI KURANG: Ambil nilainya dulu dari elemen HTML
+    const jenjang    = document.getElementById('buku-jenjang').value.trim();
+    const program    = document.getElementById('buku-program').value.trim();
+    const keterangan = document.getElementById('buku-ket').value.trim();
 
     if (!nama) { UI.toast('Nama modul wajib diisi', 'error'); return; }
 
     try {
       if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
 
-      const payload = { nama, jenjang, program, keterangan };
+      // Sekarang variabel ini sudah ada isinya
+      const jenjang    = document.getElementById('buku-jenjang').value.trim();
+      const program    = document.getElementById('buku-program').value.trim();
+      const keterangan = document.getElementById('buku-ket').value.trim();
       const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
       
       if (res.status === 'OK') {
         UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
         UI.closeModal('modal-buku');
-        load();
+        allData = []; // Bersihkan cache
+        load(); // Refresh tabel
       } else {
         UI.toast(res.message || 'Gagal', 'error');
       }
     } catch (e) {
+      console.error(e);
       UI.toast('Terjadi kesalahan sistem', 'error');
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
@@ -743,10 +770,32 @@ async function saveForm() {
 // ============================================================
 
 const GajiPage = (() => {
-  async function load() {
-    const [gajiRes, mentorRes] = await Promise.all([API.gaji.getAll(), API.mentor.getAll()]);
-    renderTable(gajiRes.data || []);
-    populateMentor(mentorRes.data || []);
+async function load() {
+    // 1. PAGAR: Cek dulu, ada nggak elemen tabelnya di halaman ini?
+    const tbody = document.getElementById('gaji-tbody');
+    if (!tbody) return; // Kalau nggak ada, BERHENTI di sini. Jangan bebani server.
+
+    // 2. SPINNER: Kasih tanda kalau lagi loading biar user gak bingung
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Menghitung gaji mentor...</td></tr>';
+
+    try {
+      // 3. AMBIL DATA: Pakai Promise.all biar narik Gaji & Mentor barengan (paralel)
+      const [gajiRes, mentorRes] = await Promise.all([
+        API.gaji.getAll(), 
+        API.mentor.getAll()
+      ]);
+
+      if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
+        // 4. SORTING: Gaji biasanya paling enak dilihat yang terbaru di atas (Reverse)
+        const dataGaji = (gajiRes.data || []).reverse();
+        
+        renderTable(dataGaji);
+        populateMentor(mentorRes.data || []);
+      }
+    } catch (e) {
+      console.error("Gagal load Gaji:", e);
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data penggajian.</td></tr>';
+    }
   }
 
   function populateMentor(mentors) {
@@ -776,7 +825,10 @@ async function saveForm() {
     const tgl_bayar  = document.getElementById('gaji-tgl').value;
     const metode     = document.getElementById('gaji-metode').value;
 
-    if (!mentorSel.value || !bulan_gaji) { UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); return; }
+    if (!mentorSel.value || !bulan_gaji) { 
+      UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); 
+      return; 
+    }
 
     try {
       if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
@@ -790,6 +842,8 @@ async function saveForm() {
       } else {
         UI.toast(res.message || 'Gagal', 'error');
       }
+    } catch (e) {
+      UI.toast('Kesalahan koneksi!', 'error'); // <--- BIAR GAK BINGUNG KALAU SINYAL ILANG
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Simpan Penggajian'; }
     }
