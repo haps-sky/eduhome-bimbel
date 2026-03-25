@@ -327,37 +327,40 @@ async function deleteMurid(id, nama) {
 
 async function viewSchedule(id, nama) {
   const list = document.getElementById('schedule-detail-list');
+
+  // 1. Buka modal langsung
   document.getElementById('schedule-modal-title').textContent = 'Jadwal: ' + nama;
   list.innerHTML = '<div class="empty-feed">Memuat jadwal...</div>';
   UI.openModal('modal-schedule');
 
   try {
+    // 2. Baru ambil data di background
     const res = await API.jadwal.getByMurid(id);
 
     if (res.status !== 'OK' || res.data.length === 0) {
       list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
     } else {
-      // --- LOGIKA FILTER UNIK (MENCEGAH DOUBLE) ---
-      const uniqueSchedule = [];
+      // --- TAMBAHAN FILTER UNIK BIAR GAK TUMPUK ---
+      const uniqueData = [];
       const seen = new Set();
-
+      
       res.data.forEach(item => {
-        // Gabungkan hari + jam sebagai kunci unik
-        const key = `${item.hari}-${item.jam}`; 
+        const key = `${item.hari}-${item.jam}`;
         if (!seen.has(key)) {
           seen.add(key);
-          uniqueSchedule.push(item);
+          uniqueData.push(item);
         }
       });
 
-      // Render hanya data yang unik
-      list.innerHTML = uniqueSchedule.map(j => `
-        <div class="schedule-row" style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-color);">
-          <span style="font-weight:700; color:var(--primary);">${j.hari}</span>
-          <span style="font-family:monospace;">${j.jam}</span>
+      // 3. Render pake STYLE ASLI KAMU (Gak ada yang diubah)
+      list.innerHTML = uniqueData.map(j => `
+        <div class="schedule-row">
+          <span>${j.hari}</span>
+          <span>${j.jam}</span>
         </div>
       `).join('');
     }
+
   } catch(e) {
     list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
   }
