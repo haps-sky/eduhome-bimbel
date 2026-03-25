@@ -850,7 +850,6 @@ async function saveForm() {
 // ============================================================
 
 const GajiPage = (() => {
-a// Ganti fungsi load() di GajiPage:
 async function load() {
   const tbody = document.getElementById('gaji-tbody');
   if (!tbody) return;
