@@ -254,7 +254,8 @@ function showApp(user) {
   function applyPageVisibility(role) {
     const adminBtns = [
       'btn-tambah-murid', 'btn-tambah-mentor',
-      'btn-tambah-presensi', 'btn-buat-spp', 'btn-bayar-gaji'
+      'btn-tambah-presensi', 'btn-tambah-pembayaran',
+      'btn-buat-spp', 'btn-tambah-buku', 'btn-bayar-gaji'
     ];
     adminBtns.forEach(id => {
       const el = document.getElementById(id);
