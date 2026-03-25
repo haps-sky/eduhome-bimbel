@@ -257,7 +257,7 @@
       <section id="page-presensi" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="calendar-check"></i> Presensi</h2>
-          <button class="btn btn-primary" id="btn-tambah-presensi" onclick="PresensiPage.openAdd()" style="display:none">
+          <button class="btn btn-primary" id="btn-tambah-presensi" onclick="UI.openModal('modal-presensi')" style="display:none">
             <i data-lucide="plus"></i> Catat Presensi
           </button>
         </div>
@@ -278,7 +278,7 @@
       <section id="page-pembayaran" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="credit-card"></i> Pembayaran</h2>
-          <button class="btn btn-primary" onclick="PembayaranPage.openAdd()">
+          <button class="btn btn-primary" onclick="UI.openModal('modal-pembayaran')">
             <i data-lucide="plus"></i> Catat Pembayaran
           </button>
         </div>
@@ -331,7 +331,7 @@
       <section id="page-gaji" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="banknote"></i> Penggajian Mentor</h2>
-          <button class="btn btn-primary" id="btn-bayar-gaji" onclick="UI.openModal('modal-gaji')" style="display:none">
+          <button class="btn btn-primary" id="btn-bayar-gaji" onclick="GajiPage.openAdd()" style="display:none">
             <i data-lucide="plus"></i> Bayar Gaji
           </button>
         </div>
@@ -545,7 +545,7 @@
 
 <div id="modal-spp" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3 id="spp-modal-title">Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
+    <div class="modal-header"><h3 >Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
     <div class="modal-body"><input type="hidden" id="spp-id-field">
       <div class="form-group"><label>Murid *</label><select id="spp-murid"><option value="">-- Pilih Murid --</option></select></div>
       <div class="form-row">

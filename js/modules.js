@@ -193,51 +193,46 @@ const PresensiPage = (() => {
   let isFetched = false;
 
   async function load() {
-  const tbody = document.getElementById('presensi-tbody');
-  if (!tbody) return;
+    const tbody = document.getElementById('presensi-tbody');
+    if (!tbody) return;
 
-  // 1. TAMPILKAN CACHE INSTAN (Langsung gambar tabel jika ada data)
-  if (allData && allData.length > 0) {
-    renderTable(allData.slice(-50).reverse());
-    
-    // 2. KUNCI UTAMA: Jika sudah pernah fetch (isFetched = true), 
-    // lupakan kode di bawahnya, langsung keluar fungsi (return).
-    if (isFetched) return; 
-  }
-
-  // 3. TAMPILKAN SPINNER HANYA JIKA MEMORI KOSONG
-  // Jika Gerbang 1 di atas lolos (allData ada), baris spinner ini tidak akan pernah tereksekusi.
-  if (allData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
-  }
-
-  try {
-    // 4. TARIK DATA DARI SERVER (Hanya jalan jika isFetched masih false)
-    const [presRes, muridRes, mentorRes] = await Promise.all([
-      API.presensi.getAll(),
-      API.murid.getAll(),
-      API.mentor.getAll()
-    ]);
-    
-    if (presRes.status === 'OK') {
-      allData = presRes.data || [];
-      isFetched = true; // Tandai data sudah fresh
+    // 1. TAMPILKAN MEMORI DULU
+    if (allData && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
       
-      const muridSel = document.getElementById('presensi-murid');
-      if (muridSel && muridSel.options.length <= 1) { 
-        populateDropdowns(muridRes.data || [], mentorRes.data || []);
+      // KUNCI: Jika sudah pernah fetch sukses, STOP di sini.
+      // Ini yang bikin pindah menu jadi instan tanpa loading background.
+      if (isFetched) return; 
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data presensi...</td></tr>';
+    }
+
+    try {
+      // 2. AMBIL DATA (Hanya jalan jika isFetched masih false)
+      const [presRes, muridRes, mentorRes] = await Promise.all([
+        API.presensi.getAll(),
+        API.murid.getAll(),
+        API.mentor.getAll()
+      ]);
+      
+      if (presRes.status === 'OK') {
+        allData = presRes.data || [];
+        isFetched = true; // Tandai sudah sukses
+        
+        const muridSel = document.getElementById('presensi-murid');
+        if (muridSel && muridSel.options.length <= 1) { 
+          populateDropdowns(muridRes.data || [], mentorRes.data || []);
+        }
+        
+        renderTable(allData.slice(-50).reverse()); 
       }
-      
-      // Update tabel dengan data terbaru
-      renderTable(allData.slice(-50).reverse()); 
-    }
-  } catch (e) {
-    console.error("Gagal update presensi:", e);
-    if (allData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+    } catch (e) {
+      console.error("Gagal update presensi:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+      }
     }
   }
-}
 
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
