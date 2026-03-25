@@ -189,39 +189,46 @@ async function saveForm() {
 // ============================================================
 
 const PresensiPage = (() => {
-  let allData = []; // Variabel ini aman di dalam closure
+  let allData = []; 
+  let isFetched = false; // <--- KUNCI UTAMA: Penanda data sudah pernah ditarik
 
-async function load() {
-  const tbody = document.getElementById('presensi-tbody'); // Sesuaikan ID per modul
-  if (!tbody) return;
+  async function load() {
+    const tbody = document.getElementById('presensi-tbody');
+    if (!tbody) return;
 
-  // 1. CEK MEMORI DULU
-  if (allData && allData.length > 0) {
-    // Jika sudah ada data di memori, LANGSUNG TAMPILKAN (Instan!)
-    renderTable(allData.slice(-50).reverse());
-  } else {
-    // JIKA MEMORI KOSONG (Baru buka pertama kali), KASIH SPINNER
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data...</td></tr>';
-  }
+    // 1. LOGIKA ANTI-LOADING TERUS
+    if (isFetched) {
+      // Jika sudah pernah narik data, LANGSUNG render (meskipun datanya kosong [])
+      renderTable(allData.slice(-50).reverse());
+      return; // STOP! Gak perlu nampilin spinner lagi
+    }
 
-  try {
-    // 2. TARIK DATA FRESH DI BACKGROUND
-    const res = await API.presensi.getAll(); // Sesuaikan API per modul
-    
-    if (res.status === 'OK') {
-      allData = res.data || [];
+    // 2. TAMPILAN AWAL (Hanya jalan sekali seumur hidup aplikasi sebelum di-refresh)
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat...</td></tr>';
+
+    try {
+      const [presRes, muridRes, mentorRes] = await Promise.all([
+        API.presensi.getAll(), 
+        API.murid.getAll(), 
+        API.mentor.getAll()
+      ]);
       
-      // 3. RENDER ULANG (Spinner akan hilang, diganti tabel atau tulisan "Belum ada data")
-      renderTable(allData.slice(-50).reverse()); 
-    }
-  } catch (e) {
-    console.error("Gagal update:", e);
-    // Jika gagal total dan memori kosong, kasih tau user
-    if (allData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat. Periksa koneksi.</td></tr>';
+      if (presRes.status === 'OK') {
+        allData = presRes.data || [];
+        isFetched = true;
+        
+        const ms = document.getElementById('presensi-murid');
+        if (ms && ms.options.length <= 1) { 
+          populateDropdowns(muridRes.data || [], mentorRes.data || []);
+        }
+        
+        renderTable(allData.slice(-50).reverse()); 
+      }
+    } catch (e) { 
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat.</td></tr>';
     }
   }
-}
 
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
