@@ -175,56 +175,57 @@ function buildSidebar(role) {
   }
 
   // ── Auth ─────────────────────────────────────────────────
-  async function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value.trim();
     const btn      = document.getElementById('login-btn');
 
-    if (!username || !password) { UI.toast('Username dan password diperlukan', 'error'); return; }
+    if (!username || !password) { 
+      UI.toast('Username dan password diperlukan', 'error'); 
+      return; 
+    }
 
+    // 1. Matikan tombol & pasang spinner
     btn.disabled = true;
+    const originalText = btn.innerHTML; // Simpan teks asli (misal: "Login")
     btn.innerHTML = '<div class="spinner"></div>';
 
     try {
       const res = await API.auth.login(username, password);
+      
       if (res.status === 'OK') {
         setSession(res.data);
         showApp(res.data);
         
-        // 1. Tentukan halaman tujuan
         const startPage = RBAC.defaultPage[res.data.role] || 'dashboard';
         
-        // 2. Ambil data SEKARANG (Biar nggak delay)
-        loadPage(startPage); 
-        
-        // 3. Pindah halaman
+        // Cukup panggil navigate(startPage). 
+        // Di dalam fungsi navigate() kamu sudah otomatis panggil loadPage().
+        // Jadi nggak usah panggil loadPage() lagi di sini biar nggak narik API 2x.
         navigate(startPage);
         
         UI.toast('Selamat datang, ' + res.data.username + '!', 'success');
       } else {
-        // JIKA GAGAL: Cukup kasih tau user, jangan dipindah halamannya!
         UI.toast(res.message || 'Login gagal', 'error');
       }
     } catch(err) {
+      console.error(err);
       UI.toast('Koneksi gagal. Periksa URL API.', 'error');
-   }
+    } finally {
+      // 2. KUNCI UTAMA: Nyalakan lagi tombolnya kalau proses selesai/gagal
+      // Supaya kalau user salah password, mereka bisa coba klik lagi tanpa refresh web
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
   }
 
 function handleLogout() {
-    clearSession();
-    
-    const userField = document.getElementById('login-username');
-    const passField = document.getElementById('login-password');
-    
-    if (userField) userField.value = '';
-    if (passField) passField.value = '';
-    
-    document.getElementById('app-shell').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    
+    sessionStorage.clear();
+    localStorage.clear();
     UI.toast('Berhasil keluar', 'info');
-  }
+    window.location.replace(window.location.pathname); 
+}
 
 function showApp(user) {
     document.getElementById('login-screen').style.display = 'none';
