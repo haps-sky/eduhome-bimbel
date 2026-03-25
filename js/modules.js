@@ -850,38 +850,51 @@ async function saveForm() {
 // ============================================================
 
 const GajiPage = (() => {
-async function load() {
-  const tbody = document.getElementById('gaji-tbody');
-  if (!tbody) return;
+  let allData = []; // Ini sudah benar, kunci utama memori
 
-  // 1. Jika sudah ada data di memori, jangan kasih spinner (biar gak kedip)
-  // Catatan: Jika GajiPage belum punya variabel allData, buat di atas: let allData = [];
+  async function load() {
+    const tbody = document.getElementById('gaji-tbody');
+    if (!tbody) return;
 
-  try {
-    const [gajiRes, mentorRes] = await Promise.all([
-      API.gaji.getAll(), 
-      API.mentor.getAll()
-    ]);
-
-    if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
-      const dataGaji = (gajiRes.data || []).reverse();
-      
-      // 2. KUNCI: Cek dropdown mentor
-      const sel = document.getElementById('gaji-mentor');
-      if (sel && sel.options.length <= 1) {
-        populateMentor(mentorRes.data || []);
-        
-        // Set tanggal bayar default
-        const tglInput = document.getElementById('gaji-tgl');
-        if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
-      }
-      
-      renderTable(dataGaji);
+    // 1. TAMPILKAN MEMORI INSTAN (Sama kayak MuridPage)
+    // Supaya pas diklik, tabel langsung ada isinya, gak putih polos dulu
+    if (allData.length > 0) {
+      renderTable(allData);
+    } else {
+      // Hanya tampilkan spinner kalau benar-benar pertama kali buka (allData masih [])
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Menghitung...</td></tr>';
     }
-  } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat.</td></tr>';
+
+    try {
+      // 2. TARIK DATA FRESH DI BACKGROUND
+      const [gajiRes, mentorRes] = await Promise.all([
+        API.gaji.getAll(), 
+        API.mentor.getAll()
+      ]);
+
+      if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
+        // Simpan ke variabel memori module
+        allData = (gajiRes.data || []).reverse(); 
+        
+        // 3. CEK DROPDOWN: Biar gak kedip pas milih mentor
+        const sel = document.getElementById('gaji-mentor');
+        if (sel && sel.options.length <= 1) {
+          populateMentor(mentorRes.data || []);
+          
+          const tglInput = document.getElementById('gaji-tgl');
+          if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+        }
+        
+        // 4. UPDATE TABEL SECARA HALUS
+        renderTable(allData);
+      }
+    } catch (e) {
+      console.error(e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat.</td></tr>';
+      }
+    }
   }
-}
 
   function populateMentor(mentors) {
     const sel = document.getElementById('gaji-mentor');
