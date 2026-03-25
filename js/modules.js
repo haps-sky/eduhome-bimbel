@@ -503,36 +503,46 @@ const PembayaranPage = (() => {
 
 const SPPPage = (() => {
   let allData = [];
+  let isFetched = false; // <--- Penjaga gerbang SPP
 
-async function load() {
+  async function load() {
     const tbody = document.getElementById('spp-tbody');
     if (!tbody) return;
 
-    if (allData && allData.length > 0) {
+    // 1. CEK KUNCI: Biar klik menu SPP langsung "Jreng"
+    if (isFetched) {
       renderTable(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner"></div> Memuat data paket SPP...</td></tr>';
+      return; // STOP! Gak usah pake spinner lagi
     }
 
+    // 2. SPINNER AWAL (Pakai colspan="12" karena kolomnya banyak)
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner"></div> Memuat data paket SPP...</td></tr>';
+
     try {
+      // 3. TARIK DATA (SPP & Murid buat dropdown)
       const [sppRes, muridRes] = await Promise.all([
         API.spp.getAll(), 
         API.murid.getAll()
       ]);
 
       if (sppRes.status === 'OK') {
+        // Simpan ke memori dan urutkan
         allData = (sppRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        isFetched = true; // KUNCI PINTU: Data sudah aman
         
-        populateMurid(muridRes.data || []);
+        // Isi dropdown murid di modal SPP
+        const sel = document.getElementById('spp-murid');
+        if (sel && sel.options.length <= 1) {
+          populateMurid(muridRes.data || []);
+        }
+        
         renderTable(allData);
       }
     } catch (e) {
-      console.error("Gagal update background SPP:", e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data.</td></tr>';
-      }
+      console.error("Gagal load SPP:", e);
+      tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data paket SPP.</td></tr>';
     }
-
+    
     initLiveCount();
   }
 
@@ -778,9 +788,9 @@ async function deleteSPP(id) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data modul belajar...</td></tr>';
 
     try {
-      const res = await API.buku.getAll();
-      if (res.status === 'OK') {
-        allData = res.data || [];
+      const bukuRes = await API.buku.getAll();
+      if (bukuRes.status === 'OK') {
+        allData = bukuRes.data || [];
         isFetched = true;
         renderTable(allData);
       }
