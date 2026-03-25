@@ -1,42 +1,35 @@
-const MuridPage = (() => {
+  const MuridPage = (() => {
   let allData = [];
-  const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  let isFetched = false;
 
-async function load() {
+  async function load() {
     const tbody = document.getElementById('murid-tbody');
-    
-    // 1. CEK MEMORI: Jika data sudah ada (hasil loadPage saat login), TAMPILKAN INSTAN!
-    if (allData && allData.length > 0) {
+    if (!tbody) return;
+
+    if (isFetched) {
       renderTable(allData);
       updateSummary(allData);
-    } else if (tbody) {
-      // Jika benar-benar kosong (misal baru pertama kali buka), kasih loading
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner"></div> Memuat data murid...</td></tr>';
+      return;
     }
 
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner"></div> Memuat data murid...</td></tr>';
+
     try {
-      // 2. Ambil data fresh di background (Tetap jalankan keduanya)
       const [muridRes, mentorRes] = await Promise.all([
         API.murid.getAll(), 
         API.mentor.getAll()
       ]);
 
       if (muridRes.status === 'OK') {
-        allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
-        // 3. Update tabel secara halus dengan data paling baru
+      allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
+      isFetched = true;
+        
         renderTable(allData);
         updateSummary(allData);
       }
-      
-      if (mentorRes.status === 'OK') {
-        populateMentorDropdown(mentorRes.data || []);
-      }
-    } catch(e) {
-      console.error("Background update gagal:", e);
-      // Jangan kasih toast error kalau allData sudah tampil (biar user gak keganggu)
-      if (!allData || allData.length === 0) {
-        UI.toast('Gagal memuat data: ' + e.message, 'error');
-      }
+    } catch (e) {
+      console.error("Error Load Murid:", e);
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Gagal memuat data murid.</td></tr>';
     }
   }
 
@@ -231,7 +224,7 @@ async function saveForm() {
       return; 
     }
 
-    // Ambil Data Jadwal
+    // Ambil Data Jadwal (Sudah benar!)
     const jadwalData = [];
     document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
       const day = cb.value;
@@ -251,33 +244,33 @@ async function saveForm() {
     const btn = document.getElementById('murid-save-btn');
 
     try {
-      // --- AFTER: PAKAI INNERHTML BIAR SPINNER GACOR ---
       if (btn) { 
         btn.disabled = true; 
-        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+        // --- 1. TEKS TOMBOL DINAMIS SESUAI STATUS ID ---
+        btn.innerHTML = id ? 
+            '<div class="spinner"></div> Mengedit data...' : 
+            '<div class="spinner"></div> Menambahkan data...'; 
       }
 
-      let res; 
-      if (id) {
-        res = await API.murid.update({ id, ...payload });
-      } else {
-        res = await API.murid.add(payload);
-      }
+      // Gunakan ternary operator biar lebih ringkas (Sesuai gaya Master Template)
+      const res = id ? await API.murid.update({ id, ...payload }) : await API.murid.add(payload);
 
       if (res.status === 'OK') {
-        UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
+        const pesanSukses = id ? 'Data murid berhasil diperbarui' : 'Murid baru berhasil ditambahkan';
+        UI.toast(pesanSukses, 'success');
+        
         UI.closeModal('modal-murid');
         
-        // RESET CACHE & SORTIR OTOMATIS
         allData = []; 
+        isFetched = false; //
         load(); 
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
       }
     } catch(e) {
+      console.error(e);
       UI.toast('Terjadi kesalahan koneksi', 'error');
     } finally {
-      // KEMBALIKAN TOMBOL KE SEMULA
       if (btn) { 
         btn.disabled = false; 
         btn.innerHTML = 'Simpan'; 
