@@ -238,8 +238,8 @@
 
       <section id="page-mentor" class="page-section">
         <div class="page-header">
-          <h2><i data-lucide="user-check"></i> Data Mentor</h2>
-          <button class="btn btn-primary" id="btn-tambah-mentor" onclick="MentorPage.openAdd()" style="display:none">
+          <h2><i data-lucide="user-check"></i> Data Mentor</h2>            
+          <button type="button" class="btn btn-primary" id="mentor-save-btn" onclick="MentorPage.saveForm()"></button>
             <i data-lucide="plus"></i> Tambah Mentor
           </button>
         </div>
@@ -257,7 +257,7 @@
       <section id="page-presensi" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="calendar-check"></i> Presensi</h2>
-          <button class="btn btn-primary" id="btn-tambah-presensi" onclick="PresensiPage.openAdd()" style="display:none">
+          <button type="button" class="btn btn-primary" id="presensi-save-btn" onclick="PresensiPage.saveForm()"></button>
             <i data-lucide="plus"></i> Catat Presensi
           </button>
         </div>
@@ -278,7 +278,7 @@
       <section id="page-pembayaran" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="credit-card"></i> Pembayaran</h2>
-          <button class="btn btn-primary" onclick="PembayaranPage.openAdd()">
+          <button type="button" class="btn btn-primary" id="pay-save-btn" onclick="PembayaranPage.saveForm()"></button>
             <i data-lucide="plus"></i> Catat Pembayaran
           </button>
         </div>
@@ -294,40 +294,64 @@
         </div>
       </section>
 
-      <section id="page-spp" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="package"></i> Paket SPP</h2>
-          <button class="btn btn-primary" id="btn-buat-spp" onclick="SPPPage.openAdd()" style="display:none">
-            <i data-lucide="plus"></i> Buat Paket SPP
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="package"></i> Daftar Paket SPP</div></div>
-          <div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr><th>ID</th><th>Murid</th><th>Program</th><th>Periode</th><th>Total</th><th>Hadir/Sisa</th><th>Progress</th><th>Status</th><th>Harga</th><th>Terbayar</th><th>Bayar</th><th>AKSI</th></tr></thead>
-              <tbody id="spp-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+<section id="page-spp" class="page-section">
+  <div class="page-header">
+    <h2><i data-lucide="package"></i> Paket SPP</h2>
+    <!-- PERBAIKAN: Gunakan ID btn-buat-spp dan fungsi SPPPage.openAdd -->
+    <button type="button" class="btn btn-primary" id="btn-buat-spp" onclick="SPPPage.openAdd()" style="display:none">
+      <i data-lucide="plus"></i> Buat Paket SPP
+    </button>
+  </div>
+  
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <div class="table-title"><i data-lucide="package"></i> Daftar Paket SPP</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Murid</th><th>Program</th><th>Periode</th><th>Total</th><th>Hadir/Sisa</th><th>Progress</th><th>Status</th><th>Harga</th><th>Terbayar</th><th>Bayar</th><th>AKSI</th>
+          </tr>
+        </thead>
+        <tbody id="spp-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
       <section id="page-buku" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="book-open"></i> Modul Pembelajaran</h2>
-          <button class="btn btn-primary" onclick="BukuPage.openAdd()"><i data-lucide="plus"></i> Tambah Modul</button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="book-open"></i> Daftar Modul</div></div>
-          <div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr><th>ID</th><th>Nama Modul</th><th>Jenjang</th><th>Program</th><th>Keterangan</th><th>Aksi</th></tr></thead>
-              <tbody id="buku-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+  <div class="page-header">
+    <h2><i data-lucide="book-open"></i> Modul Pembelajaran</h2>
+  
+    <button type="button" 
+            class="btn btn-primary" 
+            id="btn-tambah-buku" 
+            onclick="BukuPage.openAdd()" 
+            style="display:none">
+      <i data-lucide="plus"></i> Tambah Modul
+    </button>
+  </div>
 
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <div class="table-title"><i data-lucide="book-open"></i> Daftar Modul</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Modul</th>
+            <th>Jenjang</th>
+            <th>Program</th>
+            <th>Keterangan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="buku-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
       <section id="page-gaji" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="banknote"></i> Penggajian Mentor</h2>
@@ -441,6 +465,7 @@
 
      <div class="modal-footer">
   <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-murid')">Batal</button>
+
   <button type="button" class="btn btn-primary" id="murid-save-btn" onclick="MuridPage.saveForm()">
     <i data-lucide="save"></i> Simpan
   </button>
@@ -466,9 +491,14 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-mentor')">Batal</button>
-      <button class="btn btn-primary" onclick="MentorPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
-    </div>
+  <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-mentor')">Batal</button>
+  <button type="button" 
+          class="btn btn-primary" 
+          id="mentor-save-btn" 
+          onclick="MentorPage.saveForm()">
+    <i data-lucide="save"></i> Simpan
+  </button>
+  </div>
   </div>
 </div>
 
@@ -488,8 +518,10 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-presensi')">Batal</button>
-      <button class="btn btn-primary" onclick="PresensiPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-presensi')">Batal</button>
+      <button type="button" class="btn btn-primary" id="presensi-save-btn" onclick="PresensiPage.saveForm()">
+      <i data-lucide="save"></i> Simpan
+      </button>
     </div>
   </div>
 </div>
@@ -537,8 +569,10 @@
       <div class="form-group"><label>Keterangan</label><input type="text" id="pay-keterangan" placeholder="Contoh: SPP Januari 2025"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-pembayaran')">Batal</button>
-      <button class="btn btn-primary" onclick="PembayaranPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-pembayaran')">Batal</button>
+      <button type="button" class="btn btn-primary" id="pay-save-btn" onclick="PembayaranPage.saveForm()">
+      <i data-lucide="save"></i> Simpan
+      </button>
     </div>
   </div>
 </div>
@@ -563,8 +597,10 @@
       <div class="info-note"><i data-lucide="info"></i> Sisa pertemuan dari paket sebelumnya akan otomatis ditambahkan (carry-over).</div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-spp')">Batal</button>
-      <button class="btn btn-primary" onclick="SPPPage.saveForm()"><i data-lucide="save"></i> Buat Paket</button>
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-spp')">Batal</button>
+      <button type="button" class="btn btn-primary" id="spp-save-btn" onclick="SPPPage.saveForm()">
+      <i data-lucide="save"></i> Buat Paket
+      </button>
     </div>
   </div>
 </div>
@@ -582,8 +618,10 @@
       <div class="form-group"><label>Keterangan</label><textarea id="buku-ket" placeholder="Deskripsi singkat modul"></textarea></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-buku')">Batal</button>
-      <button class="btn btn-primary" onclick="BukuPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-buku')">Batal</button>
+      <button type="button" class="btn btn-primary" id="buku-save-btn" onclick="BukuPage.saveForm()">
+      <i data-lucide="save"></i> Simpan
+      </button>
     </div>
   </div>
 </div>
@@ -600,10 +638,15 @@
       <div class="form-group"><label>Metode</label><select id="gaji-metode"><option value="TRANSFER">Transfer</option><option value="TUNAI">Tunai</option></select></div>
       <div class="info-note"><i data-lucide="calculator"></i> Gaji dihitung otomatis: (murid unik × fee/murid) + (total sesi × fee/sesi)</div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-gaji')">Batal</button>
-      <button class="btn btn-primary" onclick="GajiPage.saveForm()"><i data-lucide="calculator"></i> Hitung &amp; Simpan</button>
-    </div>
+      <div class="modal-footer">
+  <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-gaji')">Batal</button>
+  <button type="button" 
+          class="btn btn-primary" 
+          id="gaji-save-btn" 
+          onclick="GajiPage.saveForm()">
+    <i data-lucide="calculator"></i> Hitung & Simpan
+  </button>
+</div>
   </div>
 </div>
 <div id="modal-schedule" class="modal">

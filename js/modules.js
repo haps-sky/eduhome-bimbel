@@ -187,24 +187,52 @@ async function saveForm() {
 }
 
   async function deleteMentor(id, nama) {
-    if (!confirm(`Hapus mentor "${nama}"? Data gaji dan jadwal terkait mungkin akan terpengaruh.`)) return;
+    // 1. Konfirmasi (Penting agar tidak sengaja klik)
+    if (!confirm(`Hapus mentor "${nama}"? Semua data terkait mentor ini akan dihapus.`)) return;
+
+    // 2. Cari tombol tong sampah yang diklik berdasarkan ID mentor
+    const btn = document.querySelector(`button[onclick*="deleteMentor('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : ''; 
 
     try {
-      const res = await API.mentor.delete(id);
-      
-      if (res.status === 'OK') {
-        UI.toast('Mentor berhasil dihapus', 'success');
-        
-        allData = []; 
-        load(); 
-      } else {
-        UI.toast(res.message || 'Gagal menghapus mentor', 'error');
-      }
+        if (btn) {
+            btn.disabled = true;
+            // Ganti jadi loading imut di baris tabel
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            btn.style.width = 'auto'; 
+            btn.style.padding = '0 12px';
+        }
+
+        // 3. Panggil API Hapus Mentor
+        const res = await API.mentor.delete(id);
+
+        if (res.status === 'OK') {
+            UI.toast(`Mentor "${nama}" berhasil dihapus`, 'success');
+            
+            // --- RESET MEMORI & REFRESH ---
+            allData = [];
+            isFetched = false;
+            load(); 
+        } else {
+            UI.toast(res.message || 'Gagal menghapus mentor', 'error');
+            // Kembalikan tombol jika gagal dari server
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                btn.style.padding = ''; // Balikin padding asli
+            }
+        }
     } catch (e) {
-      console.error("Error delete mentor:", e);
-      UI.toast('Gagal terhubung ke server', 'error');
+        console.error("Error Delete Mentor:", e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        // Kembalikan tombol jika koneksi putus
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            btn.style.padding = '';
+        }
     }
-  }
+}
 
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
 })();
@@ -817,19 +845,43 @@ const SPPPage = (() => {
     document.getElementById('spp-harga').value = s.harga;
   }
 
-async function deleteSPP(id) {
-    if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
-    
-    const res = await API.spp.delete(id);
-    if (res.status === 'OK') {
-      UI.toast('Paket berhasil dihapus', 'success');
-      
-      allData = [];
-      load(); 
-    } else {
-      UI.toast(res.message || 'Gagal menghapus', 'error');
+async function deleteSPP(id, namaMurid) {
+    // 1. Konfirmasi lebih jelas (pakai nama murid kalau ada)
+    const pesan = namaMurid ? 
+        `Hapus paket SPP milik "${namaMurid}"? Sisa pertemuan akan hilang.` : 
+        `Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`;
+        
+    if (!confirm(pesan)) return;
+
+    // 2. Cari tombol hapus di tabel untuk pasang loading
+    const btn = document.querySelector(`button[onclick*="deleteSPP('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : '';
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>'; // Spinner kecil
+        }
+
+        const res = await API.spp.delete(id);
+
+        if (res.status === 'OK') {
+            UI.toast('Paket berhasil dihapus', 'success');
+            
+            // --- SINKRONISASI DATA ---
+            allData = [];       // Kosongkan array data lama
+            isFetched = false;  // BUKA GEMBOK: Paksa load() ambil data baru dari Sheets
+            load();             // Refresh tabel
+        } else {
+            UI.toast(res.message || 'Gagal menghapus', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+        }
+    } catch (e) {
+        console.error("Error Delete SPP:", e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
     }
-  }
+}
 
   return { load, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions };
 })();
@@ -970,11 +1022,41 @@ async function saveForm() {
 }
 
   async function deleteBuku(id, nama) {
-    if (!confirm(`Hapus modul "${nama}"?`)) return;
-    const res = await API.buku.delete(id);
-    if (res.status === 'OK') { UI.toast('Modul dihapus', 'success'); load(); }
-    else UI.toast(res.message || 'Gagal', 'error');
-  }
+    // 1. Konfirmasi dengan nama modul agar lebih aman
+    if (!confirm(`Hapus modul "${nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+    // 2. Cari tombol hapus di tabel untuk pasang spinner loading
+    // Ini mencari button yang onclick-nya mengandung ID buku tersebut
+    const btn = document.querySelector(`button[onclick*="deleteBuku('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : '';
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>'; // Muncul spinner muter
+        }
+
+        const res = await API.buku.delete(id);
+
+        if (res.status === 'OK') {
+            UI.toast(`Modul "${nama}" berhasil dihapus`, 'success');
+            
+            // --- SINKRONISASI DATA ---
+            allData = [];       // Kosongkan cache lokal
+            isFetched = false;  // BUKA GEMBOK: Paksa load() ambil data terbaru dari Google Sheets
+            load();             // Refresh tabel agar baris yang dihapus hilang
+        } else {
+            UI.toast(res.message || 'Gagal menghapus modul', 'error');
+            // Kembalikan tombol jika gagal
+            if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+        }
+    } catch (e) {
+        console.error("Error Delete Buku:", e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        // Kembalikan tombol jika error koneksi
+        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+    }
+}
 
   return { load, openAdd, openEdit, saveForm, deleteBuku };
 })();
