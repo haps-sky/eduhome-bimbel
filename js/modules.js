@@ -192,25 +192,34 @@ const PresensiPage = (() => {
   let allData = []; // Variabel ini aman di dalam closure
 
 async function load() {
-  const tbody = document.getElementById('presensi-tbody');
+  const tbody = document.getElementById('presensi-tbody'); // Sesuaikan ID per modul
   if (!tbody) return;
 
-  // JANGAN langsung kasih spinner di sini. 
-  // Biarkan renderTable yang memutuskan mau nampilin data atau tulisan "Kosong".
-  if (allData.length > 0) {
+  // 1. CEK MEMORI DULU
+  if (allData && allData.length > 0) {
+    // Jika sudah ada data di memori, LANGSUNG TAMPILKAN (Instan!)
     renderTable(allData.slice(-50).reverse());
-  } 
+  } else {
+    // JIKA MEMORI KOSONG (Baru buka pertama kali), KASIH SPINNER
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data...</td></tr>';
+  }
 
   try {
-    const res = await API.presensi.getAll(); // Ambil data
+    // 2. TARIK DATA FRESH DI BACKGROUND
+    const res = await API.presensi.getAll(); // Sesuaikan API per modul
     
     if (res.status === 'OK') {
       allData = res.data || [];
-      renderTable(allData.slice(-50).reverse()); // Render hasil (meskipun [])
+      
+      // 3. RENDER ULANG (Spinner akan hilang, diganti tabel atau tulisan "Belum ada data")
+      renderTable(allData.slice(-50).reverse()); 
     }
   } catch (e) {
-    // Jika benar-benar error koneksi, baru kasih info gagal
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+    console.error("Gagal update:", e);
+    // Jika gagal total dan memori kosong, kasih tau user
+    if (allData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat. Periksa koneksi.</td></tr>';
+    }
   }
 }
 
