@@ -134,6 +134,26 @@ async function saveForm() {
     }
   }
 
+  async function deleteMentor(id, nama) {
+    if (!confirm(`Hapus mentor "${nama}"? Data gaji dan jadwal terkait mungkin akan terpengaruh.`)) return;
+
+    try {
+      const res = await API.mentor.delete(id);
+      
+      if (res.status === 'OK') {
+        UI.toast('Mentor berhasil dihapus', 'success');
+        
+        allData = []; 
+        load(); 
+      } else {
+        UI.toast(res.message || 'Gagal menghapus mentor', 'error');
+      }
+    } catch (e) {
+      console.error("Error delete mentor:", e);
+      UI.toast('Gagal terhubung ke server', 'error');
+    }
+  }
+
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
 })();
 
