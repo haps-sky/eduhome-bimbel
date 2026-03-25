@@ -301,7 +301,7 @@ async function saveForm() {
         UI.toast('Presensi berhasil dicatat', 'success');
         UI.closeModal('modal-presensi');
         allData = [];
-        isFetched = false
+        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal mencatat presensi', 'error');
@@ -372,7 +372,6 @@ const PembayaranPage = (() => {
         API.spp.getAll()
       ]);
 
-      // ⚠️ PERBAIKAN DI SINI: Pakai payRes, bukan res!
       if (payRes.status === 'OK') {
         allData = payRes.data || [];
         sppData = sppRes.data || []; // Simpan data SPP jika perlu
@@ -478,7 +477,7 @@ const PembayaranPage = (() => {
         UI.toast('Pembayaran berhasil dicatat', 'success');
         UI.closeModal('modal-pembayaran');
         allData = [];
-        isFetched = false
+        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
