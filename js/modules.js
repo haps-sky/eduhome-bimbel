@@ -380,7 +380,6 @@ const SPPPage = (() => {
         <td><strong>${s.nama_murid}</strong></td>
         <td><span class="program-tag">${s.program}</span></td>
         <td>${UI.formatDate(s.periode_mulai)} – ${UI.formatDate(s.periode_akhir)}</td>
-        <td>${s.sesi_per_minggu}x/minggu</td>
         <td>${s.total_pertemuan}</td>
         <td>${s.hadir} / ${s.sisa_pertemuan}</td>
         <td>
