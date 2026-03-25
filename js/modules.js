@@ -75,7 +75,7 @@ const MentorPage = (() => {
 
 // 1. Kita buat fungsi khusus buat bersih-bersih (biar rapi)
   function clearForm() {
-    ['mentor-nama', 'mentor-program', 'mentor-fee-anak', 'mentor-fee-harian'].forEach(id => {
+    ['mentor-nama', 'mentor-fee-anak', 'mentor-fee-harian'].forEach(id => {
       const el = document.getElementById(id); 
       if (el) el.value = '';
     });
@@ -113,7 +113,6 @@ async function openEdit(id) {
     document.getElementById('mentor-modal-title').textContent = 'Edit Mentor';
     document.getElementById('mentor-id-field').value   = m.id;
     document.getElementById('mentor-nama').value        = m.nama;
-    document.getElementById('mentor-program').value     = m.program;
     document.getElementById('mentor-status').value      = m.status;
     document.getElementById('mentor-fee-anak').value    = m.fee_anak;
     document.getElementById('mentor-fee-harian').value  = m.fee_harian;
@@ -126,24 +125,22 @@ async function saveForm() {
     // 1. Ambil data dari input field Mentor
     const id      = document.getElementById('mentor-id-field').value;
     const nama    = document.getElementById('mentor-nama').value.trim();
-    const jk      = document.getElementById('mentor-jk').value;
-    const program = document.getElementById('mentor-program').value.trim(); // Bidang studi
-    const kontak  = document.getElementById('mentor-kontak').value.trim();
     const status  = document.getElementById('mentor-status').value;
+    const fee_anak    = document.getElementById('mentor-fee-anak').value;
+    const fee_harian  = document.getElementById('mentor-fee-harian').value;
 
     // 2. Validasi sederhana
-    if (!nama || !program) { 
-      UI.toast('Nama dan Program wajib diisi', 'error'); 
+    if (!nama) { 
+      UI.toast('Nama wajib diisi', 'error'); 
       return; 
     }
 
-    // 3. Siapkan Payload (Sesuaikan dengan kolom di Sheet Mentor)
+    // 3. Siapkan Payload
     const payload = { 
-      nama, 
-      jk, 
-      program, 
-      kontak,
-      status 
+      nama,
+      status,
+      fee_anak,
+      fee_harian
     };
 
     const btn = document.getElementById('mentor-save-btn');
