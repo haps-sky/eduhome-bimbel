@@ -313,8 +313,11 @@ const SPPPage = (() => {
 
 async function load() {
     const tbody = document.getElementById('spp-tbody');
-    
-    if (tbody) {
+    if (!tbody) return;
+
+    if (allData && allData.length > 0) {
+      renderTable(allData);
+    } else {
       tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner"></div> Memuat data paket SPP...</td></tr>';
     }
 
@@ -324,14 +327,17 @@ async function load() {
         API.murid.getAll()
       ]);
 
-      allData = (sppRes.data || []).reverse(); 
-      
-      populateMurid(muridRes.data || []);
-      renderTable(allData);
-
+      if (sppRes.status === 'OK') {
+        allData = (sppRes.data || []).reverse(); 
+        
+        populateMurid(muridRes.data || []);
+        renderTable(allData);
+      }
     } catch (e) {
-      console.error(e);
-      if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data.</td></tr>';
+      console.error("Gagal update background SPP:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data.</td></tr>';
+      }
     }
 
     initLiveCount();
@@ -893,12 +899,6 @@ const MentorPresensiPage = (() => {
 
   return { load, saveForm };
 })();
-
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("mentor-tbody")) {
-    MentorPage.load();
-  }
-});
 
 document.addEventListener("DOMContentLoaded", () => {
 
