@@ -14,7 +14,7 @@
       return;
     }
 
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner"></div> Memuat data murid...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data murid...</td></tr>';
 
     try {
       const [muridRes, mentorRes] = await Promise.all([
@@ -250,8 +250,8 @@ async function saveForm() {
         btn.disabled = true; 
         // --- 1. TEKS TOMBOL DINAMIS SESUAI STATUS ID ---
         btn.innerHTML = id ? 
-            '<div class="spinner"></div> Mengedit data...' : 
-            '<div class="spinner"></div> Menambahkan data...'; 
+            '<div class="spinner spinner-sm"></div> Mengedit data...' : 
+            '<div class="spinner spinner-sm"></div> Menambahkan data...'; 
       }
 
       // Gunakan ternary operator biar lebih ringkas (Sesuai gaya Master Template)
