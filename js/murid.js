@@ -1,4 +1,6 @@
   const MuridPage = (() => {
+    const DAYS = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU'];
+    
   let allData = [];
   let isFetched = false;
 
