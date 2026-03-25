@@ -195,16 +195,14 @@ async function load() {
   const tbody = document.getElementById('presensi-tbody');
   if (!tbody) return;
 
-  // 1. TAMPILKAN DARI MEMORI (Gak pake kedip, persis MuridPage)
+  // 1. CEK MEMORI: Tampilkan instan tanpa spinner jika sudah ada data
   if (allData && allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
   } else {
-    // Spinner cuma muncul kalo bener-bener baru buka pertama kali
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
   }
 
   try {
-    // 2. AMBIL DATA FRESH DI BACKGROUND
     const [presRes, muridRes, mentorRes] = await Promise.all([
       API.presensi.getAll(),
       API.murid.getAll(),
@@ -213,21 +211,12 @@ async function load() {
     
     allData = presRes.data || [];
     
-    // 3. DROPDOWN: Cukup isi sekali saja biar gak "lompat" pas update
     const muridSel = document.getElementById('presensi-murid');
     if (muridSel && muridSel.options.length <= 1) { 
       populateDropdowns(muridRes.data || [], mentorRes.data || []);
-      
-      // Set tanggal hari ini HANYA JIKA masih kosong
-      const tglInput = document.getElementById('presensi-tanggal');
-      if (tglInput && !tglInput.value) {
-        tglInput.value = new Date().toISOString().split('T')[0];
-      }
     }
     
-    // 4. UPDATE TABEL SECARA HALUS
     renderTable(allData.slice(-50).reverse()); 
-    
   } catch (e) {
     console.error("Gagal update presensi:", e);
   }
@@ -1216,30 +1205,4 @@ const MentorPresensiPage = (() => {
   return { load, saveForm };
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
 
-  if (document.getElementById("mentor-tbody")) {
-    MentorPage.load();
-  }
-
-  if (document.getElementById("presensi-tbody")) {
-    PresensiPage.load();
-  }
-
-  if (document.getElementById("pay-tbody")) {
-    PembayaranPage.load();
-  }
-
-  if (document.getElementById("spp-tbody")) {
-    SPPPage.load();
-  }
-
-  if (document.getElementById("buku-tbody")) {
-    BukuPage.load();
-  }
-
-  if (document.getElementById("gaji-tbody")) {
-    GajiPage.load();
-  }
-
-});
