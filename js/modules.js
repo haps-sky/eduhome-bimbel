@@ -311,11 +311,28 @@ const PembayaranPage = (() => {
 const SPPPage = (() => {
   let allData = [];
 
-  async function load() {
-    const [sppRes, muridRes] = await Promise.all([API.spp.getAll(), API.murid.getAll()]);
-    allData = sppRes.data || [];
-    populateMurid(muridRes.data || []);
-    renderTable(allData);
+async function load() {
+    const tbody = document.getElementById('spp-tbody');
+    
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner"></div> Memuat data paket SPP...</td></tr>';
+    }
+
+    try {
+      const [sppRes, muridRes] = await Promise.all([
+        API.spp.getAll(), 
+        API.murid.getAll()
+      ]);
+
+      allData = (sppRes.data || []).reverse(); 
+      
+      populateMurid(muridRes.data || []);
+      renderTable(allData);
+
+    } catch (e) {
+      console.error(e);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data.</td></tr>';
+    }
 
     initLiveCount();
   }
@@ -407,6 +424,8 @@ const SPPPage = (() => {
   }
 
   async function saveForm() {
+    const id = document.getElementById('spp-id-field').value;
+
     const muridSel = document.getElementById('spp-murid');
     const mulai    = document.getElementById('spp-mulai').value;
     const akhir    = document.getElementById('spp-akhir').value;
@@ -420,6 +439,7 @@ const SPPPage = (() => {
     const opt = muridSel.options[muridSel.selectedIndex];
 
     const payload = {
+      id:            id,
       id_murid:      muridSel.value,
       nama_murid:    opt.dataset.nama,
       program:       opt.dataset.program,
@@ -428,30 +448,35 @@ const SPPPage = (() => {
       harga:         harga
     };
 
-    const res = await API.spp.create(payload);
+    const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
     
     if (res.status === 'OK') {
-      UI.toast(`Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`, 'success');
+      const msg = id ? 'Paket SPP diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
+      UI.toast(msg, 'success');
       UI.closeModal('modal-spp');
       load(); 
     } else {
-      UI.toast(res.message || 'Gagal membuat paket', 'error');
+      UI.toast(res.message || 'Gagal memproses paket', 'error');
     }
-  }
+}
 
-  function openAdd() {
+ function openAdd() {
     document.getElementById('spp-modal-title').textContent = 'Buat Paket SPP';
-    document.getElementById('spp-id-field').value = ''; // Kosongkan ID (tanda buat baru)
     
-    // Reset form lainnya
+    document.getElementById('spp-id-field').value = ''; 
+    
     const muridSel = document.getElementById('spp-murid');
-    muridSel.value = '';
-    muridSel.disabled = false; // Aktifkan lagi dropdown murid
+    if (muridSel) {
+      muridSel.value = '';
+      muridSel.disabled = false; 
+    }
     
     document.getElementById('spp-mulai').value = '';
     document.getElementById('spp-akhir').value = '';
     document.getElementById('spp-harga').value = '';
-    document.getElementById('spp-count-preview').textContent = 'Total: 0 Sesi';
+    
+    const display = document.getElementById('spp-count-preview');
+    if (display) display.textContent = 'Total: 0 Sesi';
     
     UI.openModal('modal-spp');
   }

@@ -163,11 +163,13 @@ async function load() {
 
 
 async function openEdit(id) {
-  // 1. Ambil data dari variabel lokal (allData) biar instan
+  
   const m = allData.find(x => x.id === id);
   if (!m) return;
 
-  // 2. Isi form identitas murid
+  document.querySelectorAll('#day-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.time-input-container').forEach(div => div.style.display = 'none');
+  document.querySelectorAll('.time-picker').forEach(input => input.value = '');
   document.getElementById('murid-modal-title').textContent = 'Edit Data Murid';
   document.getElementById('murid-id-field').value = m.id;
   document.getElementById('murid-nama').value     = m.nama;
@@ -179,12 +181,11 @@ async function openEdit(id) {
 
   renderDayCheckboxes(); 
 
-  // 3. MUNCULKAN MODAL DETIK INI JUGA (0 delay)
+
   document.getElementById('murid-schedule-section').style.display = 'block';
   UI.openModal('modal-murid');
 
-  // 4. Ambil jadwal secara asinkron (tanpa await di depan)
-// 4. Ambil jadwal di background (Tanpa await = Tanpa delay!)
+
   API.jadwal.getByMurid(id).then(jadwalRes => {
     if (jadwalRes.status === 'OK' && jadwalRes.data.length > 0) {
       const hariSet = new Set(jadwalRes.data.map(j => j.hari));
@@ -194,8 +195,7 @@ async function openEdit(id) {
         if(hariSet.has(val)) {
           cb.checked = true;
           
-          // --- PENTING: Munculkan input jam & isi waktunya ---
-          toggleTimeInput(val); 
+          toggleTimeInput(val);
           const item = jadwalRes.data.find(j => j.hari === val);
           if(item) {
             const timeInput = document.getElementById(`time-${val}`);
@@ -204,7 +204,7 @@ async function openEdit(id) {
         }
       });
     }
-  }).catch(err => console.log("Gagal ambil jadwal, tapi modal identitas aman."));
+  }).catch(err => console.log("Jadwal gagal dimuat, tapi data murid aman."));
 }
 
   function clearForm() {
