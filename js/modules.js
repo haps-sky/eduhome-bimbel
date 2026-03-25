@@ -92,29 +92,35 @@ const MentorPage = (() => {
   }
 
   async function saveForm() {
+    const btn = document.querySelector('#modal-mentor .btn-primary'); // Ambil tombol
     const id         = document.getElementById('mentor-id-field').value;
     const nama       = document.getElementById('mentor-nama').value.trim();
     const program    = document.getElementById('mentor-program').value.trim();
     const status     = document.getElementById('mentor-status').value;
     const fee_anak   = parseFloat(document.getElementById('mentor-fee-anak').value) || 0;
     const fee_harian = parseFloat(document.getElementById('mentor-fee-harian').value) || 0;
-    if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
-    const payload = { nama, program, status, fee_anak, fee_harian };
-    const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
-    if (res.status === 'OK') {
-      UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
-      UI.closeModal('modal-mentor');
-      load();
-    } else {
-      UI.toast(res.message || 'Gagal menyimpan', 'error');
-    }
-  }
 
-  async function deleteMentor(id, nama) {
-    if (!confirm(`Hapus mentor "${nama}"?`)) return;
-    const res = await API.mentor.delete(id);
-    if (res.status === 'OK') { UI.toast('Mentor dihapus', 'success'); load(); }
-    else UI.toast(res.message || 'Gagal', 'error');
+    if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
+
+    try {
+      // ANTI DOUBLE CLICK
+      if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+
+      const payload = { nama, program, status, fee_anak, fee_harian };
+      const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
+      
+      if (res.status === 'OK') {
+        UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
+        UI.closeModal('modal-mentor');
+        allData = []; // RESET CACHE biar data terbaru ditarik
+        load();
+      } else {
+        UI.toast(res.message || 'Gagal menyimpan', 'error');
+      }
+    } finally {
+      // HIDUPKAN TOMBOL LAGI
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+    }
   }
 
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
@@ -127,17 +133,44 @@ const MentorPage = (() => {
 const PresensiPage = (() => {
   let allData = [];
 
-  async function load() {
-    const today = new Date().toISOString().split('T')[0];
-    const [presRes, muridRes, mentorRes] = await Promise.all([
-      API.presensi.getAll(),
-      API.murid.getAll(),
-      API.mentor.getAll()
-    ]);
-    allData = presRes.data || [];
-    populateDropdowns(muridRes.data || [], mentorRes.data || []);
-    renderTable(allData.slice(-50).reverse());
-    document.getElementById('presensi-tanggal').value = today;
+async function load() {
+    const tbody = document.getElementById('presensi-tbody');
+    if (!tbody) return;
+
+    // 1. CEK MEMORI: Kalau sudah ada data, langsung tampilin (GAK PAKE LOADING)
+    if (allData && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 2. AMBIL DATA TERBARU: Tetap di background biar data sinkron
+      const [presRes, muridRes, mentorRes] = await Promise.all([
+        API.presensi.getAll(),
+        API.murid.getAll(),
+        API.mentor.getAll()
+      ]);
+      
+      allData = presRes.data || [];
+      
+      // Isi dropdown murid & mentor
+      populateDropdowns(muridRes.data || [], mentorRes.data || []);
+      
+      // 3. AUTO SORT: Ambil 50 data terakhir, lalu balik (terbaru di atas)
+      renderTable(allData.slice(-50).reverse()); 
+      
+      const tglInput = document.getElementById('presensi-tanggal');
+      if (tglInput) tglInput.value = today;
+      
+    } catch (e) {
+      console.error("Gagal update presensi:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+      }
+    }
   }
 
   function populateDropdowns(murid, mentor) {
@@ -164,7 +197,10 @@ const PresensiPage = (() => {
     UI.renderTable('presensi-tbody', rows, 'Belum ada data presensi');
   }
 
-  async function saveForm() {
+async function saveForm() {
+    // 1. PENTING: Ambil tombol simpan biar bisa kita "matikan" sementara
+    const btn = document.querySelector('#modal-presensi .btn-primary');
+
     const tanggal   = document.getElementById('presensi-tanggal').value;
     const muridSel  = document.getElementById('presensi-murid');
     const mentorSel = document.getElementById('presensi-mentor');
@@ -172,7 +208,10 @@ const PresensiPage = (() => {
     const catatan   = document.getElementById('presensi-catatan').value;
     const bintang   = document.getElementById('presensi-bintang').value;
 
-    if (!tanggal || !muridSel.value) { UI.toast('Tanggal dan murid wajib diisi', 'error'); return; }
+    if (!tanggal || !muridSel.value) { 
+      UI.toast('Tanggal dan murid wajib diisi', 'error'); 
+      return; 
+    }
 
     const muridOpt  = muridSel.options[muridSel.selectedIndex];
     const mentorOpt = mentorSel.options[mentorSel.selectedIndex];
@@ -187,13 +226,33 @@ const PresensiPage = (() => {
       status, catatan, bintang: parseInt(bintang) || 0
     };
 
-    const res = await API.presensi.add(payload);
-    if (res.status === 'OK') {
-      UI.toast('Presensi berhasil dicatat', 'success');
-      UI.closeModal('modal-presensi');
-      load();
-    } else {
-      UI.toast(res.message || 'Gagal', 'error');
+    try {
+      // 2. ANTI DOUBLE CLICK: Matikan tombol pas proses kirim data
+      if (btn) { 
+        btn.disabled = true; 
+        btn.textContent = 'Menyimpan...'; 
+      }
+
+      const res = await API.presensi.add(payload);
+      
+      if (res.status === 'OK') {
+        UI.toast('Presensi berhasil dicatat', 'success');
+        UI.closeModal('modal-presensi');
+        
+        // 3. RESET MEMORI: Kosongkan allData biar load() narik data terbaru dari Sheets
+        allData = []; 
+        load(); 
+      } else {
+        UI.toast(res.message || 'Gagal mencatat presensi', 'error');
+      }
+    } catch (e) {
+      UI.toast('Gagal terhubung ke server', 'error');
+    } finally {
+      // 4. HIDUPKAN LAGI: Biar tombol bisa dipakai lagi nanti
+      if (btn) { 
+        btn.disabled = false; 
+        btn.textContent = 'Simpan Presensi'; 
+      }
     }
   }
 
@@ -213,17 +272,42 @@ const PembayaranPage = (() => {
   let allData = [];
   let sppData = [];
 
-  async function load() {
-    const [payRes, muridRes, sppRes] = await Promise.all([
-      API.pembayaran.getAll(),
-      API.murid.getAll(),
-      API.spp.getAll()
-    ]);
-    allData = payRes.data || [];
-    sppData = sppRes.data || [];
-    populateMuridDropdown(muridRes.data || []);
-    renderTable(allData.slice(-50).reverse());
-    updateSummary();
+async function load() {
+    const tbody = document.getElementById('pay-tbody');
+    if (!tbody) return;
+
+    // 1. TAMPILKAN DARI MEMORI (BIAR INSTAN)
+    if (allData && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
+      updateSummary();
+    } else {
+      // Spinner cuma buat tamu pertama (pas data masih kosong)
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data pembayaran...</td></tr>';
+    }
+
+    try {
+      // 2. AMBIL DATA TERBARU DI BACKGROUND
+      const [payRes, muridRes, sppRes] = await Promise.all([
+        API.pembayaran.getAll(),
+        API.murid.getAll(),
+        API.spp.getAll()
+      ]);
+
+      if (payRes.status === 'OK') {
+        allData = payRes.data || [];
+        sppData = sppRes.data || []; // Simpan data SPP buat dropdown nanti
+        
+        populateMuridDropdown(muridRes.data || []);
+        
+        renderTable(allData.slice(-50).reverse());
+        updateSummary();
+      }
+    } catch (e) {
+      console.error("Gagal update background Pembayaran:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data keuangan.</td></tr>';
+      }
+    }
   }
 
   function populateMuridDropdown(murid) {
@@ -272,15 +356,21 @@ const PembayaranPage = (() => {
   }
 
   async function saveForm() {
-    const muridSel  = document.getElementById('pay-murid');
-    const sppSel    = document.getElementById('pay-spp');
-    const tanggal   = document.getElementById('pay-tanggal').value;
-    const jumlah    = parseFloat(document.getElementById('pay-jumlah').value) || 0;
-    const metode    = document.getElementById('pay-metode').value;
-    const jenis     = document.getElementById('pay-jenis').value;
+    // 1. Ambil tombolnya dulu buat dimatiin pas loading
+    const btn = document.querySelector('#modal-pembayaran .btn-primary');
+    
+    const muridSel   = document.getElementById('pay-murid');
+    const sppSel     = document.getElementById('pay-spp');
+    const tanggal    = document.getElementById('pay-tanggal').value;
+    const jumlah     = parseFloat(document.getElementById('pay-jumlah').value) || 0;
+    const metode     = document.getElementById('pay-metode').value;
+    const jenis      = document.getElementById('pay-jenis').value;
     const keterangan = document.getElementById('pay-keterangan').value;
 
-    if (!muridSel.value || jumlah <= 0) { UI.toast('Murid dan jumlah wajib diisi', 'error'); return; }
+    if (!muridSel.value || jumlah <= 0) { 
+      UI.toast('Murid dan jumlah wajib diisi', 'error'); 
+      return; 
+    }
 
     const muridOpt = muridSel.options[muridSel.selectedIndex];
     const payload = {
@@ -291,16 +381,36 @@ const PembayaranPage = (() => {
       spp_id:     sppSel ? sppSel.value : ''
     };
 
-    const res = await API.pembayaran.add(payload);
-    if (res.status === 'OK') {
-      UI.toast('Pembayaran berhasil dicatat', 'success');
-      UI.closeModal('modal-pembayaran');
-      load();
-    } else {
-      UI.toast(res.message || 'Gagal', 'error');
+    try {
+      // 2. ANTI DOUBLE CLICK: Tombol jadi abu-abu pas lagi proses
+      if (btn) { 
+        btn.disabled = true; 
+        btn.textContent = 'Memproses...'; 
+      }
+
+      const res = await API.pembayaran.add(payload);
+      
+      if (res.status === 'OK') {
+        UI.toast('Pembayaran berhasil dicatat', 'success');
+        UI.closeModal('modal-pembayaran');
+        
+        // 3. PENTING: Reset memori dulu biar Dashboard narik angka terbaru
+        allData = []; 
+        load(); 
+      } else {
+        UI.toast(res.message || 'Gagal menyimpan pembayaran', 'error');
+      }
+    } catch (e) {
+      UI.toast('Terjadi kesalahan koneksi', 'error');
+    } finally {
+      // 4. Balikin tombolnya biar bisa dipake input lagi
+      if (btn) { 
+        btn.disabled = false; 
+        btn.textContent = 'Simpan Pembayaran'; 
+      }
     }
   }
-
+  
   return { load, saveForm };
 })();
 
@@ -528,10 +638,28 @@ async function load() {
 const BukuPage = (() => {
   let allData = [];
 
-  async function load() {
-    const res = await API.buku.getAll();
-    allData = res.data || [];
-    renderTable(allData);
+async function load() {
+    const tbody = document.getElementById('buku-tbody');
+    if (!tbody) return;
+
+    if (allData && allData.length > 0) {
+      renderTable(allData);
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data modul belajar...</td></tr>';
+    }
+
+    try {
+      const res = await API.buku.getAll();
+      if (res.status === 'OK') {
+        allData = res.data || [];
+        renderTable(allData);
+      }
+    } catch (e) {
+      console.error("Gagal update background Buku:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
+      }
+    }
   }
 
   function renderTable(data) {
@@ -573,23 +701,30 @@ const BukuPage = (() => {
     UI.openModal('modal-buku');
   }
 
-  async function saveForm() {
-    const id         = document.getElementById('buku-id-field').value;
-    const nama       = document.getElementById('buku-nama').value.trim();
-    const jenjang    = document.getElementById('buku-jenjang').value.trim();
-    const program    = document.getElementById('buku-program').value.trim();
-    const keterangan = document.getElementById('buku-ket').value.trim();
+async function saveForm() {
+    const btn = document.querySelector('#modal-buku .btn-primary');
+    const id = document.getElementById('buku-id-field').value;
+    const nama = document.getElementById('buku-nama').value.trim();
 
     if (!nama) { UI.toast('Nama modul wajib diisi', 'error'); return; }
 
-    const payload = { nama, jenjang, program, keterangan };
-    const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
-    if (res.status === 'OK') {
-      UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
-      UI.closeModal('modal-buku');
-      load();
-    } else {
-      UI.toast(res.message || 'Gagal', 'error');
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+
+      const payload = { nama, jenjang, program, keterangan };
+      const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
+      
+      if (res.status === 'OK') {
+        UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
+        UI.closeModal('modal-buku');
+        load();
+      } else {
+        UI.toast(res.message || 'Gagal', 'error');
+      }
+    } catch (e) {
+      UI.toast('Terjadi kesalahan sistem', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
     }
   }
 
@@ -634,7 +769,8 @@ const GajiPage = (() => {
     UI.renderTable('gaji-tbody', rows, 'Belum ada data penggajian');
   }
 
-  async function saveForm() {
+async function saveForm() {
+    const btn = document.querySelector('#modal-gaji .btn-primary');
     const mentorSel  = document.getElementById('gaji-mentor');
     const bulan_gaji = document.getElementById('gaji-bulan').value;
     const tgl_bayar  = document.getElementById('gaji-tgl').value;
@@ -642,14 +778,20 @@ const GajiPage = (() => {
 
     if (!mentorSel.value || !bulan_gaji) { UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); return; }
 
-    const res = await API.gaji.record({ id_mentor: mentorSel.value, bulan_gaji, tgl_bayar, metode });
-    if (res.status === 'OK') {
-      const d = res.data.salary_detail;
-      UI.toast(`Gaji ${d.nama_mentor}: ${UI.formatCurrency(d.total)} (${d.total_students} murid × ${d.total_sessions} sesi)`, 'success');
-      UI.closeModal('modal-gaji');
-      load();
-    } else {
-      UI.toast(res.message || 'Gagal', 'error');
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+
+      const res = await API.gaji.record({ id_mentor: mentorSel.value, bulan_gaji, tgl_bayar, metode });
+      if (res.status === 'OK') {
+        const d = res.data.salary_detail;
+        UI.toast(`Gaji ${d.nama_mentor} berhasil dicatat`, 'success');
+        UI.closeModal('modal-gaji');
+        load();
+      } else {
+        UI.toast(res.message || 'Gagal', 'error');
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan Penggajian'; }
     }
   }
 
