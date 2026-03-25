@@ -190,37 +190,53 @@ async function saveForm() {
 
 const PresensiPage = (() => {
   let allData = [];
+  let isFetched = false; // KUNCI: Tambahkan flag untuk menandai data sudah pernah diambil
 
-async function load() {
-  const tbody = document.getElementById('presensi-tbody');
-  if (!tbody) return;
+  async function load() {
+    const tbody = document.getElementById('presensi-tbody');
+    if (!tbody) return;
 
-  // 1. CEK MEMORI: Tampilkan instan tanpa spinner jika sudah ada data
-  if (allData && allData.length > 0) {
-    renderTable(allData.slice(-50).reverse());
-  } else {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
-  }
+    // 1. TAMPILKAN CACHE INSTAN (Jika sudah ada data)
+    if (allData && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
+    } 
 
-  try {
-    const [presRes, muridRes, mentorRes] = await Promise.all([
-      API.presensi.getAll(),
-      API.murid.getAll(),
-      API.mentor.getAll()
-    ]);
-    
-    allData = presRes.data || [];
-    
-    const muridSel = document.getElementById('presensi-murid');
-    if (muridSel && muridSel.options.length <= 1) { 
-      populateDropdowns(muridRes.data || [], mentorRes.data || []);
+    // 2. CEK APAKAH SUDAH PERNAH FETCH? 
+    // Jika sudah pernah fetch dan data sudah ada, jangan tarik API lagi (stop di sini)
+    if (isFetched && allData.length > 0) {
+      return; 
     }
-    
-    renderTable(allData.slice(-50).reverse()); 
-  } catch (e) {
-    console.error("Gagal update presensi:", e);
+
+    // 3. TAMPILKAN SPINNER (Hanya jika benar-benar pertama kali dan data kosong)
+    if (allData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
+    }
+
+    try {
+      const [presRes, muridRes, mentorRes] = await Promise.all([
+        API.presensi.getAll(),
+        API.murid.getAll(),
+        API.mentor.getAll()
+      ]);
+      
+      if (presRes.status === 'OK') {
+        allData = presRes.data || [];
+        isFetched = true; // Tandai bahwa data sudah berhasil diambil dari server
+        
+        const muridSel = document.getElementById('presensi-murid');
+        if (muridSel && muridSel.options.length <= 1) { 
+          populateDropdowns(muridRes.data || [], mentorRes.data || []);
+        }
+        
+        renderTable(allData.slice(-50).reverse()); 
+      }
+    } catch (e) {
+      console.error("Gagal update presensi:", e);
+      if (allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+      }
+    }
   }
-}
 
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
@@ -287,6 +303,7 @@ async function saveForm() {
         UI.toast('Presensi berhasil dicatat', 'success');
         UI.closeModal('modal-presensi');
         allData = []; 
+        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal mencatat presensi', 'error');
