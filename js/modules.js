@@ -18,7 +18,7 @@ const MentorPage = (() => {
     }
 
     // 2. TAMPILAN AWAL: Spinner cuma muncul sekali seumur hidup (sebelum refresh)
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data mentor...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data mentor...</td></tr>';
 
     try {
       // 3. TARIK DATA FRESH
@@ -123,49 +123,68 @@ async function openEdit(id) {
   }
 
 async function saveForm() {
-    // 1. Ambil tombol modal Mentor (Bukan modal presensi!)
-    const btn = document.querySelector('#modal-mentor .btn-primary');
-    
-    const id         = document.getElementById('mentor-id-field').value;
-    const nama       = document.getElementById('mentor-nama').value.trim();
-    const program    = document.getElementById('mentor-program').value.trim();
-    const status     = document.getElementById('mentor-status').value;
-    const fee_anak   = parseFloat(document.getElementById('mentor-fee-anak').value) || 0;
-    const fee_harian = parseFloat(document.getElementById('mentor-fee-harian').value) || 0;
+    // 1. Ambil data dari input field Mentor
+    const id      = document.getElementById('mentor-id-field').value;
+    const nama    = document.getElementById('mentor-nama').value.trim();
+    const jk      = document.getElementById('mentor-jk').value;
+    const program = document.getElementById('mentor-program').value.trim(); // Bidang studi
+    const kontak  = document.getElementById('mentor-kontak').value.trim();
+    const status  = document.getElementById('mentor-status').value;
 
-    if (!nama) { UI.toast('Nama mentor wajib diisi', 'error'); return; }
+    // 2. Validasi sederhana
+    if (!nama || !program) { 
+      UI.toast('Nama dan Program wajib diisi', 'error'); 
+      return; 
+    }
+
+    // 3. Siapkan Payload (Sesuaikan dengan kolom di Sheet Mentor)
+    const payload = { 
+      nama, 
+      jk, 
+      program, 
+      kontak,
+      status 
+    };
+
+    const btn = document.getElementById('mentor-save-btn');
 
     try {
-      // 2. EFEK LOADING: Tombol mati & spinner muncul
       if (btn) { 
         btn.disabled = true; 
-        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+        // Efek loading dinamis
+        btn.innerHTML = id ? 
+            '<div class="spinner spinner-sm"></div> Mengedit data mentor...' : 
+            '<div class="spinner spinner-sm"></div> Menambahkan mentor...'; 
       }
 
-      const payload = { nama, program, status, fee_anak, fee_harian };
-      
-      // 3. PANGGIL API MENTOR (Pastikan ini API Mentor ya!)
-      const res = id ? await API.mentor.update({ id, ...payload }) : await API.mentor.add(payload);
-      
+      // Panggil API Mentor
+      const res = id ? 
+          await API.mentor.update({ id, ...payload }) : 
+          await API.mentor.add(payload);
+
       if (res.status === 'OK') {
-        UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
+        const pesanSukses = id ? 'Data mentor berhasil diperbarui' : 'Mentor baru berhasil ditambahkan';
+        UI.toast(pesanSukses, 'success');
+        
         UI.closeModal('modal-mentor');
-        allData = [];
-        isFetched = false;
-        load();
+        
+        // RESET CACHE & REFRESH TABEL
+        allData = []; 
+        isFetched = false; 
+        load(); 
       } else {
-        UI.toast(res.message || 'Gagal menyimpan', 'error');
+        UI.toast(res.message || 'Gagal menyimpan data mentor', 'error');
       }
-    } catch (e) {
-      UI.toast('Gagal terhubung ke server', 'error');
+    } catch(e) {
+      console.error("Error Save Mentor:", e);
+      UI.toast('Terjadi kesalahan koneksi', 'error');
     } finally {
-      // 4. BALIKIN TOMBOL: Normal lagi mau sukses atau gagal
       if (btn) { 
         btn.disabled = false; 
         btn.innerHTML = 'Simpan'; 
       }
     }
-  }
+}
 
   async function deleteMentor(id, nama) {
     if (!confirm(`Hapus mentor "${nama}"? Data gaji dan jadwal terkait mungkin akan terpengaruh.`)) return;
@@ -210,7 +229,7 @@ const PresensiPage = (() => {
     }
 
     // 2. TAMPILAN AWAL (Hanya jalan sekali seumur hidup aplikasi sebelum di-refresh)
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data presensi...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data presensi...</td></tr>';
 
     try {
       const [presRes, muridRes, mentorRes] = await Promise.all([
@@ -261,8 +280,11 @@ const PresensiPage = (() => {
   }
 
 async function saveForm() {
+    // 1. Ambil elemen tombol menggunakan querySelector (lebih aman jika ID belum terpasang)
     const btn = document.querySelector('#modal-presensi .btn-primary');
 
+    // 2. Ambil data dari input field
+    const id        = document.getElementById('presensi-id-field')?.value; // Untuk jaga-jaga jika ada fitur Edit
     const tanggal   = document.getElementById('presensi-tanggal').value;
     const muridSel  = document.getElementById('presensi-murid');
     const mentorSel = document.getElementById('presensi-mentor');
@@ -270,6 +292,7 @@ async function saveForm() {
     const catatan   = document.getElementById('presensi-catatan').value;
     const bintang   = document.getElementById('presensi-bintang').value;
 
+    // 3. Validasi
     if (!tanggal || !muridSel.value) { 
       UI.toast('Tanggal dan murid wajib diisi', 'error'); 
       return; 
@@ -278,6 +301,7 @@ async function saveForm() {
     const muridOpt  = muridSel.options[muridSel.selectedIndex];
     const mentorOpt = mentorSel.options[mentorSel.selectedIndex];
 
+    // 4. Siapkan Payload
     const payload = {
       tanggal,
       id_murid:    muridSel.value,
@@ -285,36 +309,48 @@ async function saveForm() {
       id_mentor:   mentorSel.value,
       nama_mentor: mentorOpt ? mentorOpt.dataset.nama : '',
       program:     muridOpt.dataset.program,
-      status, catatan, bintang: parseInt(bintang) || 0
+      status, 
+      catatan, 
+      bintang: parseInt(bintang) || 0
     };
 
     try {
-      // --- PERBAIKAN: Gunakan innerHTML untuk Spinner ---
       if (btn) { 
         btn.disabled = true; 
-        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+        // Efek loading dengan spinner-sm yang imut
+        btn.innerHTML = id ? 
+            '<div class="spinner spinner-sm"></div> Memperbarui presensi...' : 
+            '<div class="spinner spinner-sm"></div> Mencatat presensi...'; 
       }
 
-      const res = await API.presensi.add(payload);
+      // Gunakan ternary: Jika ada ID berarti update, jika tidak berarti add
+      const res = id ? 
+          await API.presensi.update({ id, ...payload }) : 
+          await API.presensi.add(payload);
       
       if (res.status === 'OK') {
-        UI.toast('Presensi berhasil dicatat', 'success');
+        const pesanSukses = id ? 'Presensi berhasil diperbarui' : 'Presensi berhasil dicatat! ⭐';
+        UI.toast(pesanSukses, 'success');
+        
         UI.closeModal('modal-presensi');
+        
+        // RESET CACHE & REFRESH TABEL
         allData = [];
         isFetched = false;
         load(); 
       } else {
-        UI.toast(res.message || 'Gagal mencatat presensi', 'error');
+        UI.toast(res.message || 'Gagal menyimpan presensi', 'error');
       }
     } catch (e) {
+      console.error("Error Presensi:", e);
       UI.toast('Gagal terhubung ke server', 'error');
     } finally {
       if (btn) { 
         btn.disabled = false; 
-        btn.innerHTML = 'Simpan Presensi'; // Balikin ke teks semula
+        btn.innerHTML = 'Simpan Presensi'; // Balikin teks tombol
       }
     }
-  }
+}
 
   function filterByDate(date) {
     const filtered = date ? allData.filter(p => p.tanggal === date) : allData;
@@ -362,7 +398,7 @@ const PembayaranPage = (() => {
     }
 
     // 2. SPINNER AWAL
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data pembayaran...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pembayaran...</td></tr>';
 
     try {
       // 3. TARIK SEMUA DATA (Murid & SPP biasanya buat dropdown di modal)
@@ -440,58 +476,75 @@ const PembayaranPage = (() => {
 
 
   async function saveForm() {
-
     const btn = document.querySelector('#modal-pembayaran .btn-primary');
-    const muridSel   = document.getElementById('pay-murid');
-    const sppSel     = document.getElementById('pay-spp');
-    const tanggal    = document.getElementById('pay-tanggal').value;
-    const jumlah     = parseFloat(document.getElementById('pay-jumlah').value) || 0;
-    const metode     = document.getElementById('pay-metode').value;
-    const jenis      = document.getElementById('pay-jenis').value;
-    const keterangan = document.getElementById('pay-keterangan').value;
+    
+    // 1. Ambil data dari input field
+    const id          = document.getElementById('pay-id-field')?.value; // Untuk mode Edit
+    const muridSel    = document.getElementById('pay-murid');
+    const sppSel      = document.getElementById('pay-spp');
+    const tanggal     = document.getElementById('pay-tanggal').value;
+    const jumlah      = parseFloat(document.getElementById('pay-jumlah').value) || 0;
+    const metode      = document.getElementById('pay-metode').value;
+    const jenis       = document.getElementById('pay-jenis').value;
+    const keterangan  = document.getElementById('pay-keterangan').value;
 
+    // 2. Validasi
     if (!muridSel.value || jumlah <= 0) { 
-      UI.toast('Murid dan jumlah wajib diisi', 'error'); 
+      UI.toast('Pilih murid dan masukkan jumlah pembayaran yang valid', 'error'); 
       return; 
     }
 
     const muridOpt = muridSel.options[muridSel.selectedIndex];
+    
+    // 3. Siapkan Payload
     const payload = {
       tanggal:    tanggal || new Date().toISOString().split('T')[0],
       id_murid:   muridSel.value,
       nama:       muridOpt.dataset.nama,
-      jenis, jumlah, metode, keterangan,
+      jenis, 
+      jumlah, 
+      metode, 
+      keterangan,
       spp_id:     sppSel ? sppSel.value : ''
     };
 
     try {
-
       if (btn) { 
         btn.disabled = true; 
-        btn.textContent = 'Memproses...'; 
+        // Efek loading spinner-sm yang rapi
+        btn.innerHTML = id ? 
+            '<div class="spinner spinner-sm"></div> Memperbarui data...' : 
+            '<div class="spinner spinner-sm"></div> Memproses pembayaran...'; 
       }
 
-      const res = await API.pembayaran.add(payload);
+      // Gunakan ternary: Update jika ada ID, Add jika tidak ada
+      const res = id ? 
+          await API.pembayaran.update({ id, ...payload }) : 
+          await API.pembayaran.add(payload);
       
       if (res.status === 'OK') {
-        UI.toast('Pembayaran berhasil dicatat', 'success');
+        const pesanSukses = id ? 'Data pembayaran diperbarui' : 'Pembayaran berhasil dicatat! 💸';
+        UI.toast(pesanSukses, 'success');
+        
         UI.closeModal('modal-pembayaran');
+        
+        // RESET CACHE & REFRESH TABEL
         allData = [];
         isFetched = false;
         load(); 
       } else {
-        UI.toast(res.message || 'Gagal menyimpan', 'error');
+        UI.toast(res.message || 'Gagal menyimpan pembayaran', 'error');
       }
     } catch (e) {
-      UI.toast('Server Error!', 'error');
+      console.error("Error Payment:", e);
+      UI.toast('Terjadi kesalahan pada server', 'error');
     } finally {
-
       if (btn) { 
         btn.disabled = false; 
-        btn.textContent = 'Simpan Pembayaran'; 
+        btn.innerHTML = 'Simpan Pembayaran'; // Balikin teks tombol
       }
     }
-  }
+}
   
   return { load, saveForm };
 })();
@@ -515,7 +568,7 @@ const SPPPage = (() => {
     }
 
     // 2. SPINNER AWAL (Pakai colspan="12" karena kolomnya banyak)
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner"></div> Memuat data paket SPP...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data paket SPP...</td></tr>';
 
     try {
       // 3. TARIK DATA (SPP & Murid buat dropdown)
@@ -632,20 +685,25 @@ const SPPPage = (() => {
   }
 
   async function saveForm() {
+    // 1. Ambil ID Field dan Elemen Tombol
     const id = document.getElementById('spp-id-field').value;
+    const btn = document.querySelector('#modal-spp .btn-primary');
+    
+    // 2. Ambil Input Data
     const muridSel = document.getElementById('spp-murid');
     const mulai    = document.getElementById('spp-mulai').value;
     const akhir    = document.getElementById('spp-akhir').value;
     const harga    = parseFloat(document.getElementById('spp-harga').value) || 0;
 
+    // 3. Validasi
     if (!muridSel.value || !mulai || !akhir) { 
       UI.toast('Semua field wajib diisi', 'error'); 
       return; 
     }
 
-    const btn = document.querySelector('#modal-spp .btn-primary');
     const opt = muridSel.options[muridSel.selectedIndex];
 
+    // 4. Siapkan Payload
     const payload = {
       id:            id,
       id_murid:      muridSel.value,
@@ -657,33 +715,42 @@ const SPPPage = (() => {
     };
 
     try {
-
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<div class="spinner"></div> Memproses...';
+        // Gunakan spinner-sm agar rapi dan teks dinamis
+        btn.innerHTML = id ? 
+            '<div class="spinner spinner-sm"></div> Memperbarui paket...' : 
+            '<div class="spinner spinner-sm"></div> Menghitung pertemuan...';
       }
 
+      // Gunakan API sesuai kondisi ID (update atau create)
       const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
       
       if (res.status === 'OK') {
-        const msg = id ? 'Paket SPP diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
+        // Tampilkan jumlah pertemuan hasil hitungan backend jika tambah baru
+        const msg = id ? 'Paket SPP berhasil diperbarui' : 
+                         `Berhasil! Total: ${res.data.total_pertemuan} pertemuan. ✅`;
+        
         UI.toast(msg, 'success');
         UI.closeModal('modal-spp');
+        
+        // RESET CACHE & REFRESH TABEL
         allData = [];
         isFetched = false;
         load(); 
       } else {
-        UI.toast(res.message || 'Gagal memproses paket', 'error');
+        UI.toast(res.message || 'Gagal memproses paket SPP', 'error');
       }
     } catch (e) {
+      console.error("Error SPP:", e);
       UI.toast('Gagal terhubung ke server', 'error');
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = 'Simpan Paket';
+        btn.innerHTML = 'Simpan Paket'; // Balikin teks tombol
       }
     }
-  }
+}
 
  function openAdd() {
     document.getElementById('spp-modal-title').textContent = 'Buat Paket SPP';
@@ -784,7 +851,7 @@ async function deleteSPP(id) {
       return; 
     }
 
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data modul belajar...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data modul belajar...</td></tr>';
 
     try {
       const bukuRes = await API.buku.getAll();
@@ -840,41 +907,64 @@ async function deleteSPP(id) {
   }
 
 async function saveForm() {
+    // 1. Ambil Elemen Tombol dan ID Field
     const btn = document.querySelector('#modal-buku .btn-primary');
     const id = document.getElementById('buku-id-field').value;
+    
+    // 2. Ambil Input Data
     const nama = document.getElementById('buku-nama').value.trim();
     const jenjang = document.getElementById('buku-jenjang').value.trim();
     const program = document.getElementById('buku-program').value.trim();
     const keterangan = document.getElementById('buku-ket').value.trim();
 
-    if (!nama) { UI.toast('Nama modul wajib diisi', 'error'); return; }
+    // 3. Validasi
+    if (!nama) { 
+        UI.toast('Nama modul wajib diisi', 'error'); 
+        return; 
+    }
+
+    // 4. Bungkus Data ke Payload
+    const payload = { 
+        nama, 
+        jenjang, 
+        program, 
+        keterangan 
+    };
 
     try {
       if (btn) { 
         btn.disabled = true; 
-        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
+        // Efek loading spinner-sm dengan teks dinamis
+        btn.innerHTML = id ? 
+            '<div class="spinner spinner-sm"></div> Memperbarui modul...' : 
+            '<div class="spinner spinner-sm"></div> Menambahkan modul...'; 
       }
 
-      // INI KUNCINYA: Harus dibungkus jadi satu variabel bernama payload!
-      const payload = { nama, jenjang, program, keterangan };
-
-      const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
+      // Gunakan ternary: Update jika ada ID, Add jika ID kosong
+      const res = id ? 
+          await API.buku.update({ id, ...payload }) : 
+          await API.buku.add(payload);
       
       if (res.status === 'OK') {
-        UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
+        const pesanSukses = id ? 'Modul berhasil diperbarui' : 'Modul baru berhasil ditambahkan! 📚';
+        UI.toast(pesanSukses, 'success');
+        
         UI.closeModal('modal-buku');
+        
+        // RESET CACHE & REFRESH TABEL
         allData = [];
         isFetched = false;
         load(); 
       } else {
-        UI.toast(res.message || 'Gagal', 'error');
+        UI.toast(res.message || 'Gagal menyimpan modul', 'error');
       }
     } catch (e) {
-      UI.toast('Terjadi kesalahan sistem', 'error');
+      console.error("Error Buku Modul:", e);
+      UI.toast('Gagal terhubung ke server', 'error');
     } finally {
       if (btn) { 
         btn.disabled = false; 
-        btn.innerHTML = 'Simpan'; 
+        btn.innerHTML = 'Simpan'; // Balikin teks tombol
       }
     }
 }
@@ -906,7 +996,7 @@ async function saveForm() {
     return; 
   }
 
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data gaji...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data gaji...</td></tr>';
 
   try {
     // 1. Definisikan gajiRes dan mentorRes
@@ -955,37 +1045,58 @@ async function saveForm() {
   }
 
 async function saveForm() {
-    const btn = document.querySelector('#modal-gaji .btn-primary');
-    const mentorSel  = document.getElementById('gaji-mentor');
+    // 1. Ambil Elemen Tombol dan Input
+    const btn       = document.querySelector('#modal-gaji .btn-primary');
+    const mentorSel = document.getElementById('gaji-mentor');
     const bulan_gaji = document.getElementById('gaji-bulan').value;
     const tgl_bayar  = document.getElementById('gaji-tgl').value;
     const metode     = document.getElementById('gaji-metode').value;
 
+    // 2. Validasi
     if (!mentorSel.value || !bulan_gaji) { 
       UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); 
       return; 
     }
 
     try {
-      if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+      if (btn) { 
+        btn.disabled = true; 
+        // Gunakan spinner-sm agar konsisten dengan modul lainnya
+        btn.innerHTML = '<div class="spinner spinner-sm"></div> Memproses gaji...'; 
+      }
 
-      const res = await API.gaji.record({ id_mentor: mentorSel.value, bulan_gaji, tgl_bayar, metode });
+      // 3. Kirim Data ke API
+      const res = await API.gaji.record({ 
+        id_mentor: mentorSel.value, 
+        bulan_gaji, 
+        tgl_bayar, 
+        metode 
+      });
+
       if (res.status === 'OK') {
         const d = res.data.salary_detail;
-        UI.toast(`Gaji ${d.nama_mentor} berhasil dicatat`, 'success');
+        // Notifikasi lebih personal dengan nama mentor
+        UI.toast(`Gaji ${d.nama_mentor} bulan ${bulan_gaji} berhasil dicatat! 💸`, 'success');
+        
         UI.closeModal('modal-gaji');
+        
+        // --- REFRESH DATA ---
         allData = [];
         isFetched = false;
-        load();
+        load(); 
       } else {
-        UI.toast(res.message || 'Gagal', 'error');
+        UI.toast(res.message || 'Gagal mencatat gaji', 'error');
       }
     } catch (e) {
-      UI.toast('Kesalahan koneksi!', 'error'); // <--- BIAR GAK BINGUNG KALAU SINYAL ILANG
+      console.error("Error Gaji:", e);
+      UI.toast('Terjadi kesalahan koneksi ke server', 'error');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Simpan Penggajian'; }
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = 'Simpan Penggajian'; // Balikin teks tombol
+      }
     }
-  }
+}
 
   return { load, saveForm };
 })();
