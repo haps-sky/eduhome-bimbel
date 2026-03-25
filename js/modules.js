@@ -190,7 +190,7 @@ async function saveForm() {
 
 const PresensiPage = (() => {
   let allData = []; 
-  let isFetched = false; // <--- KUNCI UTAMA: Penanda data sudah pernah ditarik
+  let isFetched = false;
 
   async function load() {
     const tbody = document.getElementById('presensi-tbody');
@@ -204,7 +204,7 @@ const PresensiPage = (() => {
     }
 
     // 2. TAMPILAN AWAL (Hanya jalan sekali seumur hidup aplikasi sebelum di-refresh)
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data presensi...</td></tr>';
 
     try {
       const [presRes, muridRes, mentorRes] = await Promise.all([
@@ -294,6 +294,8 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast('Presensi berhasil dicatat', 'success');
         UI.closeModal('modal-presensi');
+        allData = [];
+        isFetched = false
         load(); 
       } else {
         UI.toast(res.message || 'Gagal mencatat presensi', 'error');
@@ -340,35 +342,39 @@ async function saveForm() {
 
 const PembayaranPage = (() => {
   let allData = [];
-  let sppData = [];
+  let isFetched = false;
 
-async function load() {
-  const tbody = document.getElementById('pay-tbody');
-  if (!tbody) return;
+  async function load() {
+    const tbody = document.getElementById('pay-tbody');
+    if (!tbody) return;
 
-  if (allData.length > 0) {
-    renderTable(allData.slice(-50).reverse());
-  } else {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat pembayaran...</td></tr>';
-  }
+    if (isFetched) {
+      renderTable(allData);
+      return; 
+    }
 
-  try {
-    const [payRes, muridRes, sppRes] = await Promise.all([
-      API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data pembayaran...</td></tr>';
+
+    try {
+      const [payRes, muridRes, sppRes] = await Promise.all([
+        API.pembayaran.getAll(), 
+        API.murid.getAll(), 
+        API.spp.getAll()
     ]);
 
-    if (payRes.status === 'OK') {
-      allData = payRes.data || [];
-      sppData = sppRes.data || []; 
-      const sel = document.getElementById('pay-murid');
-      if (sel && sel.options.length <= 1) {
-        populateMuridDropdown(muridRes.data || []);
+      if (res.status === 'OK') {
+        allData = res.data || [];
+        isFetched = true;
+
+
+        renderTable(allData.slice(-50).reverse());
       }
-      renderTable(allData.slice(-50).reverse());
-      updateSummary();
+
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
     }
-  } catch (e) { console.error(e); }
-}
+  }
 
   function populateMuridDropdown(murid) {
     const sel = document.getElementById('pay-murid');
@@ -453,7 +459,8 @@ async function load() {
       if (res.status === 'OK') {
         UI.toast('Pembayaran berhasil dicatat', 'success');
         UI.closeModal('modal-pembayaran');
-        allData = []; // KOSONGIN CACHE BIAR FRESH
+        allData = [];
+        isFetched = false
         load(); 
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
@@ -636,7 +643,8 @@ async function load() {
         const msg = id ? 'Paket SPP diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
         UI.toast(msg, 'success');
         UI.closeModal('modal-spp');
-        allData = []; // Reset cache biar list SPP langsung urut & fresh
+        allData = [];
+        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal memproses paket', 'error');
@@ -738,32 +746,34 @@ async function deleteSPP(id) {
 // Buku Module
 // ============================================================
 
-const BukuPage = (() => {
+  const BukuPage = (() => {
   let allData = [];
+  let isFetched = false;
 
-async function load() {
+  async function load() {
     const tbody = document.getElementById('buku-tbody');
     if (!tbody) return;
 
-    if (allData && allData.length > 0) {
+    if (isFetched) {
       renderTable(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data modul belajar...</td></tr>';
+      return; 
     }
+
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data modul belajar...</td></tr>';
 
     try {
       const res = await API.buku.getAll();
       if (res.status === 'OK') {
-        allData = (res.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        allData = res.data || [];
+        isFetched = true;
         renderTable(allData);
       }
     } catch (e) {
-      console.error("Gagal update background Buku:", e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
-      }
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
+
 
   function renderTable(data) {
     const rows = data.map(b => `
@@ -828,7 +838,8 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast(id ? 'Modul diperbarui' : 'Modul ditambahkan', 'success');
         UI.closeModal('modal-buku');
-        allData = []; 
+        allData = [];
+        isFetched = false;
         load(); 
       } else {
         UI.toast(res.message || 'Gagal', 'error');
@@ -857,50 +868,37 @@ async function saveForm() {
 // Gaji Module
 // ============================================================
 
-const GajiPage = (() => {
-  let allData = []; // Ini sudah benar, kunci utama memori
+
+  const GajiPage = (() => {
+  let allData = [];
+  let isFetched = false;
 
   async function load() {
     const tbody = document.getElementById('gaji-tbody');
     if (!tbody) return;
 
-    // 1. TAMPILKAN MEMORI INSTAN (Sama kayak MuridPage)
-    // Supaya pas diklik, tabel langsung ada isinya, gak putih polos dulu
-    if (allData.length > 0) {
+    if (isFetched) {
       renderTable(allData);
-    } else {
-      // Hanya tampilkan spinner kalau benar-benar pertama kali buka (allData masih [])
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Menghitung...</td></tr>';
+      return; 
     }
 
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data gaji...</td></tr>';
+
     try {
-      // 2. TARIK DATA FRESH DI BACKGROUND
       const [gajiRes, mentorRes] = await Promise.all([
-        API.gaji.getAll(), 
+          API.gaji.getAll(), 
         API.mentor.getAll()
       ]);
 
-      if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
-        // Simpan ke variabel memori module
-        allData = (gajiRes.data || []).reverse(); 
-        
-        // 3. CEK DROPDOWN: Biar gak kedip pas milih mentor
-        const sel = document.getElementById('gaji-mentor');
-        if (sel && sel.options.length <= 1) {
-          populateMentor(mentorRes.data || []);
-          
-          const tglInput = document.getElementById('gaji-tgl');
-          if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
-        }
-        
-        // 4. UPDATE TABEL SECARA HALUS
+
+      if (res.status === 'OK') {
+        allData = res.data || [];
+        isFetched = true;
         renderTable(allData);
       }
     } catch (e) {
       console.error(e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat.</td></tr>';
-      }
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
 
@@ -944,6 +942,8 @@ async function saveForm() {
         const d = res.data.salary_detail;
         UI.toast(`Gaji ${d.nama_mentor} berhasil dicatat`, 'success');
         UI.closeModal('modal-gaji');
+        allData = [];
+        isFetched = false;
         load();
       } else {
         UI.toast(res.message || 'Gagal', 'error');
