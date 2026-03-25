@@ -660,7 +660,7 @@ async function load() {
     // 5. HITUNG ULANG SESI
     calculateLiveSessions(); 
   }
-  
+
   async function deleteSPP(id) {
   if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
   
@@ -759,18 +759,12 @@ async function saveForm() {
     try {
       if (btn) { 
         btn.disabled = true; 
-        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; // Sekalian pakai spinner ya!
+        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
       }
 
-      // --- KUNCI PERBAIKAN: Bungkus data ke dalam variabel payload ---
-      const payload = { 
-        nama, 
-        jenjang, 
-        program, 
-        keterangan 
-      };
+      // INI KUNCINYA: Harus dibungkus jadi satu variabel bernama payload!
+      const payload = { nama, jenjang, program, keterangan };
 
-      // Sekarang payload sudah ada isinya, gak bakal error lagi!
       const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
       
       if (res.status === 'OK') {
@@ -782,7 +776,6 @@ async function saveForm() {
         UI.toast(res.message || 'Gagal', 'error');
       }
     } catch (e) {
-      console.error(e);
       UI.toast('Terjadi kesalahan sistem', 'error');
     } finally {
       if (btn) { 
