@@ -316,6 +316,52 @@ const SPPPage = (() => {
     allData = sppRes.data || [];
     populateMurid(muridRes.data || []);
     renderTable(allData);
+
+    initLiveCount();
+  }
+
+function initLiveCount() {
+    const inputs = ['spp-murid', 'spp-mulai', 'spp-akhir'];
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', calculateLiveSessions);
+    });
+  }
+
+  async function calculateLiveSessions() {
+    const id_murid = document.getElementById('spp-murid').value;
+    const mulai = document.getElementById('spp-mulai').value;
+    const akhir = document.getElementById('spp-akhir').value;
+    const display = document.getElementById('spp-count-preview');
+
+    if (!id_murid || !mulai || !akhir || !display) return;
+
+    display.innerHTML = 'Menghitung...';
+
+    try {
+      const res = await API.jadwal.getByMurid(id_murid);
+      const hariLes = (res.data || []).map(j => j.hari.toLowerCase());
+
+      if (hariLes.length === 0) {
+        display.textContent = "Total: 0 Sesi (Jadwal kosong)";
+        return;
+      }
+
+      const dayMap = { 'minggu':0, 'senin':1, 'selasa':2, 'rabu':3, 'kamis':4, 'jumat':5, 'sabtu':6 };
+      const targetDays = hariLes.map(h => dayMap[h]);
+      
+      let count = 0;
+      let cur = new Date(mulai);
+      const end = new Date(akhir);
+      
+      while (cur <= end) {
+        if (targetDays.includes(cur.getDay())) count++;
+        cur.setDate(cur.getDate() + 1);
+      }
+      display.textContent = `Total: ${count} Sesi`;
+    } catch (e) {
+      display.textContent = "Gagal menghitung";
+    }
   }
 
 function populateMurid(murid) {
@@ -350,38 +396,43 @@ function populateMurid(murid) {
     UI.renderTable('spp-tbody', rows, 'Belum ada paket SPP');
   }
 
-  async function saveForm() {
+async function saveForm() {
     const muridSel = document.getElementById('spp-murid');
     const mulai    = document.getElementById('spp-mulai').value;
     const akhir    = document.getElementById('spp-akhir').value;
-    const sesi     = parseInt(document.getElementById('spp-sesi').value) || 1;
     const harga    = parseFloat(document.getElementById('spp-harga').value) || 0;
 
-    if (!muridSel.value || !mulai || !akhir) { UI.toast('Semua field wajib diisi', 'error'); return; }
+    if (!muridSel.value || !mulai || !akhir) { 
+      UI.toast('Semua field wajib diisi', 'error'); 
+      return; 
+    }
 
     const opt = muridSel.options[muridSel.selectedIndex];
+
     const payload = {
-      id_murid:        muridSel.value,
-      nama_murid:      opt.dataset.nama,
-      program:         opt.dataset.program,
-      periode_mulai:   mulai,
-      periode_akhir:   akhir,
-      sesi_per_minggu: sesi,
-      harga
+      id_murid:      muridSel.value,
+      nama_murid:    opt.dataset.nama,
+      program:       opt.dataset.program,
+      periode_mulai: mulai,
+      periode_akhir: akhir,
+      harga:         harga
     };
 
     const res = await API.spp.create(payload);
+    
     if (res.status === 'OK') {
-      UI.toast(`Paket SPP dibuat. Total: ${res.data.total_pertemuan} pertemuan (carry-over: ${res.data.carry_over})`, 'success');
+      UI.toast(`Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`, 'success');
       UI.closeModal('modal-spp');
-      load();
+      load(); // Refresh tabel
     } else {
-      UI.toast(res.message || 'Gagal', 'error');
+      UI.toast(res.message || 'Gagal membuat paket', 'error');
     }
   }
 
-  return { load, saveForm };
-})();
+  })();
+
+  // JANGAN LUPA: Daftarkan fungsi preview di return agar bisa dipakai
+  return { load, saveForm, initLiveCount, calculateLiveSessions };
 
 // ============================================================
 // Buku Module

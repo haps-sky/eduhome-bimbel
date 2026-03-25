@@ -552,9 +552,13 @@
         <div class="form-group"><label>Periode Mulai *</label><input type="date" id="spp-mulai"></div>
         <div class="form-group"><label>Periode Akhir *</label><input type="date" id="spp-akhir"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Sesi per Minggu</label><input type="number" id="spp-sesi" value="3" min="1" max="7"></div>
+        <div class="form-row">
         <div class="form-group"><label>Harga Paket (Rp)</label><input type="number" id="spp-harga" placeholder="500000"></div>
+        <div class="form-group" style="display:flex; align-items:flex-end;">
+    <div id="spp-count-preview" style="padding:10px; background:var(--bg-secondary); border-radius:8px; width:100%; text-align:center; font-weight:bold; color:var(--primary);">
+      Total: 0 Sesi
+    </div>
+  </div>
       </div>
       <div class="info-note"><i data-lucide="info"></i> Sisa pertemuan dari paket sebelumnya akan otomatis ditambahkan (carry-over).</div>
     </div>

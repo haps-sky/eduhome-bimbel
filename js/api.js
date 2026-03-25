@@ -35,25 +35,25 @@ async function get(action, params = {}) {
   }
 
 async function post(body) {
-    const user = currentUser();
-    
-    const payload = {
-      ...body,
-      username: user.username || '',
-      role: currentRole()
-    };
+  const user = currentUser();
+  const payload = {
+    ...body,
+    username: user.username || '',
+    role: currentRole()
+  };
 
+  try {
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      mode: 'no-cors', 
-      headers: {
-        'Content-Type': 'text/plain', // Gunakan text/plain untuk memancing CORS
-      },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload) 
     });
 
-    return { status: 'OK', message: 'Data sedang diproses oleh sistem' };
+    return await res.json(); 
+  } catch (e) {
+    console.error('POST Error:', e);
+    return { status: 'ERROR', message: 'Koneksi ke server terputus' };
   }
+}
 
   // AUTH
   const auth = {
@@ -133,5 +133,6 @@ async function post(body) {
   };
 
   return { auth, murid, mentor, jadwal, spp, presensi, pembayaran, gaji, buku, dashboard, logs, currentUser, currentRole };
+  
 })();
 
