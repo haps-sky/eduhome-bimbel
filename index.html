@@ -274,11 +274,10 @@
     </div>
   </div>
 </section>
-
       <section id="page-presensi" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="calendar-check"></i> Presensi</h2>
-          <button type="button" class="btn btn-primary" id="presensi-save-btn" onclick="PresensiPage.saveForm()"></button>
+          <button type="button" class="btn btn-primary" id="btn-tambah-presensi" onclick="PresensiPage.openAdd()" style="display:none">
             <i data-lucide="plus"></i> Catat Presensi
           </button>
         </div>
@@ -299,7 +298,7 @@
       <section id="page-pembayaran" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="credit-card"></i> Pembayaran</h2>
-          <button type="button" class="btn btn-primary" id="pay-save-btn" onclick="PembayaranPage.saveForm()"></button>
+          <button type="button" class="btn btn-primary" id="btn-tambah-pembayaran" onclick="UI.openModal('modal-pembayaran')" style="display:none">
             <i data-lucide="plus"></i> Catat Pembayaran
           </button>
         </div>
@@ -339,23 +338,33 @@
   </div>
 </section>
 
-      <section id="page-buku" class="page-section">
+<section id="page-buku" class="page-section">
+  <!-- Header: Judul di kiri, Tombol di kanan -->
   <div class="page-header">
     <h2><i data-lucide="book-open"></i> Modul Pembelajaran</h2>
-  
     <button type="button" 
             class="btn btn-primary" 
             id="btn-tambah-buku" 
-            onclick="BukuPage.openAdd()" 
-            style="display:none">
+            onclick="BukuPage.openAdd()">
       <i data-lucide="plus"></i> Tambah Modul
     </button>
   </div>
 
+  <!-- Tabel Wrap: Ada Toolbar Pencarian -->
   <div class="table-wrap">
     <div class="table-toolbar">
-      <div class="table-title"><i data-lucide="book-open"></i> Daftar Modul</div>
+      <div class="table-title">
+        <i data-lucide="book-open"></i> Daftar Modul 
+        <span id="buku-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span>
+      </div>
+      <div class="table-controls">
+        <input class="search-input" 
+               type="text" 
+               placeholder="Cari nama modul / program..." 
+               oninput="BukuPage.search(this.value)">
+      </div>
     </div>
+
     <div style="overflow-x:auto">
       <table class="data-table">
         <thead>
@@ -365,18 +374,21 @@
             <th>Jenjang</th>
             <th>Program</th>
             <th>Keterangan</th>
-            <th>Aksi</th>
+            <th style="text-align:center">Aksi</th>
           </tr>
         </thead>
-        <tbody id="buku-tbody"></tbody>
+        <tbody id="buku-tbody">
+          <!-- Data akan diisi oleh JavaScript -->
+        </tbody>
       </table>
     </div>
   </div>
 </section>
+
       <section id="page-gaji" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="banknote"></i> Penggajian Mentor</h2>
-          <button class="btn btn-primary" id="btn-bayar-gaji" onclick="GajiPage.openAdd()" style="display:none">
+          <button class="btn btn-primary" id="btn-bayar-gaji" onclick="UI.openModal('modal-gaji')" style="display:none">
             <i data-lucide="plus"></i> Bayar Gaji
           </button>
         </div>
@@ -503,6 +515,10 @@
       <input type="hidden" id="mentor-id-field">
       <div class="form-group"><label>Nama Mentor *</label><input type="text" id="mentor-nama" placeholder="Nama lengkap"></div>
       <div class="form-row">
+        <div class="form-group"><label>Jenis Kelamin</label><select id="mentor-jk"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+        <div class="form-group"><label>Kontak/WA</label><input type="text" id="mentor-kontak" placeholder="0812..."></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label>Program</label><input type="text" id="mentor-program" placeholder="Matematika, dll"></div>
         <div class="form-group"><label>Status</label><select id="mentor-status"><option value="AKTIF">Aktif</option><option value="NONAKTIF">Non-Aktif</option></select></div>
       </div>
@@ -600,7 +616,7 @@
 
 <div id="modal-spp" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3 >Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
+    <div class="modal-header"><h3 id="spp-modal-title">Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
     <div class="modal-body"><input type="hidden" id="spp-id-field">
       <div class="form-group"><label>Murid *</label><select id="spp-murid"><option value="">-- Pilih Murid --</option></select></div>
       <div class="form-row">
@@ -695,7 +711,15 @@
 
 <script>
 function applyAdminButtons(role) {
-  const adminBtns = ['btn-tambah-murid','btn-tambah-mentor','btn-tambah-presensi','btn-buat-spp','btn-bayar-gaji'];
+  const adminBtns = [
+    'btn-tambah-murid',
+    'btn-tambah-mentor',
+    'btn-tambah-presensi',
+    'btn-tambah-pembayaran',
+    'btn-buat-spp',
+    'btn-tambah-buku',
+    'btn-bayar-gaji'
+  ];
   adminBtns.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (role === 'ADMIN') ? 'inline-flex' : 'none';
