@@ -22,7 +22,7 @@ async function load() {
       ]);
 
       if (muridRes.status === 'OK') {
-        allData = muridRes.data || [];
+        allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
         // 3. Update tabel secara halus dengan data paling baru
         renderTable(allData);
         updateSummary(allData);
@@ -163,7 +163,7 @@ async function load() {
 
 
 async function openEdit(id) {
-  
+
   const m = allData.find(x => x.id === id);
   if (!m) return;
 

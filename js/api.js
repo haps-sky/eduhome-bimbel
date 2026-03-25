@@ -1,4 +1,11 @@
 const API = (() => {
+
+  const logout = () => {
+    sessionStorage.removeItem('eduhome_user');
+    localStorage.removeItem('eduhome_user');
+    window.location.href = 'index.html'; // atau login.html
+  };
+
   const BASE_URL = window.EDUHOME_API_URL || 'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
 
   function currentRole() {
@@ -45,13 +52,14 @@ async function post(body) {
   try {
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      body: JSON.stringify(payload) 
+      body: JSON.stringify(payload)
+
     });
 
     return await res.json(); 
   } catch (e) {
     console.error('POST Error:', e);
-    return { status: 'ERROR', message: 'Koneksi ke server terputus' };
+    return { status: 'ERROR', message: 'Gagal terhubung ke server. Cek koneksi atau coba lagi.' };
   }
 }
 
@@ -132,7 +140,7 @@ async function post(body) {
     getAll: () => get('getLogs')
   };
 
-  return { auth, murid, mentor, jadwal, spp, presensi, pembayaran, gaji, buku, dashboard, logs, currentUser, currentRole };
+  return { auth, murid, mentor, jadwal, spp, presensi, pembayaran, gaji, buku, dashboard, logs, currentUser, currentRole, logout };
   
 })();
 
