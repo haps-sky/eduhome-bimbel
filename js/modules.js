@@ -68,18 +68,43 @@ const MentorPage = (() => {
     }
   }
 
-  function openAdd() {
-    ['mentor-id-field','mentor-nama','mentor-program','mentor-fee-anak','mentor-fee-harian'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
+// 1. Kita buat fungsi khusus buat bersih-bersih (biar rapi)
+  function clearForm() {
+    ['mentor-nama', 'mentor-program', 'mentor-fee-anak', 'mentor-fee-harian'].forEach(id => {
+      const el = document.getElementById(id); 
+      if (el) el.value = '';
     });
-    document.getElementById('mentor-status').value = 'AKTIF';
-    document.getElementById('mentor-modal-title').textContent = 'Tambah Mentor';
+    
+    // Set status default ke AKTIF
+    const status = document.getElementById('mentor-status');
+    if (status) status.value = 'AKTIF';
+  }
+
+  // 2. Fungsi openAdd jadi lebih pendek dan manis
+  function openAdd() {
+    clearForm(); // Panggil si tukang bersih-bersih
+    
+    document.getElementById('mentor-modal-title').textContent = 'Tambah Mentor Baru';
+    document.getElementById('mentor-id-field').value = ''; // ID dikosongkan karena data baru
+    
     UI.openModal('modal-mentor');
   }
 
-  function openEdit(id) {
+async function openEdit(id) {
+    // 1. CEK DATA: Kalau memori kosong (allData = []), tarik data dulu
+    if (allData.length === 0) {
+      UI.toast('Memuat data mentor...', 'info');
+      await load(); // Tunggu sampai data ditarik dari Google Sheets
+    }
+
+    // 2. CARI BARANGNYA
     const m = allData.find(x => x.id === id);
-    if (!m) return;
+    if (!m) {
+      UI.toast('Data mentor tidak ditemukan', 'error');
+      return;
+    }
+
+    // 3. ISI FORM (Sesuai kode kamu, ini sudah urutan yang benar)
     document.getElementById('mentor-modal-title').textContent = 'Edit Mentor';
     document.getElementById('mentor-id-field').value   = m.id;
     document.getElementById('mentor-nama').value        = m.nama;
@@ -87,6 +112,8 @@ const MentorPage = (() => {
     document.getElementById('mentor-status').value      = m.status;
     document.getElementById('mentor-fee-anak').value    = m.fee_anak;
     document.getElementById('mentor-fee-harian').value  = m.fee_harian;
+
+    // 4. BARU BUKA PINTUNYA (Modal muncul dengan data sudah terisi)
     UI.openModal('modal-mentor');
   }
 
@@ -165,44 +192,43 @@ const PresensiPage = (() => {
   let allData = [];
 
 async function load() {
-    const tbody = document.getElementById('presensi-tbody');
-    if (!tbody) return;
+  const tbody = document.getElementById('presensi-tbody');
+  if (!tbody) return;
 
-    // 1. CEK MEMORI: Kalau sudah ada data, langsung tampilin (GAK PAKE LOADING)
-    if (allData && allData.length > 0) {
-      renderTable(allData.slice(-50).reverse());
-    } else {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
+  // 1. TAMPILKAN MEMORI DULU (Cepat & Tanpa Kedip)
+  if (allData && allData.length > 0) {
+    renderTable(allData.slice(-50).reverse());
+  } else {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
+  }
+
+  try {
+    // 2. AMBIL DATA DI BACKGROUND
+    const [presRes, muridRes, mentorRes] = await Promise.all([
+      API.presensi.getAll(),
+      API.murid.getAll(),
+      API.mentor.getAll()
+    ]);
+    
+    allData = presRes.data || [];
+    populateDropdowns(muridRes.data || [], mentorRes.data || []);
+    
+    // 3. UPDATE TABEL SECARA HALUS
+    renderTable(allData.slice(-50).reverse()); 
+
+    // --- PERBAIKAN: Isi tanggal HANYA jika inputnya masih kosong ---
+    const tglInput = document.getElementById('presensi-tanggal');
+    if (tglInput && !tglInput.value) { // Cek: Kalau belum ada isinya, baru kasih 'today'
+      tglInput.value = new Date().toISOString().split('T')[0];
     }
-
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // 2. AMBIL DATA TERBARU: Tetap di background biar data sinkron
-      const [presRes, muridRes, mentorRes] = await Promise.all([
-        API.presensi.getAll(),
-        API.murid.getAll(),
-        API.mentor.getAll()
-      ]);
-      
-      allData = presRes.data || [];
-      
-      // Isi dropdown murid & mentor
-      populateDropdowns(muridRes.data || [], mentorRes.data || []);
-      
-      // 3. AUTO SORT: Ambil 50 data terakhir, lalu balik (terbaru di atas)
-      renderTable(allData.slice(-50).reverse()); 
-      
-      const tglInput = document.getElementById('presensi-tanggal');
-      if (tglInput) tglInput.value = today;
-      
-    } catch (e) {
-      console.error("Gagal update presensi:", e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
-      }
+    
+  } catch (e) {
+    console.error("Gagal update presensi:", e);
+    if (allData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
+}
 
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
@@ -229,7 +255,6 @@ async function load() {
   }
 
 async function saveForm() {
-    // 1. PENTING: Ambil tombol simpan biar bisa kita "matikan" sementara
     const btn = document.querySelector('#modal-presensi .btn-primary');
 
     const tanggal   = document.getElementById('presensi-tanggal').value;
@@ -258,10 +283,10 @@ async function saveForm() {
     };
 
     try {
-      // 2. ANTI DOUBLE CLICK: Matikan tombol pas proses kirim data
+      // --- PERBAIKAN: Gunakan innerHTML untuk Spinner ---
       if (btn) { 
         btn.disabled = true; 
-        btn.textContent = 'Menyimpan...'; 
+        btn.innerHTML = '<div class="spinner"></div> Menyimpan...'; 
       }
 
       const res = await API.presensi.add(payload);
@@ -269,8 +294,6 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast('Presensi berhasil dicatat', 'success');
         UI.closeModal('modal-presensi');
-        
-        // 3. RESET MEMORI: Kosongkan allData biar load() narik data terbaru dari Sheets
         allData = []; 
         load(); 
       } else {
@@ -279,10 +302,9 @@ async function saveForm() {
     } catch (e) {
       UI.toast('Gagal terhubung ke server', 'error');
     } finally {
-      // 4. HIDUPKAN LAGI: Biar tombol bisa dipakai lagi nanti
       if (btn) { 
         btn.disabled = false; 
-        btn.textContent = 'Simpan Presensi'; 
+        btn.innerHTML = 'Simpan Presensi'; // Balikin ke teks semula
       }
     }
   }
