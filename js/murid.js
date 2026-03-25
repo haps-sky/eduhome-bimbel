@@ -281,34 +281,48 @@ async function saveForm() {
 }
 
 async function deleteMurid(id, nama) {
+    // 1. Konfirmasi dulu
+    if (!confirm(`Hapus murid "${nama}"? Semua jadwal terkait akan ikut terhapus.`)) return;
 
-  if (!confirm(`Hapus murid "${nama}"?`)) return;
+    // 2. Cari tombol yang diklik (biar loading-nya muncul di situ)
+    // Kita cari button yang punya fungsi deleteMurid dengan ID ini
+    const btn = document.querySelector(`button[onclick*="deleteMurid('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : ''; // Simpan icon sampah aslinya
 
-  const btn = event.target.closest('button');
-  const oldHTML = btn.innerHTML;
+    try {
+        if (btn) {
+            btn.disabled = true;
+            // Kita ganti icon sampah jadi spinner + teks
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            btn.style.width = 'auto'; // Biar muat teksnya
+            btn.style.padding = '0 10px';
+        }
 
-  // loading hanya di tombol
-  btn.innerHTML = 'Menghapus...';
-  btn.disabled = true;
+        const res = await API.murid.delete(id);
 
-  try {
-
-    const res = await API.murid.delete(id);
-
-    if (res.status === 'OK') {
-      UI.toast('Murid berhasil dihapus', 'success');
-      load();
-    } else {
-      UI.toast('Gagal menghapus', 'error');
-      btn.innerHTML = oldHTML;
-      btn.disabled = false;
+        if (res.status === 'OK') {
+            UI.toast(`Data "${nama}" berhasil dihapus`, 'success');
+            
+            // --- RESET CACHE AGAR TABEL REFRESH ---
+            allData = [];
+            isFetched = false;
+            load(); 
+        } else {
+            UI.toast(res.message || 'Gagal menghapus', 'error');
+            // Balikin tombol kalau gagal
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
     }
-
-  } catch (e) {
-    UI.toast('Error: ' + e.message, 'error');
-    btn.innerHTML = oldHTML;
-    btn.disabled = false;
-  }
 }
 
 async function viewSchedule(id, nama) {
