@@ -4,32 +4,37 @@
 
 const MentorPage = (() => {
   let allData = [];
+  let isFetched = false; // <--- Kunci utama biar ga loading terus
 
   async function load() {
     const tbody = document.getElementById('mentor-tbody');
     if (!tbody) return;
 
-    // 1. TAMPILKAN MEMORI DULU (Biar ga delay)
-    if (allData && allData.length > 0) {
+    // 1. CEK KUNCI: Kalau sudah pernah ditarik, langsung tampilkan (Instan!)
+    if (isFetched) {
       renderTable(allData);
       updateSummary(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data mentor...</td></tr>';
+      return; // STOP! Jangan munculin spinner lagi
     }
 
+    // 2. TAMPILAN AWAL: Spinner cuma muncul sekali seumur hidup (sebelum refresh)
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data mentor...</td></tr>';
+
     try {
-      // 2. AMBIL DATA DARI SERVER
+      // 3. TARIK DATA FRESH
       const res = await API.mentor.getAll();
+      
       if (res.status === 'OK') {
         allData = (res.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        isFetched = true; // KUNCI PINTU: Berhasil ditarik
+        
         renderTable(allData);
         updateSummary(allData);
       }
     } catch (e) {
-      console.error(e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
-      }
+      console.error("Error Load Mentor:", e);
+      // Kalau gagal total, kasih tau user
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data mentor.</td></tr>';
     }
   }
 
@@ -145,7 +150,8 @@ async function saveForm() {
       if (res.status === 'OK') {
         UI.toast(id ? 'Mentor diperbarui' : 'Mentor ditambahkan', 'success');
         UI.closeModal('modal-mentor');
-        allData = []; // Kosongin cache biar data fresh ditarik
+        allData = [];
+        isFetched = false;
         load();
       } else {
         UI.toast(res.message || 'Gagal menyimpan', 'error');
@@ -343,35 +349,47 @@ async function saveForm() {
 const PembayaranPage = (() => {
   let allData = [];
   let isFetched = false;
+  let sppData = []; // Tambahkan ini kalau kamu butuh data SPP untuk dropdown/validasi
 
   async function load() {
     const tbody = document.getElementById('pay-tbody');
     if (!tbody) return;
 
+    // 1. KUNCI ANTI-LOADING (Sesuai Template Sakti)
     if (isFetched) {
-      renderTable(allData);
+      renderTable(allData.slice(-50).reverse());
       return; 
     }
 
+    // 2. SPINNER AWAL
     tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data pembayaran...</td></tr>';
 
     try {
+      // 3. TARIK SEMUA DATA (Murid & SPP biasanya buat dropdown di modal)
       const [payRes, muridRes, sppRes] = await Promise.all([
         API.pembayaran.getAll(), 
         API.murid.getAll(), 
         API.spp.getAll()
-    ]);
+      ]);
 
-      if (res.status === 'OK') {
-        allData = res.data || [];
+      // ⚠️ PERBAIKAN DI SINI: Pakai payRes, bukan res!
+      if (payRes.status === 'OK') {
+        allData = payRes.data || [];
+        sppData = sppRes.data || []; // Simpan data SPP jika perlu
         isFetched = true;
 
+        // 4. ISI DROPDOWN MURID (Biar kalau catat bayar, nama muridnya muncul)
+        const sel = document.getElementById('pay-murid');
+        if (sel && sel.options.length <= 1) {
+          populateMuridDropdown(muridRes.data || []);
+        }
 
         renderTable(allData.slice(-50).reverse());
+        // updateSummary(); // Aktifkan jika ada fungsi rekap harian
       }
 
     } catch (e) {
-      console.error(e);
+      console.error("Error Load Pembayaran:", e);
       tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
@@ -616,7 +634,6 @@ async function load() {
       return; 
     }
 
-    // 1. TANGKAP TOMBOLNYA
     const btn = document.querySelector('#modal-spp .btn-primary');
     const opt = muridSel.options[muridSel.selectedIndex];
 
@@ -631,7 +648,7 @@ async function load() {
     };
 
     try {
-      // 2. AKTIFKAN LOADING & SPINNER
+
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner"></div> Memproses...';
@@ -652,7 +669,6 @@ async function load() {
     } catch (e) {
       UI.toast('Gagal terhubung ke server', 'error');
     } finally {
-      // 3. KEMBALIKAN TOMBOL KE NORMAL
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = 'Simpan Paket';
@@ -868,39 +884,46 @@ async function saveForm() {
 // Gaji Module
 // ============================================================
 
-
   const GajiPage = (() => {
   let allData = [];
   let isFetched = false;
 
   async function load() {
-    const tbody = document.getElementById('gaji-tbody');
-    if (!tbody) return;
+  const tbody = document.getElementById('gaji-tbody');
+  if (!tbody) return;
 
-    if (isFetched) {
-      renderTable(allData);
-      return; 
-    }
-
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data gaji...</td></tr>';
-
-    try {
-      const [gajiRes, mentorRes] = await Promise.all([
-          API.gaji.getAll(), 
-        API.mentor.getAll()
-      ]);
-
-
-      if (res.status === 'OK') {
-        allData = res.data || [];
-        isFetched = true;
-        renderTable(allData);
-      }
-    } catch (e) {
-      console.error(e);
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
-    }
+  if (isFetched) {
+    renderTable(allData);
+    return; 
   }
+
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Memuat data gaji...</td></tr>';
+
+  try {
+    // 1. Definisikan gajiRes dan mentorRes
+    const [gajiRes, mentorRes] = await Promise.all([
+      API.gaji.getAll(), 
+      API.mentor.getAll()
+    ]);
+
+    // 2. CEK gajiRes (Bukan 'res' saja!)
+    if (gajiRes.status === 'OK') {
+      allData = gajiRes.data || [];
+      isFetched = true;
+
+      // 3. Tambahkan logika populate mentor jika perlu (biar dropdown gak kosong)
+      const sel = document.getElementById('gaji-mentor');
+      if (sel && sel.options.length <= 1) {
+        populateMentor(mentorRes.data || []);
+      }
+
+      renderTable(allData);
+    }
+  } catch (e) {
+    console.error("Error Load Gaji:", e);
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data.</td></tr>';
+  }
+}
 
   function populateMentor(mentors) {
     const sel = document.getElementById('gaji-mentor');
