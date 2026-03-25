@@ -195,7 +195,7 @@ async function load() {
   const tbody = document.getElementById('presensi-tbody');
   if (!tbody) return;
 
-  // 1. TAMPILKAN MEMORI DULU (Cepat & Tanpa Kedip)
+  // 1. Tampilkan memori instan
   if (allData && allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
   } else {
@@ -203,7 +203,6 @@ async function load() {
   }
 
   try {
-    // 2. AMBIL DATA DI BACKGROUND
     const [presRes, muridRes, mentorRes] = await Promise.all([
       API.presensi.getAll(),
       API.murid.getAll(),
@@ -211,22 +210,22 @@ async function load() {
     ]);
     
     allData = presRes.data || [];
-    populateDropdowns(muridRes.data || [], mentorRes.data || []);
     
-    // 3. UPDATE TABEL SECARA HALUS
-    renderTable(allData.slice(-50).reverse()); 
-
-    // --- PERBAIKAN: Isi tanggal HANYA jika inputnya masih kosong ---
-    const tglInput = document.getElementById('presensi-tanggal');
-    if (tglInput && !tglInput.value) { // Cek: Kalau belum ada isinya, baru kasih 'today'
-      tglInput.value = new Date().toISOString().split('T')[0];
+    // 2. KUNCI: Hanya isi dropdown jika dropdown masih kosong (mencegah kedip)
+    const muridSel = document.getElementById('presensi-murid');
+    if (muridSel && muridSel.options.length <= 1) { 
+      populateDropdowns(muridRes.data || [], mentorRes.data || []);
+      
+      // Set tanggal hari ini HANYA sekali saat pertama kali menu dibuka
+      const tglInput = document.getElementById('presensi-tanggal');
+      if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
     }
+    
+    // 3. Update tabel tanpa reset input
+    renderTable(allData.slice(-50).reverse()); 
     
   } catch (e) {
     console.error("Gagal update presensi:", e);
-    if (allData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
-    }
   }
 }
 
@@ -325,43 +324,43 @@ const PembayaranPage = (() => {
   let allData = [];
   let sppData = [];
 
+// Ganti fungsi load() di PembayaranPage:
 async function load() {
-    const tbody = document.getElementById('pay-tbody');
-    if (!tbody) return;
+  const tbody = document.getElementById('pay-tbody');
+  if (!tbody) return;
 
-    // 1. TAMPILKAN DARI MEMORI (BIAR INSTAN)
-    if (allData && allData.length > 0) {
-      renderTable(allData.slice(-50).reverse());
-      updateSummary();
-    } else {
-      // Spinner cuma buat tamu pertama (pas data masih kosong)
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data pembayaran...</td></tr>';
-    }
+  if (allData && allData.length > 0) {
+    renderTable(allData.slice(-50).reverse());
+  }
 
-    try {
-      // 2. AMBIL DATA TERBARU DI BACKGROUND
-      const [payRes, muridRes, sppRes] = await Promise.all([
-        API.pembayaran.getAll(),
-        API.murid.getAll(),
-        API.spp.getAll()
-      ]);
+  try {
+    const [payRes, muridRes, sppRes] = await Promise.all([
+      API.pembayaran.getAll(),
+      API.murid.getAll(),
+      API.spp.getAll()
+    ]);
 
-      if (payRes.status === 'OK') {
-        allData = payRes.data || [];
-        sppData = sppRes.data || []; // Simpan data SPP buat dropdown nanti
-        
+    if (payRes.status === 'OK') {
+      allData = payRes.data || [];
+      sppData = sppRes.data || []; 
+      
+      // KUNCI: Cek dropdown murid dulu
+      const sel = document.getElementById('pay-murid');
+      if (sel && sel.options.length <= 1) {
         populateMuridDropdown(muridRes.data || []);
         
-        renderTable(allData.slice(-50).reverse());
-        updateSummary();
+        // Set tanggal default pembayaran hanya jika kosong
+        const tglInput = document.getElementById('pay-tanggal');
+        if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
       }
-    } catch (e) {
-      console.error("Gagal update background Pembayaran:", e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data keuangan.</td></tr>';
-      }
+      
+      renderTable(allData.slice(-50).reverse());
+      updateSummary();
     }
+  } catch (e) {
+    console.error("Gagal update Pembayaran:", e);
   }
+}
 
   function populateMuridDropdown(murid) {
     const sel = document.getElementById('pay-murid');
@@ -851,33 +850,39 @@ async function saveForm() {
 // ============================================================
 
 const GajiPage = (() => {
+a// Ganti fungsi load() di GajiPage:
 async function load() {
-    // 1. PAGAR: Cek dulu, ada nggak elemen tabelnya di halaman ini?
-    const tbody = document.getElementById('gaji-tbody');
-    if (!tbody) return; // Kalau nggak ada, BERHENTI di sini. Jangan bebani server.
+  const tbody = document.getElementById('gaji-tbody');
+  if (!tbody) return;
 
-    // 2. SPINNER: Kasih tanda kalau lagi loading biar user gak bingung
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner"></div> Menghitung gaji mentor...</td></tr>';
+  // 1. Jika sudah ada data di memori, jangan kasih spinner (biar gak kedip)
+  // Catatan: Jika GajiPage belum punya variabel allData, buat di atas: let allData = [];
 
-    try {
-      // 3. AMBIL DATA: Pakai Promise.all biar narik Gaji & Mentor barengan (paralel)
-      const [gajiRes, mentorRes] = await Promise.all([
-        API.gaji.getAll(), 
-        API.mentor.getAll()
-      ]);
+  try {
+    const [gajiRes, mentorRes] = await Promise.all([
+      API.gaji.getAll(), 
+      API.mentor.getAll()
+    ]);
 
-      if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
-        // 4. SORTING: Gaji biasanya paling enak dilihat yang terbaru di atas (Reverse)
-        const dataGaji = (gajiRes.data || []).reverse();
-        
-        renderTable(dataGaji);
+    if (gajiRes.status === 'OK' && mentorRes.status === 'OK') {
+      const dataGaji = (gajiRes.data || []).reverse();
+      
+      // 2. KUNCI: Cek dropdown mentor
+      const sel = document.getElementById('gaji-mentor');
+      if (sel && sel.options.length <= 1) {
         populateMentor(mentorRes.data || []);
+        
+        // Set tanggal bayar default
+        const tglInput = document.getElementById('gaji-tgl');
+        if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
       }
-    } catch (e) {
-      console.error("Gagal load Gaji:", e);
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat data penggajian.</td></tr>';
+      
+      renderTable(dataGaji);
     }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Gagal memuat.</td></tr>';
   }
+}
 
   function populateMentor(mentors) {
     const sel = document.getElementById('gaji-mentor');
