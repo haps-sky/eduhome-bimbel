@@ -645,14 +645,19 @@ async function load() {
   }
 
   async function openEdit(id) {
-    // 1. LANGSUNG BUKA MODALNYA DULU (Admin seneng karena cepet)
+    // 1. LANGSUNG BUKA MODAL
     document.getElementById('spp-modal-title').textContent = 'Edit Paket SPP';
     UI.openModal('modal-spp');
 
-    // 2. CEK DATA: Kalau memori kosong, paksa tarik data fresh
-    if (allData.length === 0) {
+    const muridSel = document.getElementById('spp-murid');
+    
+    // 2. MODIFIKASI DI SINI:
+    // Jangan cuma cek allData, tapi cek apakah dropdown murid sudah ada isinya atau belum
+    if (allData.length === 0 || (muridSel && muridSel.options.length <= 1)) {
       const display = document.getElementById('spp-count-preview');
-      if (display) display.innerHTML = '<span class="spinner"></span> Memuat data...';
+      if (display) display.innerHTML = '<span class="spinner"></span> Sinkronisasi data...';
+      
+      // Paksa load ulang untuk mastiin dropdown murid & allData SPP beneran sinkron
       await load(); 
     }
 
@@ -664,34 +669,38 @@ async function load() {
       return;
     }
 
-    // 4. BARU ISI KOTAK-KOTAKNYA (Value)
+    // 4. ISI KOTAK-KOTAKNYA
     document.getElementById('spp-id-field').value = s.id; 
     
-    const muridSel = document.getElementById('spp-murid');
     if (muridSel) {
-      muridSel.value = s.id_murid;
-      muridSel.disabled = true; // Kunci murid pas edit
+      // Kita kasih delay 10ms (sangat sebentar) biar browser sempet ngerender dropdown
+      setTimeout(() => {
+        muridSel.value = s.id_murid;
+        muridSel.disabled = true; 
+        
+        // PENTING: Panggil hitung sesi SETELAH value murid beneran kepasang
+        calculateLiveSessions(); 
+      }, 50);
     }
     
     document.getElementById('spp-mulai').value = s.periode_mulai;
     document.getElementById('spp-akhir').value = s.periode_akhir;
     document.getElementById('spp-harga').value = s.harga;
-    
-    // 5. HITUNG ULANG SESI
-    calculateLiveSessions(); 
   }
 
-  async function deleteSPP(id) {
-  if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
-  
-  const res = await API.spp.delete(id);
-  if (res.status === 'OK') {
-    UI.toast('Paket berhasil dihapus', 'success');
-    load();
-  } else {
-    UI.toast(res.message || 'Gagal menghapus', 'error');
+async function deleteSPP(id) {
+    if (!confirm(`Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`)) return;
+    
+    const res = await API.spp.delete(id);
+    if (res.status === 'OK') {
+      UI.toast('Paket berhasil dihapus', 'success');
+      
+      allData = [];
+      load(); 
+    } else {
+      UI.toast(res.message || 'Gagal menghapus', 'error');
+    }
   }
-}
 
   return { load, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions };
 })();
