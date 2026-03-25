@@ -193,46 +193,30 @@ const PresensiPage = (() => {
   let isFetched = false;
 
   async function load() {
-    const tbody = document.getElementById('presensi-tbody');
-    if (!tbody) return;
+  const tbody = document.getElementById('presensi-tbody');
+  if (!tbody) return;
 
-    // 1. TAMPILKAN MEMORI DULU
-    if (allData && allData.length > 0) {
-      renderTable(allData.slice(-50).reverse());
-      
-      // KUNCI: Jika sudah pernah fetch sukses, STOP di sini.
-      // Ini yang bikin pindah menu jadi instan tanpa loading background.
-      if (isFetched) return; 
-    } else {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat data presensi...</td></tr>';
-    }
-
-    try {
-      // 2. AMBIL DATA (Hanya jalan jika isFetched masih false)
-      const [presRes, muridRes, mentorRes] = await Promise.all([
-        API.presensi.getAll(),
-        API.murid.getAll(),
-        API.mentor.getAll()
-      ]);
-      
-      if (presRes.status === 'OK') {
-        allData = presRes.data || [];
-        isFetched = true; // Tandai sudah sukses
-        
-        const muridSel = document.getElementById('presensi-murid');
-        if (muridSel && muridSel.options.length <= 1) { 
-          populateDropdowns(muridRes.data || [], mentorRes.data || []);
-        }
-        
-        renderTable(allData.slice(-50).reverse()); 
-      }
-    } catch (e) {
-      console.error("Gagal update presensi:", e);
-      if (allData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
-      }
-    }
+  if (allData.length > 0) {
+    renderTable(allData.slice(-50).reverse());
+  } else {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat presensi...</td></tr>';
   }
+
+  try {
+    const [presRes, muridRes, mentorRes] = await Promise.all([
+      API.presensi.getAll(), API.murid.getAll(), API.mentor.getAll()
+    ]);
+    
+    if (presRes.status === 'OK') {
+      allData = presRes.data || [];
+      const ms = document.getElementById('presensi-murid');
+      if (ms && ms.options.length <= 1) { 
+        populateDropdowns(muridRes.data || [], mentorRes.data || []);
+      }
+      renderTable(allData.slice(-50).reverse()); 
+    }
+  } catch (e) { console.error(e); }
+}
 
   function populateDropdowns(murid, mentor) {
     const ms = document.getElementById('presensi-murid');
@@ -348,42 +332,32 @@ const PembayaranPage = (() => {
   let allData = [];
   let sppData = [];
 
-// Ganti fungsi load() di PembayaranPage:
 async function load() {
   const tbody = document.getElementById('pay-tbody');
   if (!tbody) return;
 
-  if (allData && allData.length > 0) {
+  if (allData.length > 0) {
     renderTable(allData.slice(-50).reverse());
+  } else {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner"></div> Memuat pembayaran...</td></tr>';
   }
 
   try {
     const [payRes, muridRes, sppRes] = await Promise.all([
-      API.pembayaran.getAll(),
-      API.murid.getAll(),
-      API.spp.getAll()
+      API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
     ]);
 
     if (payRes.status === 'OK') {
       allData = payRes.data || [];
       sppData = sppRes.data || []; 
-      
-      // KUNCI: Cek dropdown murid dulu
       const sel = document.getElementById('pay-murid');
       if (sel && sel.options.length <= 1) {
         populateMuridDropdown(muridRes.data || []);
-        
-        // Set tanggal default pembayaran hanya jika kosong
-        const tglInput = document.getElementById('pay-tanggal');
-        if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
       }
-      
       renderTable(allData.slice(-50).reverse());
       updateSummary();
     }
-  } catch (e) {
-    console.error("Gagal update Pembayaran:", e);
-  }
+  } catch (e) { console.error(e); }
 }
 
   function populateMuridDropdown(murid) {
