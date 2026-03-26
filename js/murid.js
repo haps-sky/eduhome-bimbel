@@ -4,22 +4,23 @@
   let allData = [];
   let isFetched = false;
 
-  // Tambahkan parameter forceRefresh = false
+ // Tambahkan default parameter false
 async function load(forceRefresh = false) {
     const tbody = document.getElementById('murid-tbody');
     if (!tbody) return;
 
-    // MODIFIKASI: Jika bukan paksa refresh DAN data sudah ada, pakai data lokal saja
-    if (!forceRefresh && isFetched) {
+    // 1. STRATEGI INSTAN: Jika tidak dipaksa refresh & data sudah ada di memori, pakai itu dulu
+    if (!forceRefresh && allData && allData.length > 0) {
       renderTable(allData);
       updateSummary(allData);
-      return;
+      // Kita tetap tarik data di background (silent update) tanpa ganggu user
+    } else {
+      // Tampilkan loading hanya jika memori kosong atau sedang dipaksa refresh
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data terbaru...</td></tr>';
     }
 
-    // Tampilkan loading jika benar-benar akan menarik data dari server
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data murid...</td></tr>';
-
     try {
+      // 2. Ambil data fresh dari Google Sheets
       const [muridRes, mentorRes] = await Promise.all([
         API.murid.getAll(), 
         API.mentor.getAll()
@@ -27,14 +28,21 @@ async function load(forceRefresh = false) {
 
       if (muridRes.status === 'OK') {
         allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
-        isFetched = true; // Tandai data sudah ditarik
+        isFetched = true; // Tandai bahwa data sudah sinkron dengan server
         
         renderTable(allData);
         updateSummary(allData);
       }
+      
+      if (mentorRes.status === 'OK') {
+        populateMentorDropdown(mentorRes.data || []);
+      }
     } catch (e) {
-      console.error("Error Load Murid:", e);
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Gagal memuat data murid.</td></tr>';
+      console.error("Gagal update data:", e);
+      // Jika memori kosong baru tampilkan error di tabel
+      if (!allData || allData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Gagal terhubung ke server.</td></tr>';
+      }
     }
 }
 
@@ -238,14 +246,13 @@ async function saveForm() {
         }
     });
 
-    const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status };
+    const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status, jadwal: jadwalData };
     const btn = document.getElementById('murid-save-btn');
 
-    // --- LOADING DINAMIS ---
-    if (btn) {
-        btn.disabled = true;
-        const label = id ? 'Mengedit data...' : 'Menambahkan data...';
-        btn.innerHTML = `<div class="spinner spinner-sm"></div> ${label}`;
+    if (btn) { 
+        btn.disabled = true; 
+        // --- LOADING DINAMIS ---
+        btn.innerHTML = `<div class="spinner spinner-sm"></div> ${id ? 'Mengedit...' : 'Menambahkan...'}`; 
     }
 
     try {
@@ -253,42 +260,25 @@ async function saveForm() {
             ? await API.murid.update({ id, ...payload }) 
             : await API.murid.add(payload);
 
-        if (res.status !== 'OK') {
-            UI.toast(res.message || 'Gagal menyimpan', 'error');
-            return;
-        }
+        if (res.status === 'OK') {
+            UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
+            UI.closeModal('modal-murid');
+            
+            // --- REFRESH DATA DENGAN JEDA (Penting!) ---
+            setTimeout(() => {
+                load(true); // Pakai load(true) agar menembus isFetched
+            }, 800); 
 
-        // --- SOLUSI JADWAL GA MASUK ---
-        // Kita paksa cari ID dari respon backend jika data baru
-        const muridId = id || res.data?.id || res.id;
-
-        if (muridId) {
-            // Pastikan jadwal dikirim dengan ID yang valid
-            await API.jadwal.replaceByMurid(muridId, jadwalData);
         } else {
-            console.error("Gagal mendapatkan ID Murid untuk simpan jadwal");
+            UI.toast(res.message || 'Gagal menyimpan', 'error');
         }
-
-        const pesanSukses = id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan';
-        UI.toast(pesanSukses, 'success');
-        UI.closeModal('modal-murid');
-
-        // REFRESH DATA DENGAN BENAR
-        setTimeout(async () => {
-            allData = [];       // Kosongkan data lama
-            isFetched = false;  // BUKA GERBANG agar load() bisa menarik data baru dari server
-            await load();       // Tarik data fresh dari Google Sheets
-            UI.toast('Data disinkronkan', 'info');
-        }, 1000);
-
-    } catch (e) {
-        console.error(e);
-        UI.toast('Terjadi kesalahan koneksi', 'error');
+    } catch(e) {
+        UI.toast('Error: ' + e.message, 'error');
     } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="save"></i> Simpan';
-            lucide.createIcons({ nodes: [btn] });
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = '<i data-lucide="save"></i> Simpan'; 
+            lucide.createIcons({ nodes: [btn] }); // Munculkan icon lagi
         }
     }
 }
@@ -341,39 +331,34 @@ async function deleteMurid(id, nama) {
 async function viewSchedule(id, nama) {
   const list = document.getElementById('schedule-detail-list');
 
-  // 1. Tampilkan modal & header langsung
   document.getElementById('schedule-modal-title').textContent = 'Jadwal: ' + nama;
   list.innerHTML = '<div class="empty-feed">Memuat jadwal...</div>';
   UI.openModal('modal-schedule');
 
-  // 2. CARI MURIDNYA di dalam allData (Sesuai saran screenshot)
-  const murid = allData.find(m => m.id === id);
+  try {
+    const res = await API.jadwal.getByMurid(id);
 
-  if (murid && murid.schedule && murid.schedule.length > 0) {
-    // JADWAL DIAMBIL LANGSUNG DARI OBJEK MURIDNYA (Bukan array global)
-    list.innerHTML = murid.schedule.map(sc => `
-      <div class="schedule-row">
-        <strong>${sc.hari}</strong>
-        <span>${sc.jam}</span>
-      </div>
-    `).join('');
-  } else {
-    // Kalau di memori lokal belum ada/kosong, baru kita panggil API sebagai cadangan
-    try {
-      const res = await API.jadwal.getByMurid(id);
-      if (res.status === 'OK' && res.data.length > 0) {
-        list.innerHTML = res.data.map(j => `
-          <div class="schedule-row">
-            <strong>${j.hari}</strong>
-            <span>${j.jam}</span>
-          </div>
-        `).join('');
-      } else {
-        list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
-      }
-    } catch (e) {
-      list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
+    if (res.status !== 'OK' || res.data.length === 0) {
+      list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
+    } else {
+      // --- TAMBAHAN: FILTER BIAR GAK DOBEL DI TAMPILAN ---
+      const seen = new Set();
+      const uniqueData = res.data.filter(j => {
+        const key = `${j.hari}-${j.jam}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      list.innerHTML = uniqueData.map(j => `
+        <div class="schedule-row">
+          <span><strong>${j.hari}</strong></span>
+          <span>${j.jam}</span>
+        </div>
+      `).join('');
     }
+  } catch(e) {
+    list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
   }
 }
 
