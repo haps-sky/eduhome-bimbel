@@ -222,73 +222,71 @@ async function saveForm() {
     const status  = document.getElementById('murid-status').value;
 
     if (!nama || !program) { 
-      UI.toast('Nama dan program wajib diisi', 'error'); 
-      return; 
+        UI.toast('Nama dan program wajib diisi', 'error'); 
+        return; 
     }
 
-    // Ambil Data Jadwal (Sudah benar!)
     const jadwalData = [];
     document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
-      const day = cb.value;
-      const timeSelect = document.getElementById(`time-${day}`);
-      if (timeSelect && timeSelect.value) {
-        jadwalData.push({ hari: day, jam: timeSelect.value });
-      }
+        const day = cb.value;
+        const timeSelect = document.getElementById(`time-${day}`);
+        if (timeSelect && timeSelect.value) {
+            jadwalData.push({ hari: day, jam: timeSelect.value });
+        }
     });
 
-    const payload = { 
-      nama, jk, kelas, program, 
-      tgl_mulai: tgl, 
-      status,
-    };
-
+    const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status };
     const btn = document.getElementById('murid-save-btn');
 
+    // --- LOADING DINAMIS ---
     if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan data...';
+        btn.disabled = true;
+        const label = id ? 'Mengedit data...' : 'Menambahkan data...';
+        btn.innerHTML = `<div class="spinner spinner-sm"></div> ${label}`;
     }
-    // ----------------------------
 
     try {
-      const res = id 
-        ? await API.murid.update({ id, ...payload }) 
-        : await API.murid.add(payload);
+        const res = id 
+            ? await API.murid.update({ id, ...payload }) 
+            : await API.murid.add(payload);
 
+        if (res.status !== 'OK') {
+            UI.toast(res.message || 'Gagal menyimpan', 'error');
+            return;
+        }
 
-  if (res.status !== 'OK') {
-    UI.toast(res.message || 'Gagal menyimpan', 'error');
-    return;
-  }
+        // --- SOLUSI JADWAL GA MASUK ---
+        // Kita paksa cari ID dari respon backend jika data baru
+        const muridId = id || res.data?.id || res.id;
 
-  // pastikan ID yang dipakai benar
-  const muridId = id || res.data?.id || res.id;
+        if (muridId) {
+            // Pastikan jadwal dikirim dengan ID yang valid
+            await API.jadwal.replaceByMurid(muridId, jadwalData);
+        } else {
+            console.error("Gagal mendapatkan ID Murid untuk simpan jadwal");
+        }
 
-  await API.jadwal.replaceByMurid(muridId, jadwalData);
+        const pesanSukses = id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan';
+        UI.toast(pesanSukses, 'success');
+        UI.closeModal('modal-murid');
 
-  const pesanSukses = id
-    ? 'Data murid berhasil diperbarui'
-    : 'Murid baru berhasil ditambahkan';
+        // Refresh data (Beri jeda sedikit agar backend GAS selesai memproses)
+        setTimeout(() => {
+            allData = [];
+            isFetched = false;
+            load();
+        }, 500);
 
-  UI.toast(pesanSukses, 'success');
-  UI.closeModal('modal-murid');
-
-  // refresh data
-  allData = [];
-  isFetched = false;
-  load();
-
-} catch (e) {
-  console.error(e);
-  UI.toast('Terjadi kesalahan koneksi', 'error');
-} finally {
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = 'Simpan';
-    lucide.createIcons({ nodes: [btn] });
-  }
-}
-
+    } catch (e) {
+        console.error(e);
+        UI.toast('Terjadi kesalahan koneksi', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save"></i> Simpan';
+            lucide.createIcons({ nodes: [btn] });
+        }
+    }
 }
 
 async function deleteMurid(id, nama) {
