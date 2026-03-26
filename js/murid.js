@@ -240,44 +240,47 @@ async function saveForm() {
       nama, jk, kelas, program, 
       tgl_mulai: tgl, 
       status,
-      jadwal: jadwalData 
     };
 
     const btn = document.getElementById('murid-save-btn');
 
-    try {
-      if (btn) { 
-        btn.disabled = true; 
-        // --- 1. TEKS TOMBOL DINAMIS SESUAI STATUS ID ---
-        btn.innerHTML = id ? 
-            '<div class="spinner spinner-sm"></div> Mengedit data...' : 
-            '<div class="spinner spinner-sm"></div> Menambahkan data...'; 
-      }
+try {
+  const res = id 
+    ? await API.murid.update({ id, ...payload }) 
+    : await API.murid.add(payload);
 
-      // Gunakan ternary operator biar lebih ringkas (Sesuai gaya Master Template)
-      const res = id ? await API.murid.update({ id, ...payload }) : await API.murid.add(payload);
+  if (res.status !== 'OK') {
+    UI.toast(res.message || 'Gagal menyimpan', 'error');
+    return;
+  }
 
-      if (res.status === 'OK') {
-        const pesanSukses = id ? 'Data murid berhasil diperbarui' : 'Murid baru berhasil ditambahkan';
-        UI.toast(pesanSukses, 'success');
-        
-        UI.closeModal('modal-murid');
-        
-        allData = []; 
-        isFetched = false; //
-        load(); 
-      } else {
-        UI.toast(res.message || 'Gagal menyimpan', 'error');
-      }
-    } catch(e) {
-      console.error(e);
-      UI.toast('Terjadi kesalahan koneksi', 'error');
-    } finally {
-      if (btn) { 
-        btn.disabled = false; 
-        btn.innerHTML = 'Simpan'; 
-      }
-    }
+  // pastikan ID yang dipakai benar
+  const muridId = id || res.data?.id || res.id;
+
+  await API.jadwal.replaceByMurid(muridId, jadwalData);
+
+  const pesanSukses = id
+    ? 'Data murid berhasil diperbarui'
+    : 'Murid baru berhasil ditambahkan';
+
+  UI.toast(pesanSukses, 'success');
+  UI.closeModal('modal-murid');
+
+  // refresh data
+  allData = [];
+  isFetched = false;
+  load();
+
+} catch (e) {
+  console.error(e);
+  UI.toast('Terjadi kesalahan koneksi', 'error');
+} finally {
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = 'Simpan';
+  }
+}
+
 }
 
 async function deleteMurid(id, nama) {
