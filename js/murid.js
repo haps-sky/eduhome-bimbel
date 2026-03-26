@@ -244,10 +244,17 @@ async function saveForm() {
 
     const btn = document.getElementById('murid-save-btn');
 
-try {
-  const res = id 
-    ? await API.murid.update({ id, ...payload }) 
-    : await API.murid.add(payload);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan data...';
+    }
+    // ----------------------------
+
+    try {
+      const res = id 
+        ? await API.murid.update({ id, ...payload }) 
+        : await API.murid.add(payload);
+
 
   if (res.status !== 'OK') {
     UI.toast(res.message || 'Gagal menyimpan', 'error');
@@ -278,6 +285,7 @@ try {
   if (btn) {
     btn.disabled = false;
     btn.innerHTML = 'Simpan';
+    lucide.createIcons({ nodes: [btn] });
   }
 }
 
