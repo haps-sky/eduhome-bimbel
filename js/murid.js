@@ -328,41 +328,39 @@ async function deleteMurid(id, nama) {
 async function viewSchedule(id, nama) {
   const list = document.getElementById('schedule-detail-list');
 
-  // 1. Buka modal langsung
+  // 1. Tampilkan modal & header langsung
   document.getElementById('schedule-modal-title').textContent = 'Jadwal: ' + nama;
   list.innerHTML = '<div class="empty-feed">Memuat jadwal...</div>';
   UI.openModal('modal-schedule');
 
-  try {
-    // 2. Baru ambil data di background
-    const res = await API.jadwal.getByMurid(id);
+  // 2. CARI MURIDNYA di dalam allData (Sesuai saran screenshot)
+  const murid = allData.find(m => m.id === id);
 
-    if (res.status !== 'OK' || res.data.length === 0) {
-      list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
-    } else {
-      // --- TAMBAHAN FILTER UNIK BIAR GAK TUMPUK ---
-      const uniqueData = [];
-      const seen = new Set();
-      
-      res.data.forEach(item => {
-        const key = `${item.hari}-${item.jam}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          uniqueData.push(item);
-        }
-      });
-
-      // 3. Render pake STYLE ASLI KAMU (Gak ada yang diubah)
-      list.innerHTML = uniqueData.map(j => `
-        <div class="schedule-row">
-          <span>${j.hari}</span>
-          <span>${j.jam}</span>
-        </div>
-      `).join('');
+  if (murid && murid.schedule && murid.schedule.length > 0) {
+    // JADWAL DIAMBIL LANGSUNG DARI OBJEK MURIDNYA (Bukan array global)
+    list.innerHTML = murid.schedule.map(sc => `
+      <div class="schedule-row">
+        <strong>${sc.hari}</strong>
+        <span>${sc.jam}</span>
+      </div>
+    `).join('');
+  } else {
+    // Kalau di memori lokal belum ada/kosong, baru kita panggil API sebagai cadangan
+    try {
+      const res = await API.jadwal.getByMurid(id);
+      if (res.status === 'OK' && res.data.length > 0) {
+        list.innerHTML = res.data.map(j => `
+          <div class="schedule-row">
+            <strong>${j.hari}</strong>
+            <span>${j.jam}</span>
+          </div>
+        `).join('');
+      } else {
+        list.innerHTML = '<div class="empty-feed">Tidak ada jadwal terdaftar</div>';
+      }
+    } catch (e) {
+      list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
     }
-
-  } catch(e) {
-    list.innerHTML = '<div class="empty-feed">Gagal memuat jadwal</div>';
   }
 }
 
