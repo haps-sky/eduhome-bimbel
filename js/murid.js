@@ -4,16 +4,19 @@
   let allData = [];
   let isFetched = false;
 
-  async function load() {
+  // Tambahkan parameter forceRefresh = false
+async function load(forceRefresh = false) {
     const tbody = document.getElementById('murid-tbody');
     if (!tbody) return;
 
-    if (isFetched) {
+    // MODIFIKASI: Jika bukan paksa refresh DAN data sudah ada, pakai data lokal saja
+    if (!forceRefresh && isFetched) {
       renderTable(allData);
       updateSummary(allData);
       return;
     }
 
+    // Tampilkan loading jika benar-benar akan menarik data dari server
     tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data murid...</td></tr>';
 
     try {
@@ -23,8 +26,8 @@
       ]);
 
       if (muridRes.status === 'OK') {
-      allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
-      isFetched = true;
+        allData = (muridRes.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        isFetched = true; // Tandai data sudah ditarik
         
         renderTable(allData);
         updateSummary(allData);
@@ -33,7 +36,7 @@
       console.error("Error Load Murid:", e);
       tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Gagal memuat data murid.</td></tr>';
     }
-  }
+}
 
   function populateMentorDropdown(mentors) {
     const sel = document.getElementById('murid-mentor');
@@ -270,12 +273,13 @@ async function saveForm() {
         UI.toast(pesanSukses, 'success');
         UI.closeModal('modal-murid');
 
-        // Refresh data (Beri jeda sedikit agar backend GAS selesai memproses)
-        setTimeout(() => {
-            allData = [];
-            isFetched = false;
-            load();
-        }, 500);
+        // REFRESH DATA DENGAN BENAR
+        setTimeout(async () => {
+            allData = [];       // Kosongkan data lama
+            isFetched = false;  // BUKA GERBANG agar load() bisa menarik data baru dari server
+            await load();       // Tarik data fresh dari Google Sheets
+            UI.toast('Data disinkronkan', 'info');
+        }, 1000);
 
     } catch (e) {
         console.error(e);
