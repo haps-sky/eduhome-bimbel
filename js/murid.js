@@ -237,14 +237,21 @@ async function saveForm() {
         return; 
     }
 
-    const jadwalData = [];
+    const jadwalData = []
+    // Ambil semua checkbox hari yang dicentang
     document.querySelectorAll('#day-checkboxes input[name="hari"]:checked').forEach(cb => {
-        const day = cb.value;
-        const timeSelect = document.getElementById(`time-${day}`);
-        if (timeSelect && timeSelect.value) {
-            jadwalData.push({ hari: day, jam: timeSelect.value });
+        const day = cb.value; // Misal: SENIN
+        // Cari elemen jam berdasarkan ID 'time-SENIN'
+        const timeInput = document.getElementById(`time-${day}`);
+        
+        if (timeInput && timeInput.value) {
+            jadwalData.push({ 
+                hari: day, 
+                jam: timeInput.value 
+            });
         }
     });
+    console.log("Data Jadwal yang siap dikirim:", jadwalData); // Cek di F12
 
     const payload = { nama, jk, kelas, program, tgl_mulai: tgl, status, jadwal: jadwalData };
     const btn = document.getElementById('murid-save-btn');
