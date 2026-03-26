@@ -87,9 +87,16 @@ async function post(body) {
 
   // JADWAL
   const jadwal = {
-    getAll:     () => get('getJadwal'),
-    getByMurid: (id_murid) => get('getJadwal', { id_murid })
-  };
+  getAll:     () => get('getJadwal'),
+  getByMurid: (id_murid) => get('getJadwal', { id_murid }),
+
+  replaceByMurid: (muridId, jadwalData) =>
+    post({
+      action: 'replaceJadwalMurid',
+      muridId: muridId,
+      jadwal: jadwalData
+    })
+};
 
   
   const spp = {
