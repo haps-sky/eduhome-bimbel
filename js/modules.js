@@ -321,6 +321,7 @@ const PresensiPage = (() => {
 
     const mt = document.getElementById('presensi-mentor');
     if (mt) mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
+      mentor.filter(m => m.status === 'AKTIF')
       mentor.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF').map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`).join('');
   }
 
