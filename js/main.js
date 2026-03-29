@@ -189,7 +189,7 @@ async function handleLogin(e) {
     // 1. Matikan tombol & pasang spinner
     btn.disabled = true;
     const originalText = btn.innerHTML; // Simpan teks asli (misal: "Login")
-    btn.innerHTML = '<div class="spinner"></div>';
+    btn.innerHTML = '<div class="spinner-sm"></div> Memuat...';
 
     try {
       const res = await API.auth.login(username, password);
