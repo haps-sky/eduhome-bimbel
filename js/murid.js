@@ -61,7 +61,10 @@ async function load(forceRefresh = false) {
   function renderTable(data) {
     const role = API.currentRole();
     const canEdit = role === 'ADMIN';
-    const rows = data.map(m => `
+    const rows = data.map(m => {
+    const color = m.jk === 'L' ? '#689bee' : '#e76fab';
+
+    return `
       <tr>
         <td><span class="id-badge">${m.id}</span></td>
         <td>
@@ -69,7 +72,8 @@ async function load(forceRefresh = false) {
             <span class="avatar-initial">${(m.nama || '?')[0].toUpperCase()}</span>
             <div>
               <strong>${m.nama}</strong>
-              <small>${m.jk === 'L' ? '♂ Laki-laki' : '♀ Perempuan'}</small>
+              <small style="color: ${color}; font-weight: 500;">
+               ${m.jk === 'L' ? '♂ Laki-laki' : '♀ Perempuan'}</small>
             </div>
           </div>
         </td>
@@ -91,7 +95,9 @@ async function load(forceRefresh = false) {
             </button>` : ''}
           </div>
         </td>
-      </tr>`);
+      </tr>`
+      });
+
     UI.renderTable('murid-tbody', rows, 'Belum ada data murid');
     lucide.createIcons();
   }
