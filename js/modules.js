@@ -96,90 +96,101 @@ const MentorPage = (() => {
   }
 
 async function openEdit(id) {
-    // 1. CEK DATA: Kalau memori kosong (allData = []), tarik data dulu
     if (allData.length === 0) {
       UI.toast('Memuat data mentor...', 'info');
-      await load(); // Tunggu sampai data ditarik dari Google Sheets
+      await load(); 
     }
 
-    // 2. CARI BARANGNYA
     const m = allData.find(x => x.id === id);
     if (!m) {
       UI.toast('Data mentor tidak ditemukan', 'error');
       return;
     }
 
-    // 3. ISI FORM (Sesuai kode kamu, ini sudah urutan yang benar)
     document.getElementById('mentor-modal-title').textContent = 'Edit Mentor';
     document.getElementById('mentor-id-field').value   = m.id;
     document.getElementById('mentor-nama').value        = m.nama;
+    document.getElementById('mentor-jk').value          = m.jk || '';
+    document.getElementById('mentor-kontak').value      = m.kontak || '';
+    document.getElementById('mentor-program').value     = m.program || '';
     document.getElementById('mentor-status').value      = m.status;
     document.getElementById('mentor-fee-anak').value    = m.fee_anak;
     document.getElementById('mentor-fee-harian').value  = m.fee_harian;
 
-    // 4. BARU BUKA PINTUNYA (Modal muncul dengan data sudah terisi)
     UI.openModal('modal-mentor');
-  }
+}
 
 async function saveForm() {
-    // 1. Ambil data dari input field Mentor
-    const id      = document.getElementById('mentor-id-field').value;
-    const nama    = document.getElementById('mentor-nama').value.trim();
-    const status  = document.getElementById('mentor-status').value;
-    const fee_anak    = document.getElementById('mentor-fee-anak').value;
-    const fee_harian  = document.getElementById('mentor-fee-harian').value;
+    // 1. Ambil data dari semua input field Mentor (Pastikan ID-nya sesuai dengan HTML kamu)
+    const id         = document.getElementById('mentor-id-field').value;
+    const nama       = document.getElementById('mentor-nama').value.trim();
+    const jk         = document.getElementById('mentor-jk').value;
+    const program    = document.getElementById('mentor-program').value.trim();
+    const kontak     = document.getElementById('mentor-kontak').value.trim(); // Kolom H di Sheets
+    const status     = document.getElementById('mentor-status').value;
+    const fee_anak   = document.getElementById('mentor-fee-anak').value;
+    const fee_harian = document.getElementById('mentor-fee-harian').value;
 
-    // 2. Validasi sederhana
-    if (!nama) { 
-      UI.toast('Nama wajib diisi', 'error'); 
-      return; 
+    // 2. Validasi Ketat: Semua wajib diisi
+    if (!nama)    return UI.toast('Nama mentor wajib diisi!', 'error');
+    if (!jk)      return UI.toast('Jenis kelamin wajib dipilih!', 'error');
+    if (!program) return UI.toast('Program wajib diisi!', 'error');
+    if (!kontak)  return UI.toast('Kontak WA wajib diisi!', 'error');
+    if (fee_anak === "" || fee_harian === "") {
+        return UI.toast('Fee wajib diisi (boleh 0)!', 'error');
     }
 
-    // 3. Siapkan Payload
+    // 3. Siapkan Payload (Sesuai dengan handleAddMentor di Code.gs)
     const payload = { 
-      nama,
-      status,
-      fee_anak,
-      fee_harian
+        nama,
+        jk,
+        program,
+        kontak,
+        status,
+        fee_anak: Number(fee_anak), 
+        fee_harian: Number(fee_harian)
     };
 
     const btn = document.getElementById('mentor-save-btn');
 
     try {
-      if (btn) { 
-        btn.disabled = true; 
-        // Efek loading dinamis
-        btn.innerHTML = id ? 
-            '<div class="spinner spinner-sm"></div> Mengedit data mentor...' : 
-            '<div class="spinner spinner-sm"></div> Menambahkan mentor...'; 
-      }
+        if (btn) { 
+            btn.disabled = true; 
+            btn.innerHTML = id ? 
+                '<div class="spinner spinner-sm"></div> Mengedit...' : 
+                '<div class="spinner spinner-sm"></div> Menambahkan...'; 
+        }
 
-      // Panggil API Mentor
-      const res = id ? 
-          await API.mentor.update({ id, ...payload }) : 
-          await API.mentor.add(payload);
+        // Panggil API Mentor
+        const res = id ? 
+            await API.mentor.update({ id, ...payload }) : 
+            await API.mentor.add(payload);
 
-      if (res.status === 'OK') {
-        const pesanSukses = id ? 'Data mentor berhasil diperbarui' : 'Mentor baru berhasil ditambahkan';
-        UI.toast(pesanSukses, 'success');
-        
-        UI.closeModal('modal-mentor');
-        
-        // RESET CACHE & REFRESH TABEL
-        allData = []; 
-        isFetched = false; 
-        load(); 
-      } else {
-        UI.toast(res.message || 'Gagal menyimpan data mentor', 'error');
-      }
+        if (res.status === 'OK') {
+            const pesanSukses = id ? 'Data mentor diperbarui' : 'Mentor berhasil ditambahkan';
+            UI.toast(pesanSukses, 'success');
+            
+            UI.closeModal('modal-mentor');
+            
+            // 4. RESET CACHE & REFRESH TABEL (Gunakan jeda 800ms agar DB sempat sync)
+            allData = []; 
+            isFetched = false; 
+            setTimeout(() => {
+                load(true); // Pastikan fungsi load() mendukung parameter force refresh
+            }, 800);
+
+        } else {
+            UI.toast(res.message || 'Gagal menyimpan data', 'error');
+        }
     } catch(e) {
-      console.error("Error Save Mentor:", e);
-      UI.toast('Terjadi kesalahan koneksi', 'error');
+        console.error("Error Save Mentor:", e);
+        UI.toast('Terjadi kesalahan koneksi', 'error');
     } finally {
-      if (btn) { 
-        btn.disabled = false; 
-        btn.innerHTML = 'Simpan'; 
-      }
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = '<i data-lucide="save"></i> Simpan'; 
+            lucide.createIcons({ nodes: [btn] }); // Re-render icon Lucide
+        }
     }
 }
 
@@ -194,7 +205,6 @@ async function saveForm() {
     try {
         if (btn) {
             btn.disabled = true;
-            // Ganti jadi loading imut di baris tabel
             btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
             btn.style.width = 'auto'; 
             btn.style.padding = '0 12px';
