@@ -38,34 +38,51 @@ const MentorPage = (() => {
     }
   }
 
-  function renderTable(data) {
-    const rows = data.map(m => {
+function renderTable(data) {
+  const rows = data.map(m => {
+    // Tentukan warna & label berdasarkan Jenis Kelamin
     const color = m.jk === 'L' ? '#689bee' : '#e76fab';
+    const jkText = m.jk === 'L' ? '♂ Laki-laki' : '♀ Perempuan';
 
     return `
       <tr>
         <td><span class="id-badge">${m.id}</span></td>
         <td>
           <div class="name-cell">
-            <span class="avatar-initial mentor-avatar">${(m.nama || '?')[0].toUpperCase()}</span>
-            <strong>${m.nama}</strong>
+            <!-- Avatar dengan background tipis sesuai warna gender -->
+            <span class="avatar-initial mentor-avatar" style="background: ${color}20; color: ${color};">
+              ${(m.nama || '?')[0].toUpperCase()}
+            </span>
+            <div>
+              <strong>${m.nama}</strong>
+              <!-- Sub-text Jenis Kelamin di bawah nama -->
+              <small style="display: block; color: ${color}; font-weight: 500; margin-top: 2px;">
+                ${jkText}
+              </small>
+            </div>
           </div>
         </td>
+        <td>${m.kontak || '-'}</td>
         <td><span class="program-tag">${m.program}</span></td>
         <td>${UI.statusBadge(m.status)}</td>
         <td>${UI.formatCurrency(m.fee_anak)}</td>
         <td>${UI.formatCurrency(m.fee_harian)}</td>
         <td>
           <div class="action-btns">
-            <button class="btn-icon btn-warning" onclick="MentorPage.openEdit('${m.id}')" title="Edit"><i data-lucide="pencil"></i></button>
-            <button class="btn-icon btn-danger" onclick="MentorPage.deleteMentor('${m.id}','${m.nama}')" title="Hapus"><i data-lucide="trash-2"></i></button>
+            <button class="btn-icon btn-warning" onclick="MentorPage.openEdit('${m.id}')" title="Edit">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="btn-icon btn-danger" onclick="MentorPage.deleteMentor('${m.id}','${m.nama}')" title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
           </div>
         </td>
-      </tr>`
-    });
-    UI.renderTable('mentor-tbody', rows, 'Belum ada data mentor');
-    lucide.createIcons();
-    }
+      </tr>`;
+  });
+
+  UI.renderTable('mentor-tbody', rows, 'Belum ada data mentor');
+  lucide.createIcons();
+}
 
   function updateSummary(data) {
     const totalEl = document.getElementById('mentor-total-count');
