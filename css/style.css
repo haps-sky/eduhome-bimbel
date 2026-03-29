@@ -239,22 +239,6 @@ select option { background: var(--bg-card); }
   border-top: 1px solid var(--border);
 }
 
-.user-info {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  background: var(--bg-hover);
-}
-.user-info .avatar {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--primary-dim);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; font-weight: 700; color: var(--primary);
-}
-#user-display { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3; }
-
 /* ── Main Area ──────────────────────────────────────────── */
 #main-area {
   flex: 1;
@@ -499,7 +483,27 @@ select option { background: var(--bg-card); }
 }
 .mentor-avatar { background: #2e1f5e; color: #a78bfa; }
 .name-cell strong { display: block; font-weight: 600; }
-.name-cell small  { color: var(--text-secondary); font-size: 0.72rem; }
+
+/* Gaya dasar untuk sub-teks JK */
+.name-cell small {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  margin-top: 1px;
+}
+
+/* Warna khusus jika data-jk="L" (Biru) */
+.name-cell small[data-jk="L"] {
+  color: #3b82f6 !important; /* Biru soft */
+  font-weight: 500;
+}
+
+/* Warna khusus jika data-jk="P" (Pink) */
+.name-cell small[data-jk="P"] {
+  color: #ec4899 !important; /* Pink soft */
+  font-weight: 500;
+}
 
 /* ── Action buttons group ───────────────────────────────── */
 .action-btns { display: flex; gap: 6px; }
@@ -653,17 +657,6 @@ select option { background: var(--bg-card); }
 .toast-info    { border-left: 3px solid var(--primary); }
 .toast-info    svg { color: var(--primary); }
 
-/* ── Spinner ────────────────────────────────────────────── */
-.spinner {
-  width: 20px; height: 20px;
-  border: 2px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
 /* ── Misc ───────────────────────────────────────────────── */
 .text-success { color: var(--success) !important; }
 .text-muted   { color: var(--text-secondary); }
@@ -680,17 +673,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 900px) {
-  #sidebar {
-    position: fixed; 
-    top: 0; left: 0; bottom: 0;
-    transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
-    z-index: 1000; /* Sidebar di depan konten */
-    transition: transform 0.3s ease;
-  }
   
   #sidebar.open { 
     transform: translateX(0); 
@@ -705,16 +687,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   }
   
   #content { padding: 16px; }
-  /* Sisa kodingan responsive lainnya... */
-}
-
-@media (max-width: 480px) {
-  .kpi-grid { grid-template-columns: 1fr 1fr; }
-  .finance-grid { grid-template-columns: 1fr; }
-  .modal-content { max-width: 100%; }
-  .data-table { font-size: 0.76rem; }
-  .data-table td, .data-table th { padding: 8px 10px; }
-}
 
 /* ============================================================
    RBAC — Role badges & access control UI
@@ -799,15 +771,45 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   color: var(--text-secondary);
 }
 
-/* ── Sidebar user info with role badge ───────────────────── */
-.user-info span {
+/* ── Sidebar User Info (Combined & Optimized) ── */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border); /* Tambahan agar lebih tegas */
+}
+
+.user-info .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Gabungan ID user-display dan span untuk teks info */
+.user-info span, 
+#user-display {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  min-width: 0;
+  line-height: 1.3;
+  min-width: 0; /* Penting: Agar teks ellipsis berfungsi */
+  flex: 1;
 }
+
 .user-info strong {
   display: block;
   font-size: 0.82rem;
@@ -815,7 +817,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: ellipsis; /* Nama panjang akan jadi 'Nama Panjan...' */
 }
 
 /* ── Student card grid (Mentor view) ────────────────────── */
@@ -848,11 +850,20 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 .spinner-sm {
     width: 12px;
     height: 12px;
-    border-width: 2px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
     display: inline-block;
     vertical-align: middle;
     margin-right: 5px;
+    animation: spin 0.6s linear infinite;  
 }
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
 
 .student-card-body {
   padding: 14px 16px;
@@ -869,12 +880,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 }
 .student-stat svg { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
 .student-stat .badge { font-size: 0.62rem; }
-
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 600px) {
-  .student-card-grid { grid-template-columns: 1fr; }
-  .login-roles { display: none; }
-}
 
 /* Container utama untuk kartu */
 .schedule-grid-container {
@@ -941,4 +946,50 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 
 .day-card {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Responsive System (Sorted by Screen Width) ── */
+
+/* 1. TABLET & MOBILE (900px kebawah) */
+@media (max-width: 900px) {
+  #sidebar {
+    position: fixed; 
+    top: 0; left: 0; bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+  }
+  
+  #sidebar.open { 
+    transform: translateX(0); 
+  }
+
+  #mobile-menu-btn { 
+    display: flex; 
+    position: relative;
+    z-index: 1100;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  #content { padding: 16px; }
+}
+
+/* 2. SMALL TABLET / LARGE PHONE (600px kebawah) */
+@media (max-width: 600px) {
+  .student-card-grid { grid-template-columns: 1fr; }
+  .login-roles { display: none; }
+  .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; } /* Tambahan biar dashboard ga penyet */
+}
+
+/* 3. SMARTPHONE (480px kebawah) */
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .finance-grid { grid-template-columns: 1fr; }
+  .modal-content { max-width: 100%; }
+  .data-table { font-size: 0.76rem; }
+  .data-table td, .data-table th { padding: 8px 10px; }
+  
+  .form-row, .form-row-3 { grid-template-columns: 1fr; } /* Biar form ga dempet di HP */
 }
