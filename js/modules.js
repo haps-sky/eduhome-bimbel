@@ -131,7 +131,10 @@ async function openEdit(id) {
     document.getElementById('mentor-modal-title').textContent = 'Edit Mentor';
     document.getElementById('mentor-id-field').value   = m.id;
     document.getElementById('mentor-nama').value        = m.nama;
-    document.getElementById('mentor-jk').value          = m.jk || '';
+
+    const jkField = document.getElementById('mentor-jk');
+    if (jkField) jkField.value = m.jk || 'L';
+    
     document.getElementById('mentor-kontak').value      = m.kontak || '';
     document.getElementById('mentor-program').value     = m.program || '';
     document.getElementById('mentor-status').value      = m.status;
