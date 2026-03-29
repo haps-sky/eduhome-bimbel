@@ -134,7 +134,7 @@ async function openEdit(id) {
 
     const jkField = document.getElementById('mentor-jk');
     if (jkField) jkField.value = m.jk || 'L';
-    
+
     document.getElementById('mentor-kontak').value      = m.kontak || '';
     document.getElementById('mentor-program').value     = m.program || '';
     document.getElementById('mentor-status').value      = m.status;
@@ -321,7 +321,7 @@ const PresensiPage = (() => {
 
     const mt = document.getElementById('presensi-mentor');
     if (mt) mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
-      mentor.filter(m => m.status === 'AKTIF').map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`).join('');
+      mentor.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF').map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`).join('');
   }
 
   function renderTable(data) {
