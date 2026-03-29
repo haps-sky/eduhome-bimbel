@@ -28,7 +28,9 @@
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
       </div>
       <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-        <i data-lucide="log-in"></i> Masuk
+        <div id="login-spinner" class="spinner-sm" style="display:none;"></div>
+        <span id="login-text">Masuk</span>
+        <i data-lucide="log-in" id="login-icon"></i>
       </button>
     </form>
     <div class="login-roles">

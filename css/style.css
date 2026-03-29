@@ -136,10 +136,10 @@ select option { background: var(--bg-card); }
 
 /* ── Buttons ────────────────────────────────────────────── */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 20px; min-height: 42px;
   border: none; border-radius: var(--radius);
-  font-family: var(--font); font-size: 0.875rem; font-weight: 600;
+  font-family: var(--font); font-size: 0.875rem; font-weight: 600; color: #ffffff !important;
   cursor: pointer; transition: all 0.15s; text-decoration: none; line-height: 1;
 }
 
@@ -171,6 +171,12 @@ select option { background: var(--bg-card); }
 .btn-icon.btn-warning { background: var(--warning-dim); color: var(--warning); }
 .btn-icon.btn-danger  { background: var(--danger-dim);  color: var(--danger);  }
 .btn-icon:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+.btn i, .btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
 
 /* ── App Shell ──────────────────────────────────────────── */
 #app-shell {
