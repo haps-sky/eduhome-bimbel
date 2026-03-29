@@ -38,37 +38,34 @@ const MentorPage = (() => {
     }
   }
 
-function renderTable(data) {
-  const rows = data.map(m => `
-    <tr>
-      <td><span class="id-badge">${m.id}</span></td>
-      <td>
-        <div class="name-cell">
-          <span class="avatar-initial mentor-avatar">${(m.nama || '?')[0].toUpperCase()}</span>
-          <strong>${m.nama}</strong>
-        </div>
-      </td>
-      <td style="text-align:center">${m.jk || '-'}</td> <!-- TAMBAH KOLOM JK -->
-      <td>${m.kontak || '-'}</td> <!-- TAMBAH KOLOM KONTAK -->
-      <td><span class="program-tag">${m.program || '-'}</span></td>
-      <td>${UI.statusBadge(m.status)}</td>
-      <td>${UI.formatCurrency(m.fee_anak)}</td>
-      <td>${UI.formatCurrency(m.fee_harian)}</td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-icon btn-warning" onclick="MentorPage.openEdit('${m.id}')" title="Edit">
-            <i data-lucide="pencil"></i>
-          </button>
-          <button class="btn-icon btn-danger" onclick="MentorPage.deleteMentor('${m.id}','${m.nama}')" title="Hapus">
-            <i data-lucide="trash-2"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`);
-  
-  UI.renderTable('mentor-tbody', rows, 'Belum ada data mentor');
-  lucide.createIcons();
-}
+  function renderTable(data) {
+    const rows = data.map(m => {
+    const color = m.jk === 'L' ? '#689bee' : '#e76fab';
+
+    return `
+      <tr>
+        <td><span class="id-badge">${m.id}</span></td>
+        <td>
+          <div class="name-cell">
+            <span class="avatar-initial mentor-avatar">${(m.nama || '?')[0].toUpperCase()}</span>
+            <strong>${m.nama}</strong>
+          </div>
+        </td>
+        <td><span class="program-tag">${m.program}</span></td>
+        <td>${UI.statusBadge(m.status)}</td>
+        <td>${UI.formatCurrency(m.fee_anak)}</td>
+        <td>${UI.formatCurrency(m.fee_harian)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon btn-warning" onclick="MentorPage.openEdit('${m.id}')" title="Edit"><i data-lucide="pencil"></i></button>
+            <button class="btn-icon btn-danger" onclick="MentorPage.deleteMentor('${m.id}','${m.nama}')" title="Hapus"><i data-lucide="trash-2"></i></button>
+          </div>
+        </td>
+      </tr>`
+    });
+    UI.renderTable('mentor-tbody', rows, 'Belum ada data mentor');
+    lucide.createIcons();
+    }
 
   function updateSummary(data) {
     const totalEl = document.getElementById('mentor-total-count');
