@@ -14,7 +14,7 @@ const MentorPage = (() => {
     if (isFetched) {
       renderTable(allData);
       updateSummary(allData);
-      return; // STOP! Jangan munculin spinner lagi
+      return;
     }
 
     // 2. TAMPILAN AWAL: Spinner cuma muncul sekali seumur hidup (sebelum refresh)
