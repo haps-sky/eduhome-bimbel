@@ -667,48 +667,41 @@ const SPPPage = (() => {
   }
 
   async function calculateLiveSessions() {
-    const id_murid = document.getElementById('spp-murid').value;
-    const mulaiVal = document.getElementById('spp-mulai').value;
-    const akhirVal = document.getElementById('spp-akhir').value;
-    const display = document.getElementById('spp-count-preview');
+  const id_murid = document.getElementById('spp-murid').value;
+  const mulai = document.getElementById('spp-mulai').value;
+  const akhir = document.getElementById('spp-akhir').value;
+  const display = document.getElementById('spp-count-preview');
 
-    if (!id_murid || !mulaiVal || !akhirVal || !display) return;
+  if (!id_murid || !mulai || !akhir || !display) return;
 
-    display.innerHTML = '<div class="spinner spinner-sm"></div> Menghitung...';
+  display.innerHTML = '<div class="spinner-sm"></div> Menghitung...';
 
-    try {
-      const res = await API.jadwal.getByMurid(id_murid);
-      // PENTING: Gunakan trim() untuk hapus spasi tak terlihat
-      const hariLes = (res.data || []).map(j => j.hari.trim().toLowerCase());
+  try {
+    const res = await API.jadwal.getByMurid(id_murid);
+    const hariLes = (res.data || []).map(j => j.hari.trim().toLowerCase());
 
-      if (hariLes.length === 0) {
-        display.textContent = "Total: 0 Sesi (Jadwal kosong)";
-        return;
-      }
-
-      const dayMap = { 'minggu':0, 'senin':1, 'selasa':2, 'rabu':3, 'kamis':4, 'jumat':5, 'sabtu':6 };
-      const targetDays = hariLes.map(h => dayMap[h]).filter(d => d !== undefined);
-      
-      // PERBAIKAN TANGGAL: Gunakan replace agar tidak kena masalah Timezone
-      let cur = new Date(mulaiVal.replace(/-/g, '\/'));
-      const end = new Date(akhirVal.replace(/-/g, '\/'));
-      
-      let count = 0;
-      // Safety break agar tidak infinite loop jika tanggal salah
-      let safety = 0; 
-      
-      while (cur <= end && safety < 1000) {
-        if (targetDays.includes(cur.getDay())) count++;
-        cur.setDate(cur.getDate() + 1);
-        safety++;
-      }
-      
-      display.innerHTML = `Total: <strong>${count}</strong> Sesi`;
-    } catch (e) {
-      console.error("Hitung Sesi Error:", e);
-      display.textContent = "Gagal menghitung";
+    if (hariLes.length === 0) {
+      display.textContent = "Total: 0 Sesi (Jadwal kosong)";
+      return;
     }
+
+    const dayMap = { 'minggu':0, 'senin':1, 'selasa':2, 'rabu':3, 'kamis':4, 'jumat':5, 'sabtu':6 };
+    const targetDays = hariLes.map(h => dayMap[h]);
+    
+    let count = 0;
+    // PENTING: Gunakan replace agar tanggal tidak lari ke hari sebelumnya
+    let cur = new Date(mulai.replace(/-/g, '\/'));
+    const end = new Date(akhir.replace(/-/g, '\/'));
+    
+    while (cur <= end) {
+      if (targetDays.includes(cur.getDay())) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    display.innerHTML = `Total: <strong>${count}</strong> Sesi`;
+  } catch (e) {
+    display.textContent = "Gagal menghitung";
   }
+}
 
   function populateMurid(murid) {
     const sel = document.getElementById('spp-murid');
