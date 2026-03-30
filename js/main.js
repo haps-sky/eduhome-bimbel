@@ -246,21 +246,24 @@ const Theme = (() => {
     return 'theme_' + _getUsername().toLowerCase();
   }
 
-  // Update ikon tombol (Moon = dark mode aktif, Sun = light mode aktif)
+  // Update ikon tombol — bekerja setelah lucide render <i> jadi <svg>
   function _updateIcon(isLight) {
-    const moon = document.getElementById('theme-icon-moon');
-    const sun  = document.getElementById('theme-icon-sun');
-    if (!moon || !sun) return;
-    moon.style.display = isLight ? 'none'  : '';
-    sun.style.display  = isLight ? ''      : 'none';
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    // Lucide mengubah <i> menjadi <svg>, cari berdasarkan data-lucide attribute
+    const moon = btn.querySelector('[data-lucide="moon"], svg[data-lucide="moon"]')
+               || document.getElementById('theme-icon-moon');
+    const sun  = btn.querySelector('[data-lucide="sun"],  svg[data-lucide="sun"]')
+               || document.getElementById('theme-icon-sun');
+    if (moon) moon.style.display = isLight ? 'none' : '';
+    if (sun)  sun.style.display  = isLight ? ''     : 'none';
   }
 
   // Terapkan tema ke <body> dan update ikon
   function _apply(isLight) {
     document.body.classList.toggle('light-mode', isLight);
+    // Update ikon SETELAH lucide selesai, agar display style tidak ditimpa
     _updateIcon(isLight);
-    // Refresh lucide icons agar ikon di tombol ter-render ulang
-    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   // Dipanggil tepat setelah login berhasil (atau saat restore session)
@@ -281,6 +284,9 @@ const Theme = (() => {
 
   return { init, toggle };
 })();
+
+// [FIX] Expose Theme ke global scope agar onclick="Theme.toggle()" bisa diakses dari HTML
+window.Theme = Theme;
 
 function showApp(user) {
     document.getElementById('login-screen').style.display = 'none';
