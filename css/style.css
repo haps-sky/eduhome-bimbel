@@ -857,7 +857,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
     width: 12px;
     height: 12px;
     border: 5px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #ffffff !important;
+    border-top-color: var(--primary);
     border-radius: 50%;
     display: inline-block;
     vertical-align: middle;

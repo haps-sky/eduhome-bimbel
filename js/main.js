@@ -413,7 +413,7 @@ async function handleSaveStudent(e) {
   const originalHTML = btn.innerHTML;
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Menyimpan...';
+  btn.innerHTML = '<span class="spinner-sm"></span> Menyimpan...';
 
   try {
     const formData = new FormData(e.target);
