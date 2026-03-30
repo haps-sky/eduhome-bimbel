@@ -313,18 +313,25 @@ const PresensiPage = (() => {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat.</td></tr>';
     }
   }
-
-  function populateDropdowns(murid, mentor) {
-    const ms = document.getElementById('presensi-murid');
-    if (ms) ms.innerHTML = '<option value="">-- Pilih Murid --</option>' +
-      murid.filter(m => m.status === 'AKTIF').map(m => `<option value="${m.id}" data-nama="${m.nama}" data-program="${m.program}">${m.nama} (${m.program})</option>`).join('');
-
-    const mt = document.getElementById('presensi-mentor');
-    if (mt) mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
-      mentor.filter(m => m.status === 'AKTIF')
-      mentor.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF').map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`).join('');
+function populateDropdowns(murid, mentor) {
+  // Isi Dropdown Murid
+  const ms = document.getElementById('presensi-murid');
+  if (ms) {
+    ms.innerHTML = '<option value="">-- Pilih Murid --</option>' +
+      murid.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF')
+           .map(m => `<option value="${m.id}" data-nama="${m.nama}" data-program="${m.program}">${m.nama} (${m.program})</option>`)
+           .join('');
   }
 
+  // Isi Dropdown Mentor
+  const mt = document.getElementById('presensi-mentor');
+  if (mt) {
+    mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
+      mentor.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF')
+            .map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`)
+            .join('');
+  }
+}
   function renderTable(data) {
     const rows = data.map(p => `
       <tr>
