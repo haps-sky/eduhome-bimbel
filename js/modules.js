@@ -837,6 +837,8 @@ const SPPPage = (() => {
     
     const display = document.getElementById('spp-count-preview');
     if (display) display.textContent = 'Total: 0 Sesi';
+
+    initLiveCount();
     
     UI.openModal('modal-spp');
   }
