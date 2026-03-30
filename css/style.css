@@ -44,42 +44,55 @@
 }
 
 /* ── Light Mode Variables ──────────────────────────────── */
-/* [BARU] Class .light-mode mengganti semua variabel warna ke tema terang */
+/* [BARU] Class .light-mode — Tema Soft Blue Aesthetic */
 .light-mode {
-  --bg:           #f8f9fa;
-  --bg-surface:   #ffffff;
+  /* Latar: biru langit pucat → putih kebiruan */
+  --bg:           #e8f0fe;
+  --bg-surface:   #f0f6ff;
   --bg-card:      #ffffff;
-  --bg-hover:     #f0f2f5;
-  --border:       #dee2e8;
-  --border-light: #c8cdd6;
+  --bg-hover:     #d6e4fd;
+  --border:       #b8d0f5;
+  --border-light: #93b8f0;
 
-  --primary:      #2563eb;
-  --primary-dim:  #dbeafe;
-  --accent:       #d97706;
-  --accent-dim:   #fef3c7;
-  --success:      #059669;
-  --success-dim:  #d1fae5;
-  --danger:       #dc2626;
-  --danger-dim:   #fee2e2;
-  --warning:      #d97706;
-  --warning-dim:  #fef3c7;
-  --muted:        #6b7280;
+  /* Aksen biru vivid */
+  --primary:      #1d6ef5;
+  --primary-dim:  #ddeaff;
+  --accent:       #f59e0b;
+  --accent-dim:   #fef9e7;
+  --success:      #0ea472;
+  --success-dim:  #d0f5e8;
+  --danger:       #e53935;
+  --danger-dim:   #fde8e8;
+  --warning:      #f59e0b;
+  --warning-dim:  #fef9e7;
+  --muted:        #6b8cba;
 
-  --text-primary:   #1a1a1a;
-  --text-secondary: #4b5563;
-  --text-dim:       #9ca3af;
+  /* Teks: biru tua gelap agar kontras di atas biru muda */
+  --text-primary:   #0d1f3c;
+  --text-secondary: #3a5a8a;
+  --text-dim:       #7fa0cc;
 
-  --shadow:     0 1px 6px rgba(0,0,0,0.08);
-  --shadow-lg:  0 4px 20px rgba(0,0,0,0.12);
+  --shadow:     0 2px 10px rgba(29,110,245,0.10);
+  --shadow-lg:  0 6px 24px rgba(29,110,245,0.15);
 }
 
-/* [BARU] Light mode overrides tambahan untuk elemen yang pakai warna hardcoded */
-.light-mode .day-card        { background: #f1f5f9; border-color: #cbd5e1; color: #1a1a1a; }
-.light-mode .day-card.active { background: #dbeafe; border-color: #2563eb; }
-.light-mode .day-card label  { color: #374151; }
-.light-mode .time-select-card { background: #f8fafc; color: #1a1a1a; border-color: #cbd5e1; }
-.light-mode .modal            { background: rgba(0,0,0,0.35); }
-.light-mode select option     { background: #ffffff; color: #1a1a1a; }
+/* [BARU] Light mode overrides untuk elemen hardcoded & sidebar/topbar */
+.light-mode .day-card         { background: #ddeaff; border-color: #93b8f0; color: #0d1f3c; }
+.light-mode .day-card.active  { background: #bdd4fb; border-color: #1d6ef5; }
+.light-mode .day-card label   { color: #1d3a6e; }
+.light-mode .time-select-card { background: #f0f6ff; color: #0d1f3c; border-color: #93b8f0; }
+.light-mode .modal            { background: rgba(10,30,70,0.4); }
+.light-mode select option     { background: #ffffff; color: #0d1f3c; }
+
+/* Sidebar & topbar biru es */
+.light-mode #sidebar            { background: #dce8fd; border-right-color: #b8d0f5; }
+.light-mode #topbar             { background: #e4effe; border-bottom-color: #b8d0f5; }
+.light-mode .nav-item           { color: #3a5a8a; }
+.light-mode .nav-item:hover     { background: #c8dafc; color: #0d1f3c; }
+.light-mode .nav-item.active    { background: #bdd4fb; color: #1d6ef5; }
+.light-mode .sidebar-brand      { border-bottom-color: #b8d0f5; }
+.light-mode .sidebar-footer     { border-top-color: #b8d0f5; }
+.light-mode .nav-section-label  { color: #7fa0cc; }
 
 /* ── Theme Transition ──────────────────────────────────── */
 /* [BARU] Efek transisi halus saat ganti tema, tidak menyentuh animasi lainnya */
