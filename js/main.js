@@ -222,10 +222,65 @@ async function handleLogin(e) {
 
 function handleLogout() {
     sessionStorage.clear();
-    localStorage.clear();
+    // [BARU] Bersihkan class light-mode agar layar login kembali ke dark mode default
+    document.body.classList.remove('light-mode');
     UI.toast('Berhasil keluar', 'info');
     window.location.replace(window.location.pathname); 
 }
+
+// ============================================================
+// [BARU] Theme Manager — Per-User Dark/Light Mode
+// Simpan pilihan tema di localStorage dengan key: theme_{username}
+// ============================================================
+const Theme = (() => {
+  // Ambil username user yang sedang login
+  function _getUsername() {
+    try {
+      const s = sessionStorage.getItem('eduhome_user');
+      return s ? JSON.parse(s).username : 'guest';
+    } catch { return 'guest'; }
+  }
+
+  // Key localStorage unik per user: contoh "theme_admin", "theme_owner"
+  function _storageKey() {
+    return 'theme_' + _getUsername().toLowerCase();
+  }
+
+  // Update ikon tombol (Moon = dark mode aktif, Sun = light mode aktif)
+  function _updateIcon(isLight) {
+    const moon = document.getElementById('theme-icon-moon');
+    const sun  = document.getElementById('theme-icon-sun');
+    if (!moon || !sun) return;
+    moon.style.display = isLight ? 'none'  : '';
+    sun.style.display  = isLight ? ''      : 'none';
+  }
+
+  // Terapkan tema ke <body> dan update ikon
+  function _apply(isLight) {
+    document.body.classList.toggle('light-mode', isLight);
+    _updateIcon(isLight);
+    // Refresh lucide icons agar ikon di tombol ter-render ulang
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // Dipanggil tepat setelah login berhasil (atau saat restore session)
+  function init() {
+    const saved = localStorage.getItem(_storageKey());
+    // Default: dark mode (saved === null → isLight = false)
+    const isLight = saved === 'light';
+    _apply(isLight);
+  }
+
+  // Dipanggil saat user klik tombol toggle
+  function toggle() {
+    const isCurrentlyLight = document.body.classList.contains('light-mode');
+    const next = !isCurrentlyLight;
+    localStorage.setItem(_storageKey(), next ? 'light' : 'dark');
+    _apply(next);
+  }
+
+  return { init, toggle };
+})();
 
 function showApp(user) {
     document.getElementById('login-screen').style.display = 'none';
@@ -249,6 +304,7 @@ function showApp(user) {
 
     buildSidebar(user.role);
     applyPageVisibility(user.role);
+    Theme.init(); // [BARU] Muat tema pilihan user dari localStorage
 }
 
   function applyPageVisibility(role) {

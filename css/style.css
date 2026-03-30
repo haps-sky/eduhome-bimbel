@@ -43,6 +43,58 @@
   --font-mono:   'DM Mono', monospace;
 }
 
+/* ── Light Mode Variables ──────────────────────────────── */
+/* [BARU] Class .light-mode mengganti semua variabel warna ke tema terang */
+.light-mode {
+  --bg:           #f8f9fa;
+  --bg-surface:   #ffffff;
+  --bg-card:      #ffffff;
+  --bg-hover:     #f0f2f5;
+  --border:       #dee2e8;
+  --border-light: #c8cdd6;
+
+  --primary:      #2563eb;
+  --primary-dim:  #dbeafe;
+  --accent:       #d97706;
+  --accent-dim:   #fef3c7;
+  --success:      #059669;
+  --success-dim:  #d1fae5;
+  --danger:       #dc2626;
+  --danger-dim:   #fee2e2;
+  --warning:      #d97706;
+  --warning-dim:  #fef3c7;
+  --muted:        #6b7280;
+
+  --text-primary:   #1a1a1a;
+  --text-secondary: #4b5563;
+  --text-dim:       #9ca3af;
+
+  --shadow:     0 1px 6px rgba(0,0,0,0.08);
+  --shadow-lg:  0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* [BARU] Light mode overrides tambahan untuk elemen yang pakai warna hardcoded */
+.light-mode .day-card        { background: #f1f5f9; border-color: #cbd5e1; color: #1a1a1a; }
+.light-mode .day-card.active { background: #dbeafe; border-color: #2563eb; }
+.light-mode .day-card label  { color: #374151; }
+.light-mode .time-select-card { background: #f8fafc; color: #1a1a1a; border-color: #cbd5e1; }
+.light-mode .modal            { background: rgba(0,0,0,0.35); }
+.light-mode select option     { background: #ffffff; color: #1a1a1a; }
+
+/* ── Theme Transition ──────────────────────────────────── */
+/* [BARU] Efek transisi halus saat ganti tema, tidak menyentuh animasi lainnya */
+body,
+#sidebar, #topbar, #main-area,
+.card, .kpi-card, .finance-card, .table-wrap,
+.modal-content, .toast,
+.nav-item, .btn, .form-control, input, select, textarea {
+  transition:
+    background-color 0.3s ease,
+    border-color     0.3s ease,
+    color            0.2s ease,
+    box-shadow       0.3s ease;
+}
+
 html { font-size: 14px; }
 body {
   font-family: var(--font);
@@ -662,6 +714,26 @@ select option { background: var(--bg-card); }
 .toast-warning svg { color: var(--warning); }
 .toast-info    { border-left: 3px solid var(--primary); }
 .toast-info    svg { color: var(--primary); }
+
+/* ── Theme Toggle Button ────────────────────────────────── */
+/* [BARU] Styling tombol toggle tema di topbar */
+#theme-toggle-btn {
+  width: 36px; height: 36px; min-height: 36px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+#theme-toggle-btn:hover {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+#theme-toggle-btn svg { width: 16px; height: 16px; }
 
 /* ── Misc ───────────────────────────────────────────────── */
 .text-success { color: var(--success) !important; }
