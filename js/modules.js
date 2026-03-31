@@ -123,7 +123,7 @@ async function openEdit(id) {
 }
 
 function clearForm() {
-    // 1. Bersihkan Input Teks & Angka (Pasti Kosong)
+    // --- 1. Reset Input Teks & Angka (Dikosongkan Total) ---
     document.getElementById('mentor-id-field').value = '';
     document.getElementById('mentor-nama').value = '';
     document.getElementById('mentor-kontak').value = '';
@@ -131,17 +131,22 @@ function clearForm() {
     document.getElementById('mentor-fee-anak').value = '';
     document.getElementById('mentor-fee-harian').value = '';
 
-    // 2. Reset Dropdown (Paksa ke pilihan pertama)
-    // Gunakan .selectedIndex = 0 untuk memastikan dia balik ke paling atas
+    // --- 2. Reset Dropdown Jenis Kelamin ---
+    // Kita paksa balik ke urutan pertama (biasanya Laki-laki atau --Pilih--)
     const jk = document.getElementById('mentor-jk');
-    if (jk) jk.selectedIndex = 0; 
+    if (jk) {
+        jk.selectedIndex = 0; 
+    }
 
+    // --- 3. Reset Dropdown Status ---
+    // Kita paksa ke value 'AKTIF' agar setiap tambah mentor baru statusnya otomatis Aktif
     const status = document.getElementById('mentor-status');
     if (status) {
-        // Atau paksa ke value 'AKTIF' jika kamu mau default-nya itu
-        status.value = 'AKTIF';
+        status.value = 'AKTIF'; 
     }
 }
+
+
 function openAdd() {
     clearForm(); 
     const title = document.getElementById('mentor-modal-title');
@@ -1011,21 +1016,23 @@ const SPPPage = (() => {
   }
 
 async function deleteSPP(id, namaMurid) {
-    // 1. Konfirmasi lebih jelas (pakai nama murid kalau ada)
+    // 1. Konfirmasi
     const pesan = namaMurid ? 
         `Hapus paket SPP milik "${namaMurid}"? Sisa pertemuan akan hilang.` : 
         `Hapus paket SPP ${id}? Sisa pertemuan akan hilang.`;
         
     if (!confirm(pesan)) return;
 
-    // 2. Cari tombol hapus di tabel untuk pasang loading
+    // 2. Cari tombol hapus (Gunakan selector yang lebih spesifik)
     const btn = document.querySelector(`button[onclick*="deleteSPP('${id}'"]`);
     const originalContent = btn ? btn.innerHTML : '';
 
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            // CUKUP SPINNER SAJA: Biar kolom tabel nggak melebar/berantakan
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+            btn.style.width = '40px'; // Paksa lebar tetap agar konsisten
         }
 
         const res = await API.spp.delete(id);
@@ -1033,18 +1040,29 @@ async function deleteSPP(id, namaMurid) {
         if (res.status === 'OK') {
             UI.toast('Paket berhasil dihapus', 'success');
             
-            // --- SINKRONISASI DATA ---
-            allData = [];       // Kosongkan array data lama
-            isFetched = false;  // BUKA GEMBOK: Paksa load() ambil data baru dari Sheets
-            load();             // Refresh tabel
+            // --- REFRESH DATA ---
+            // Pastikan variabel ini diakses dari scope yang benar (misal: SPPPage.allData)
+            if (typeof allData !== 'undefined') allData = []; 
+            if (typeof isFetched !== 'undefined') isFetched = false; 
+            
+            // Panggil load() milik modul SPP
+            if (typeof load === 'function') load(); 
         } else {
             UI.toast(res.message || 'Gagal menghapus', 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+            if (btn) { 
+                btn.disabled = false; 
+                btn.innerHTML = originalContent; 
+                btn.style.width = ''; 
+            }
         }
     } catch (e) {
         console.error("Error Delete SPP:", e);
         UI.toast('Gagal terhubung ke server', 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = originalContent; 
+            btn.style.width = '';
+        }
     }
 }
 
