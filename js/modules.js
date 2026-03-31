@@ -144,6 +144,40 @@ async function openEdit(id) {
     UI.openModal('modal-mentor');
 }
 
+function clearForm() {
+    // 1. Daftar semua ID input yang ada di modal mentor
+    const fields = [
+        'mentor-id-field', 
+        'mentor-nama', 
+        'mentor-jk', 
+        'mentor-kontak', 
+        'mentor-program', 
+        'mentor-fee-anak', 
+        'mentor-fee-harian'
+    ];
+
+    // 2. Bersihkan semuanya
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    // 3. Set nilai default untuk dropdown agar tidak kosong
+    const status = document.getElementById('mentor-status');
+    if (status) status.value = 'AKTIF';
+
+    const jk = document.getElementById('mentor-jk');
+    if (jk) jk.value = 'L'; // Set default ke Laki-laki
+}
+
+function openAdd() {
+    clearForm(); // Sekarang semua field akan bersih total
+    
+    document.getElementById('mentor-modal-title').textContent = 'Tambah Mentor Baru';
+    
+    UI.openModal('modal-mentor');
+}
+
 async function saveForm() {
     // 1. Ambil data dari semua input field Mentor (Pastikan ID-nya sesuai dengan HTML kamu)
     const id         = document.getElementById('mentor-id-field').value;
@@ -218,53 +252,56 @@ async function saveForm() {
     }
 }
 
-  async function deleteMentor(id, nama) {
-    // 1. Konfirmasi
+ async function deleteMentor(id, nama) {
+    // 1. Konfirmasi dulu
     if (!confirm(`Hapus mentor "${nama}"? Semua data terkait mentor ini akan dihapus.`)) return;
 
-    // 2. CARI TOMBOL (PENTING: Harus ada teks 'deleteMentor' di dalamnya!)
-    // Ini bedanya: Kalau cuma pakai ID, dia bakal milih tombol Edit yang paling kiri.
-    const btn = document.querySelector(`button[onclick*="deleteMentor('${id}')"]`);
-    const originalContent = btn ? btn.innerHTML : ''; 
+    // 2. Cari tombol yang diklik (biar loading-nya muncul di situ)
+    // Kita cari button yang punya fungsi deleteMentor dengan ID ini
+    const btn = document.querySelector(`button[onclick*="deleteMentor('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : ''; // Simpan icon sampah aslinya
 
     try {
         if (btn) {
             btn.disabled = true;
-            // Gunakan spinner minimalis (tanpa teks "Menghapus") agar kolom tabel rapi
+            // Ganti icon sampah jadi spinner (tanpa teks tambahan agar tidak melebar berlebihan)
             btn.innerHTML = '<div class="spinner spinner-sm"></div>';
-            
-            // RESET STYLE: Hapus width auto & padding biar gak "jeleg" nabrak kolom
-            btn.style.width = ''; 
-            btn.style.padding = '';
+            btn.style.width = 'auto'; 
+            btn.style.padding = '0 10px';
         }
 
-        // 3. API Call
+        // 3. Panggil API Hapus Mentor
         const res = await API.mentor.delete(id);
 
         if (res.status === 'OK') {
             UI.toast(`Mentor "${nama}" berhasil dihapus`, 'success');
             
-            // --- REFRESH DATA ---
+            // --- RESET CACHE AGAR TABEL REFRESH ---
             allData = [];
             isFetched = false;
             load(); 
         } else {
-            UI.toast(res.message || 'Gagal menghapus', 'error');
+            UI.toast(res.message || 'Gagal menghapus mentor', 'error');
+            // Balikin tombol kalau gagal dari server
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
+                btn.style.width = ''; // Reset style jika gagal
+                btn.style.padding = '';
             }
         }
     } catch (e) {
         console.error("Error Delete Mentor:", e);
         UI.toast('Gagal terhubung ke server', 'error');
+        // Balikin tombol kalau koneksi putus
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = originalContent;
+            btn.style.width = '';
+            btn.style.padding = '';
         }
     }
 }
-
   return { load, openAdd, openEdit, saveForm, deleteMentor, updateSummary };
 })();
 
