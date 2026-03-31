@@ -123,32 +123,25 @@ async function openEdit(id) {
 }
 
 function clearForm() {
-    // 1. Daftar semua ID input yang ada di modal mentor
-    const fields = [
-        'mentor-id-field', 
-        'mentor-nama', 
-        'mentor-jk', 
-        'mentor-kontak', 
-        'mentor-program', 
-        'mentor-status',
-        'mentor-fee-anak', 
-        'mentor-fee-harian'
-    ];
+    // 1. Bersihkan Input Teks & Angka (Pasti Kosong)
+    document.getElementById('mentor-id-field').value = '';
+    document.getElementById('mentor-nama').value = '';
+    document.getElementById('mentor-kontak').value = '';
+    document.getElementById('mentor-program').value = '';
+    document.getElementById('mentor-fee-anak').value = '';
+    document.getElementById('mentor-fee-harian').value = '';
 
-    // 2. Bersihkan semuanya
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-
-    // 3. Set nilai default untuk dropdown agar tidak kosong
-    const status = document.getElementById('mentor-status');
-    if (status) status.value = 'AKTIF';
-
+    // 2. Reset Dropdown (Paksa ke pilihan pertama)
+    // Gunakan .selectedIndex = 0 untuk memastikan dia balik ke paling atas
     const jk = document.getElementById('mentor-jk');
-    if (jk) jk.value = 'L'; // Set default ke Laki-laki
-}
+    if (jk) jk.selectedIndex = 0; 
 
+    const status = document.getElementById('mentor-status');
+    if (status) {
+        // Atau paksa ke value 'AKTIF' jika kamu mau default-nya itu
+        status.value = 'AKTIF';
+    }
+}
 function openAdd() {
     clearForm(); 
     const title = document.getElementById('mentor-modal-title');
