@@ -394,7 +394,8 @@ async function saveForm() {
         p.id_murid === muridSel.value && 
         p.program === programMurid && 
         p.status === 'AKTIF' && 
-        (parseInt(p.total) - parseInt(p.hadir || 0)) > 0
+        // GANTI DI SINI: Langsung cek sisa_pertemuan (lebih akurat)
+        Number(p.sisa_pertemuan) > 0 
       );
 
       if (!paketAktif) {
