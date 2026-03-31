@@ -152,6 +152,7 @@ function clearForm() {
         'mentor-jk', 
         'mentor-kontak', 
         'mentor-program', 
+        'mentor-status',
         'mentor-fee-anak', 
         'mentor-fee-harian'
     ];
