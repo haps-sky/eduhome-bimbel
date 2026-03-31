@@ -462,22 +462,8 @@ async function saveForm() {
     renderTable(filtered.reverse());
   }
 
-  function openAdd() {
-  // Pastikan tanggal selalu ke hari ini pas mau input baru
-  const tglInput = document.getElementById('presensi-tanggal');
-  if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
-
-  // Kosongkan pilihan murid & mentor
-  const ms = document.getElementById('presensi-murid');
-  const mt = document.getElementById('presensi-mentor');
-  if (ms) ms.value = '';
-  if (mt) mt.value = '';
-
-  // Reset catatan & bintang ke default
-  document.getElementById('presensi-catatan').value = '';
-  document.getElementById('presensi-bintang').value = '5';
-
-  UI.openModal('modal-presensi');
+function openAdd() {
+    clearForm();
 }
 
 async function openEdit(id) {
@@ -503,79 +489,66 @@ function clearForm() {
     const titleEl = document.getElementById('modal-presensi-title');
     if (titleEl) titleEl.textContent = 'Catat Presensi Baru';
 
-    const tglInput = document.getElementById('presensi-tanggal');
-    if (tglInput) {
-        tglInput.value = ''; 
-    }
-
+    // Set ID kosong (penting untuk bedakan ADD vs EDIT)
     document.getElementById('presensi-id-field').value = '';
 
+    // Tanggal Kosong (sesuai request kamu sebelumnya)
+    const tglInput = document.getElementById('presensi-tanggal');
+    if (tglInput) tglInput.value = ''; 
+
+    // Reset dropdown & field lainnya
     document.getElementById('presensi-murid').value = '';
     document.getElementById('presensi-mentor').value = '';
     document.getElementById('presensi-status').value = 'HADIR';
     document.getElementById('presensi-catatan').value = '';
     document.getElementById('presensi-bintang').value = 5;
-  
 
-  UI.openModal('modal-presensi');
+    UI.openModal('modal-presensi');
 }
 
 async function deletePresensi(id) {
-  // 1. Konfirmasi (Sudah oke, tetap pertahankan pesannya)
-  if (!confirm('Hapus presensi ini? Sisa pertemuan murid akan bertambah kembali secara otomatis.')) return;
+    if (!confirm('Hapus presensi ini? Sisa pertemuan murid akan bertambah kembali secara otomatis.')) return;
 
-  // 2. Cari tombol (Perhatikan tanda petiknya agar akurat)
-  const btn = document.querySelector(`button[onclick*="deleteItem('${id}')"]`) || 
-              document.querySelector(`button[onclick*="deletePresensi('${id}')"]`);
-              
-  const originalContent = btn ? btn.innerHTML : '';
+    // Selector diperbaiki agar PASTI ketemu tombolnya
+    const btn = document.querySelector(`button[onclick*="deleteItem('${id}')"]`);
+    const originalContent = btn ? btn.innerHTML : '';
 
-  try {
-    if (btn) {
-      btn.disabled = true;
-      // TAMBAHAN: Efek spinner + teks seperti di hapus murid
-      btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
-      btn.style.width = 'auto'; 
-      btn.style.padding = '0 12px';
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+        }
+
+        const res = await API.presensi.delete(id);
+
+        if (res.status === 'OK') {
+            UI.toast('Data presensi berhasil dihapus', 'success');
+            
+            // Refresh data & Reset Gembok
+            allData = []; 
+            isFetched = false; 
+            
+            // SINKRONISASI KE MODUL SPP
+            // Supaya pas buka menu SPP, angkanya sudah update dari Sheets
+            if (window.SPPPage) {
+                SPPPage.isFetched = false; 
+            }
+
+            load(); 
+        } else {
+            UI.toast(res.message || 'Gagal menghapus', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+        }
+    } catch (e) {
+        console.error("Error Delete:", e);
+        UI.toast('Gagal terhubung ke server', 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
     }
-
-    const res = await API.presensi.delete(id);
-
-    if (res.status === 'OK') {
-      UI.toast('Data presensi berhasil dihapus', 'success');
-      
-      // --- SINKRONISASI CACHE ---
-      allData = [];       // Reset data presensi
-      isFetched = false;  // Buka gembok presensi
-      
-      // PENTING: Reset gembok SPP juga agar angka Hadir/Sisa terupdate saat dibuka nanti
-      if (window.SPPPage) {
-        SPPPage.isFetched = false; 
-      }
-
-      load(); // Refresh tabel presensi
-    } else {
-      UI.toast(res.message || 'Gagal menghapus', 'error');
-      // Balikin tombol kalau gagal dari server
-      if (btn) { 
-        btn.disabled = false; 
-        btn.innerHTML = originalContent; 
-        btn.style.padding = '';
-      }
-    }
-  } catch (e) {
-    console.error("Error Delete Presensi:", e);
-    UI.toast('Gagal terhubung ke server', 'error');
-    // Balikin tombol kalau koneksi putus
-    if (btn) { 
-      btn.disabled = false; 
-      btn.innerHTML = originalContent; 
-      btn.style.padding = '';
-    }
-  }
 }
 
-  return { load, saveForm, filterByDate, openAdd: clearForm, openEdit, deleteItem: deletePresensi };
+return { load, saveForm, filterByDate, openAdd, openEdit, deleteItem: deletePresensi 
+};
+
 })();
 
 // ============================================================
