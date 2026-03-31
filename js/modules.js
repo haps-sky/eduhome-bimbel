@@ -423,7 +423,7 @@ async function saveForm() {
       : await API.presensi.add(payload);
 
     if (res.status === 'OK') {
-      UI.toast(id ? 'Presensi diperbarui' : 'Presensi berhasil dicatat! ⭐', 'success');
+      UI.toast(id ? 'Presensi diperbarui' : 'Presensi berhasil dicatat!', 'success');
       UI.closeModal('modal-presensi');
       
       // Refresh Data
@@ -705,7 +705,7 @@ const PembayaranPage = (() => {
           await API.pembayaran.add(payload);
       
       if (res.status === 'OK') {
-        const pesanSukses = id ? 'Data pembayaran diperbarui' : 'Pembayaran berhasil dicatat! 💸';
+        const pesanSukses = id ? 'Data pembayaran diperbarui' : 'Pembayaran berhasil dicatat!';
         UI.toast(pesanSukses, 'success');
         
         UI.closeModal('modal-pembayaran');
@@ -912,7 +912,7 @@ const SPPPage = (() => {
       if (res.status === 'OK') {
         // Tampilkan jumlah pertemuan hasil hitungan backend jika tambah baru
         const msg = id ? 'Paket SPP berhasil diperbarui' : 
-                         `Berhasil! Total: ${res.data.total_pertemuan} pertemuan. ✅`;
+                         `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
         
         UI.toast(msg, 'success');
         UI.closeModal('modal-spp');
@@ -930,7 +930,7 @@ const SPPPage = (() => {
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = 'Simpan Paket'; // Balikin teks tombol
+        btn.innerHTML = 'Simpan Paket';
       }
     }
 }
@@ -1017,7 +1017,7 @@ async function deleteSPP(id, namaMurid) {
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div>'; // Spinner kecil
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
         }
 
         const res = await API.spp.delete(id);
@@ -1155,7 +1155,7 @@ async function saveForm() {
           await API.buku.add(payload);
       
       if (res.status === 'OK') {
-        const pesanSukses = id ? 'Modul berhasil diperbarui' : 'Modul baru berhasil ditambahkan! 📚';
+        const pesanSukses = id ? 'Modul berhasil diperbarui' : 'Modul baru berhasil ditambahkan!';
         UI.toast(pesanSukses, 'success');
         
         UI.closeModal('modal-buku');
@@ -1190,7 +1190,7 @@ async function saveForm() {
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div>'; // Muncul spinner muter
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
         }
 
         const res = await API.buku.delete(id);
