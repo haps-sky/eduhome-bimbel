@@ -222,8 +222,8 @@ async function saveForm() {
     // 1. Konfirmasi (Penting agar tidak sengaja klik)
     if (!confirm(`Hapus mentor "${nama}"? Semua data terkait mentor ini akan dihapus.`)) return;
 
-    // 2. Cari tombol tong sampah yang diklik berdasarkan ID mentor
-    const btn = document.querySelector(`button[onclick*="deleteMentor('${id}'"]`);
+    const btn = document.getElementById('mentor-tbody').querySelector(`button[onclick*="${id}"]`);
+
     const originalContent = btn ? btn.innerHTML : ''; 
 
     try {
@@ -344,10 +344,10 @@ function renderTable(data) {
       <td>${UI.stars(p.bintang)}</td>
       <td>
         <div class="action-btns">
-          <button class="btn-icon edit" onclick="PresensiPage.openEdit('${p.id}')" title="Edit Data">
-            <i data-lucide="edit-3"></i> 
+          <button class="btn-icon btn-warning" onclick="PresensiPage.openEdit('${p.id}')" title="Edit Data">
+            <i data-lucide="pencil"></i> 
           </button>
-          <button class="btn-icon delete" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
+          <button class="btn-icon btn-danger" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
             <i data-lucide="trash-2"></i>
           </button>
         </div>
