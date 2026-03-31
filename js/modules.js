@@ -360,7 +360,7 @@ function renderTable(data) {
           <button class="btn-icon btn-warning" onclick="PresensiPage.openEdit('${p.id}')" title="Edit Data">
             <i data-lucide="pencil"></i> 
           </button>
-          <button class="btn-icon btn-danger" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
+          <button class="btn-icon btn-danger" data-delete-id="${p.id}" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
             <i data-lucide="trash-2"></i>
           </button>
         </div>
@@ -509,8 +509,12 @@ function clearForm() {
 async function deletePresensi(id) {
     if (!confirm('Hapus presensi ini? Sisa pertemuan murid akan bertambah kembali secara otomatis.')) return;
 
-    // Selector diperbaiki agar PASTI ketemu tombolnya
-    const btn = document.querySelector(`button[onclick*="deleteItem('${id}')"]`);
+    // ── Guard anti double-click ──────────────────────────────
+    if (deletePresensi._loading) return;
+    deletePresensi._loading = true;
+
+    // Cari tombol dengan cara lebih robust pakai data-id
+    const btn = document.querySelector(`[data-delete-id="${id}"]`);
     const originalContent = btn ? btn.innerHTML : '';
 
     try {
@@ -522,27 +526,31 @@ async function deletePresensi(id) {
         const res = await API.presensi.delete(id);
 
         if (res.status === 'OK') {
-            UI.toast('Data presensi berhasil dihapus', 'success');
-            
-            // Refresh data & Reset Gembok
-            allData = []; 
-            isFetched = false; 
-            
-            // SINKRONISASI KE MODUL SPP
-            // Supaya pas buka menu SPP, angkanya sudah update dari Sheets
-            if (window.SPPPage) {
-                SPPPage.isFetched = false; 
-            }
+            UI.toast('Data presensi berhasil dihapus & kuota SPP dikembalikan', 'success');
 
-            load(); 
+            // Reset cache presensi
+            allData    = [];
+            isFetched  = false;
+
+            // Invalidate SPP agar fetch ulang saat dibuka
+            if (window.SPPPage) SPPPage.isFetched = false;
+
+            // Await agar UI tidak update sebelum data baru datang
+            await load();
+
         } else {
             UI.toast(res.message || 'Gagal menghapus', 'error');
             if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
         }
+
     } catch (e) {
-        console.error("Error Delete:", e);
-        UI.toast('Gagal terhubung ke server', 'error');
+        console.error('Error deletePresensi:', e);
+        UI.toast('Gagal terhubung ke server. Silakan refresh.', 'error');
         if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+
+    } finally {
+        // Selalu lepas guard meski error
+        deletePresensi._loading = false;
     }
 }
 
