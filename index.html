@@ -550,6 +550,7 @@
   <div class="modal-content">
     <div class="modal-header"><h3 id="modal-presensi-title">Catat Presensi</h3><button class="modal-close" onclick="UI.closeModal('modal-presensi')">✕</button></div>
     <div class="modal-body">
+      <input type="hidden" id="presensi-id-field">
       <div class="form-row">
         <div class="form-group"><label>Tanggal *</label><input type="date" id="presensi-tanggal"></div>
         <div class="form-group"><label>Status</label><select id="presensi-status"><option value="HADIR">Hadir</option><option value="ABSEN">Absen</option><option value="IZIN">Izin</option></select></div>
