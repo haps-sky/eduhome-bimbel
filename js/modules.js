@@ -323,7 +323,6 @@ function populateDropdowns(murid, mentor) {
            .join('');
   }
 
-  // Isi Dropdown Mentor
   const mt = document.getElementById('presensi-mentor');
   if (mt) {
     mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
@@ -332,91 +331,118 @@ function populateDropdowns(murid, mentor) {
             .join('');
   }
 }
-  function renderTable(data) {
-    const rows = data.map(p => `
-      <tr>
-        <td>${UI.formatDate(p.tanggal)}</td>
-        <td><strong>${p.nama_murid}</strong></td>
-        <td>${p.nama_mentor}</td>
-        <td><span class="program-tag">${p.program}</span></td>
-        <td>${UI.statusBadge(p.status)}</td>
-        <td>${p.catatan || '-'}</td>
-        <td>${UI.stars(p.bintang)}</td>
-      </tr>`);
-    UI.renderTable('presensi-tbody', rows, 'Belum ada data presensi');
+
+function renderTable(data) {
+  const rows = data.map(p => `
+    <tr>
+      <td>${UI.formatDate(p.tanggal)}</td>
+      <td><strong>${p.nama_murid}</strong></td>
+      <td>${p.nama_mentor}</td>
+      <td><span class="program-tag">${p.program}</span></td>
+      <td>${UI.statusBadge(p.status)}</td>
+      <td>${p.catatan || '-'}</td>
+      <td>${UI.stars(p.bintang)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-icon edit" onclick="PresensiPage.openEdit('${p.id}')" title="Edit Data">
+            <i class="lucide-edit-3"></i>
+          </button>
+          <button class="btn-icon delete" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
+            <i class="lucide-trash-2"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`);
+
+  UI.renderTable('presensi-tbody', rows, 'Belum ada data presensi');
+  
+  // WAJIB: Render ulang ikon lucide agar muncul setelah tabel digambar
+  if (window.lucide) {
+    lucide.createIcons();
   }
+}
 
 async function saveForm() {
-    // 1. Ambil elemen tombol menggunakan querySelector (lebih aman jika ID belum terpasang)
-    const btn = document.querySelector('#modal-presensi .btn-primary');
+  const id        = document.getElementById('presensi-id-field').value;
+  const tanggal   = document.getElementById('presensi-tanggal').value;
+  const muridSel  = document.getElementById('presensi-murid');
+  const mentorSel = document.getElementById('presensi-mentor');
+  const status    = document.getElementById('presensi-status').value;
+  const catatan   = document.getElementById('presensi-catatan').value.trim();
+  const bintang   = document.getElementById('presensi-bintang').value;
 
-    // 2. Ambil data dari input field
-    const id        = document.getElementById('presensi-id-field')?.value; // Untuk jaga-jaga jika ada fitur Edit
-    const tanggal   = document.getElementById('presensi-tanggal').value;
-    const muridSel  = document.getElementById('presensi-murid');
-    const mentorSel = document.getElementById('presensi-mentor');
-    const status    = document.getElementById('presensi-status').value;
-    const catatan   = document.getElementById('presensi-catatan').value;
-    const bintang   = document.getElementById('presensi-bintang').value;
+  if (!tanggal || !muridSel.value) {
+    UI.toast('Tanggal dan murid wajib diisi', 'error');
+    return;
+  }
 
-    // 3. Validasi
-    if (!tanggal || !muridSel.value) { 
-      UI.toast('Tanggal dan murid wajib diisi', 'error'); 
-      return; 
+  const muridOpt = muridSel.options[muridSel.selectedIndex];
+  const mentorOpt = mentorSel.options[mentorSel.selectedIndex];
+  const programMurid = muridOpt.dataset.program;
+
+  const btn = document.getElementById('presensi-save-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner spinner-sm"></div> ${id ? 'Memperbarui...' : 'Memvalidasi...'}`;
+  }
+
+  try {
+    let idPaketTerpilih = '';
+    
+    // --- KHUSUS TAMBAH BARU: VALIDASI KUOTA ---
+    if (!id) {
+      const sppRes = await API.spp.getAll();
+      const paketAktif = (sppRes.data || []).find(p => 
+        p.id_murid === muridSel.value && 
+        p.program === programMurid && 
+        p.status === 'AKTIF' && 
+        (parseInt(p.total) - parseInt(p.hadir || 0)) > 0
+      );
+
+      if (!paketAktif) {
+        UI.toast(`Kuota ${programMurid} habis atau paket belum aktif!`, 'error');
+        throw new Error('Kuota Habis');
+      }
+      idPaketTerpilih = paketAktif.id;
     }
 
-    const muridOpt  = muridSel.options[muridSel.selectedIndex];
-    const mentorOpt = mentorSel.options[mentorSel.selectedIndex];
-
-    // 4. Siapkan Payload
     const payload = {
       tanggal,
-      id_murid:    muridSel.value,
-      nama_murid:  muridOpt.dataset.nama,
-      id_mentor:   mentorSel.value,
+      id_murid: muridSel.value,
+      nama_murid: muridOpt.dataset.nama,
+      id_mentor: mentorSel.value,
       nama_mentor: mentorOpt ? mentorOpt.dataset.nama : '',
-      program:     muridOpt.dataset.program,
-      status, 
-      catatan, 
-      bintang: parseInt(bintang) || 0
+      program: programMurid,
+      status,
+      catatan,
+      bintang: parseInt(bintang) || 0,
+      id_paket: idPaketTerpilih
     };
 
-    try {
-      if (btn) { 
-        btn.disabled = true; 
-        // Efek loading dengan spinner-sm yang imut
-        btn.innerHTML = id ? 
-            '<div class="spinner spinner-sm"></div> Memperbarui presensi...' : 
-            '<div class="spinner spinner-sm"></div> Mencatat presensi...'; 
-      }
+    const res = id 
+      ? await API.presensi.update({ id, ...payload }) 
+      : await API.presensi.add(payload);
 
-      // Gunakan ternary: Jika ada ID berarti update, jika tidak berarti add
-      const res = id ? 
-          await API.presensi.update({ id, ...payload }) : 
-          await API.presensi.add(payload);
+    if (res.status === 'OK') {
+      UI.toast(id ? 'Presensi diperbarui' : 'Presensi berhasil dicatat! ⭐', 'success');
+      UI.closeModal('modal-presensi');
       
-      if (res.status === 'OK') {
-        const pesanSukses = id ? 'Presensi berhasil diperbarui' : 'Presensi berhasil dicatat! ⭐';
-        UI.toast(pesanSukses, 'success');
-        
-        UI.closeModal('modal-presensi');
-        
-        // RESET CACHE & REFRESH TABEL
-        allData = [];
-        isFetched = false;
-        load(); 
-      } else {
-        UI.toast(res.message || 'Gagal menyimpan presensi', 'error');
-      }
-    } catch (e) {
-      console.error("Error Presensi:", e);
-      UI.toast('Gagal terhubung ke server', 'error');
-    } finally {
-      if (btn) { 
-        btn.disabled = false; 
-        btn.innerHTML = 'Simpan Presensi'; // Balikin teks tombol
-      }
+      // Refresh Data
+      allData = [];
+      isFetched = false;
+      setTimeout(() => { load(); }, 500);
+    } else {
+      UI.toast(res.message || 'Gagal menyimpan', 'error');
     }
+  } catch (e) {
+    if(e.message !== 'Kuota Habis') UI.toast('Error: ' + e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="save"></i> Simpan Presensi';
+      lucide.createIcons({ nodes: [btn] });
+    }
+  }
 }
 
   function filterByDate(date) {
@@ -442,7 +468,66 @@ async function saveForm() {
   UI.openModal('modal-presensi');
 }
 
-  return { load, saveForm, filterByDate, openAdd };
+async function openEdit(id) {
+  const p = allData.find(x => x.id === id);
+  if (!p) return;
+
+  // Reset form & Judul
+  document.getElementById('modal-presensi-title').textContent = 'Edit Presensi';
+  document.getElementById('presensi-id-field').value = p.id;
+  
+  // Isi Field
+  document.getElementById('presensi-tanggal').value = p.tanggal;
+  document.getElementById('presensi-murid').value   = p.id_murid;
+  document.getElementById('presensi-mentor').value  = p.id_mentor;
+  document.getElementById('presensi-status').value  = p.status;
+  document.getElementById('presensi-catatan').value = p.catatan || '';
+  document.getElementById('presensi-bintang').value = p.bintang || 5;
+
+  UI.openModal('modal-presensi');
+}
+
+function clearForm() {
+  document.getElementById('modal-presensi-title').textContent = 'Catat Presensi Baru';
+  document.getElementById('presensi-id-field').value = '';
+  document.getElementById('presensi-tanggal').value = UI.getToday(); // Fungsi helper tanggal hari ini
+  document.getElementById('presensi-murid').value = '';
+  document.getElementById('presensi-mentor').value = '';
+  document.getElementById('presensi-status').value = 'HADIR';
+  document.getElementById('presensi-catatan').value = '';
+  document.getElementById('presensi-bintang').value = 5;
+}
+
+async function deletePresensi(id) {
+  if (!confirm('Hapus presensi ini? Sisa pertemuan murid akan bertambah kembali secara otomatis.')) return;
+
+  const btn = document.querySelector(`button[onclick*="deletePresensi('${id}')"]`);
+  const originalContent = btn ? btn.innerHTML : '';
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+    }
+
+    const res = await API.presensi.delete(id);
+
+    if (res.status === 'OK') {
+      UI.toast('Data presensi berhasil dihapus', 'success');
+      allData = [];
+      isFetched = false;
+      load();
+    } else {
+      UI.toast(res.message || 'Gagal menghapus', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+    }
+  } catch (e) {
+    UI.toast('Gagal terhubung ke server', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+  }
+}
+
+  return { load, saveForm, filterByDate, openAdd: clearForm, openEdit, deleteItem: deletePresensi };
 })();
 
 // ============================================================

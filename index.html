@@ -296,7 +296,7 @@
           </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Tanggal</th><th>Murid</th><th>Mentor</th><th>Program</th><th>Status</th><th>Catatan</th><th>Bintang</th></tr></thead>
+              <thead><tr><th>Tanggal</th><th>Murid</th><th>Mentor</th><th>Program</th><th>Status</th><th>Catatan</th><th>Bintang</th><th>AKSI</th></tr></thead>
               <tbody id="presensi-tbody"></tbody>
             </table>
           </div>
@@ -448,7 +448,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="calendar-check"></i> Presensi Hari Ini (Saya)</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Murid</th><th>Program</th><th>Status</th><th>Bintang</th><th>Catatan</th></tr></thead>
+              <thead><tr><th>Murid</th><th>Program</th><th>Status</th><th>Bintang</th><th>Catatan</th><th>AKSI</th></tr></thead>
               <tbody id="mentor-presensi-tbody"></tbody>
             </table>
           </div>
@@ -569,28 +569,69 @@
     </div>
   </div>
 </div>
-
+  
+<!-- MODAL INPUT PRESESI MENTOR -->
 <div id="modal-mentor-presensi" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3>Input Presensi Murid Saya</h3><button class="modal-close" onclick="UI.closeModal('modal-mentor-presensi')">✕</button></div>
+    <div class="modal-header">
+      <h3 id="modal-mentor-title">Input Presensi Murid Saya</h3>
+      <button class="modal-close" onclick="UI.closeModal('modal-mentor-presensi')">✕</button>
+    </div>
+    
     <div class="modal-body">
-      <div class="role-context-banner"><i data-lucide="shield-check"></i> Hanya murid yang ditugaskan kepada Anda ditampilkan</div>
-      <div class="form-row">
-        <div class="form-group"><label>Tanggal *</label><input type="date" id="mentor-presensi-tanggal"></div>
-        <div class="form-group"><label>Status Kehadiran</label><select id="mentor-presensi-status"><option value="HADIR">Hadir</option><option value="ABSEN">Absen</option><option value="IZIN">Izin</option></select></div>
+      <!-- ID Hidden Field (PENTING UNTUK EDIT) -->
+      <input type="hidden" id="mentor-presensi-id-field">
+
+      <div class="role-context-banner">
+        <i data-lucide="shield-check"></i> 
+        Hanya murid yang ditugaskan kepada Anda ditampilkan
       </div>
-      <div class="form-group"><label>Murid *</label><select id="mentor-presensi-murid"><option value="">-- Pilih Murid --</option></select></div>
+
       <div class="form-row">
-        <div class="form-group"><label>Bintang Hari Ini (0–10)</label><input type="number" id="mentor-presensi-bintang" min="0" max="10" value="7"></div>
-        <div class="form-group"><label>Catatan Sesi</label><input type="text" id="mentor-presensi-catatan" placeholder="Topik yang dipelajari..."></div>
+        <div class="form-group">
+          <label>Tanggal *</label>
+          <input type="date" id="mentor-presensi-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Status Kehadiran</label>
+          <select id="mentor-presensi-status">
+            <option value="HADIR">Hadir</option>
+            <option value="ABSEN">Absen</option>
+            <option value="IZIN">Izin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Murid *</label>
+        <select id="mentor-presensi-murid">
+          <option value="">-- Pilih Murid --</option>
+          <!-- Data akan diisi via JavaScript -->
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bintang Hari Ini (0–10)</label>
+          <input type="number" id="mentor-presensi-bintang" min="0" max="10" value="7">
+        </div>
+        <div class="form-group">
+          <label>Catatan Sesi</label>
+          <input type="text" id="mentor-presensi-catatan" placeholder="Topik yang dipelajari...">
+        </div>
       </div>
     </div>
+
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="UI.closeModal('modal-mentor-presensi')">Batal</button>
-      <button class="btn btn-primary" onclick="MentorPresensiPage.saveForm()"><i data-lucide="save"></i> Simpan</button>
+      <button id="mentor-presensi-save-btn" class="btn btn-primary" onclick="MentorPresensiPage.saveForm()">
+        <i data-lucide="save"></i> Simpan
+      </button>
     </div>
   </div>
 </div>
+
+
 
 <div id="modal-pembayaran" class="modal">
   <div class="modal-content">
