@@ -500,17 +500,22 @@ async function openEdit(id) {
 }
 
 function clearForm() {
-  const titleEl = document.getElementById('modal-presensi-title');
-  if (titleEl) titleEl.textContent = 'Catat Presensi Baru';
+    const titleEl = document.getElementById('modal-presensi-title');
+    if (titleEl) titleEl.textContent = 'Catat Presensi Baru';
 
-  document.getElementById('presensi-id-field').value = '';
-  document.getElementById('presensi-tanggal').value = new Date().toISOString().split('T')[0];
+    const tglInput = document.getElementById('presensi-tanggal');
+    if (tglInput) {
+        tglInput.value = ''; 
+    }
+
+    document.getElementById('presensi-id-field').value = '';
+
+    document.getElementById('presensi-murid').value = '';
+    document.getElementById('presensi-mentor').value = '';
+    document.getElementById('presensi-status').value = 'HADIR';
+    document.getElementById('presensi-catatan').value = '';
+    document.getElementById('presensi-bintang').value = 5;
   
-  document.getElementById('presensi-murid').value = '';
-  document.getElementById('presensi-mentor').value = '';
-  document.getElementById('presensi-status').value = 'HADIR';
-  document.getElementById('presensi-catatan').value = '';
-  document.getElementById('presensi-bintang').value = 5;
 
   UI.openModal('modal-presensi');
 }
