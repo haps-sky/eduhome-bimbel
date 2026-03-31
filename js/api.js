@@ -112,7 +112,9 @@ async function post(body) {
     getAll:     () => get('getPresensi'),
     getByDate:  (tanggal)  => get('getPresensi', { tanggal }),
     getByMurid: (id_murid) => get('getPresensi', { id_murid }),
-    add:        (data)     => post({ action: 'addPresensi', ...data })
+    add:        (data)     => post({ action: 'addPresensi', ...data }),
+    update:     (data)     => post({ action: 'updatePresensi', ...data }),
+    delete:     (id)       => post({ action: 'deletePresensi', id })
   };
 
   // PEMBAYARAN
