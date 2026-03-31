@@ -503,31 +503,57 @@ function clearForm() {
 }
 
 async function deletePresensi(id) {
+  // 1. Konfirmasi (Sudah oke, tetap pertahankan pesannya)
   if (!confirm('Hapus presensi ini? Sisa pertemuan murid akan bertambah kembali secara otomatis.')) return;
 
-  const btn = document.querySelector(`button[onclick*="deletePresensi('${id}')"]`);
+  // 2. Cari tombol (Perhatikan tanda petiknya agar akurat)
+  const btn = document.querySelector(`button[onclick*="deleteItem('${id}')"]`) || 
+              document.querySelector(`button[onclick*="deletePresensi('${id}')"]`);
+              
   const originalContent = btn ? btn.innerHTML : '';
 
   try {
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+      // TAMBAHAN: Efek spinner + teks seperti di hapus murid
+      btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+      btn.style.width = 'auto'; 
+      btn.style.padding = '0 12px';
     }
 
     const res = await API.presensi.delete(id);
 
     if (res.status === 'OK') {
       UI.toast('Data presensi berhasil dihapus', 'success');
-      allData = [];
-      isFetched = false;
-      load();
+      
+      // --- SINKRONISASI CACHE ---
+      allData = [];       // Reset data presensi
+      isFetched = false;  // Buka gembok presensi
+      
+      // PENTING: Reset gembok SPP juga agar angka Hadir/Sisa terupdate saat dibuka nanti
+      if (window.SPPPage) {
+        SPPPage.isFetched = false; 
+      }
+
+      load(); // Refresh tabel presensi
     } else {
       UI.toast(res.message || 'Gagal menghapus', 'error');
-      if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+      // Balikin tombol kalau gagal dari server
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = originalContent; 
+        btn.style.padding = '';
+      }
     }
   } catch (e) {
+    console.error("Error Delete Presensi:", e);
     UI.toast('Gagal terhubung ke server', 'error');
-    if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+    // Balikin tombol kalau koneksi putus
+    if (btn) { 
+      btn.disabled = false; 
+      btn.innerHTML = originalContent; 
+      btn.style.padding = '';
+    }
   }
 }
 
