@@ -94,28 +94,6 @@ function renderTable(data) {
     }
   }
 
-// 1. Kita buat fungsi khusus buat bersih-bersih (biar rapi)
-  function clearForm() {
-    ['mentor-nama', 'mentor-fee-anak', 'mentor-fee-harian'].forEach(id => {
-      const el = document.getElementById(id); 
-      if (el) el.value = '';
-    });
-    
-    // Set status default ke AKTIF
-    const status = document.getElementById('mentor-status');
-    if (status) status.value = 'AKTIF';
-  }
-
-  // 2. Fungsi openAdd jadi lebih pendek dan manis
-  function openAdd() {
-    clearForm(); // Panggil si tukang bersih-bersih
-    
-    document.getElementById('mentor-modal-title').textContent = 'Tambah Mentor Baru';
-    document.getElementById('mentor-id-field').value = ''; // ID dikosongkan karena data baru
-    
-    UI.openModal('modal-mentor');
-  }
-
 async function openEdit(id) {
     if (allData.length === 0) {
       UI.toast('Memuat data mentor...', 'info');
@@ -172,12 +150,11 @@ function clearForm() {
 }
 
 function openAdd() {
-    clearForm(); // Sekarang semua field akan bersih total
-    
-    document.getElementById('mentor-modal-title').textContent = 'Tambah Mentor Baru';
-    
+    clearForm(); 
+    const title = document.getElementById('mentor-modal-title');
+    if (title) title.textContent = 'Tambah Mentor Baru';
     UI.openModal('modal-mentor');
-}
+  }
 
 async function saveForm() {
     // 1. Ambil data dari semua input field Mentor (Pastikan ID-nya sesuai dengan HTML kamu)

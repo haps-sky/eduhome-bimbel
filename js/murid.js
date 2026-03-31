@@ -220,7 +220,7 @@ async function openEdit(id) {
 }
 
   function clearForm() {
-    ['murid-nama','murid-jk','murid-kelas','murid-program','murid-tgl','murid-mentor','murid-jam'].forEach(id => {
+    ['murid-nama','murid-jk','murid-kelas','murid-program','murid-tgl','murid-status','murid-mentor','murid-jam'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
