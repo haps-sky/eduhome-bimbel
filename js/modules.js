@@ -486,14 +486,18 @@ async function openEdit(id) {
 }
 
 function clearForm() {
-  document.getElementById('modal-presensi-title').textContent = 'Catat Presensi Baru';
+  const titleEl = document.getElementById('modal-presensi-title');
+  if (titleEl) titleEl.textContent = 'Catat Presensi Baru';
+
   document.getElementById('presensi-id-field').value = '';
-  document.getElementById('presensi-tanggal').value = UI.getToday(); // Fungsi helper tanggal hari ini
+  document.getElementById('presensi-tanggal').value = UI.getToday();
   document.getElementById('presensi-murid').value = '';
   document.getElementById('presensi-mentor').value = '';
   document.getElementById('presensi-status').value = 'HADIR';
   document.getElementById('presensi-catatan').value = '';
   document.getElementById('presensi-bintang').value = 5;
+
+  UI.openModal('modal-presensi');
 }
 
 async function deletePresensi(id) {
