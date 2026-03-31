@@ -309,7 +309,7 @@ async function deleteMurid(id, nama) {
         if (btn) {
             btn.disabled = true;
             // Kita ganti icon sampah jadi spinner + teks
-            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
             btn.style.width = 'auto'; // Biar muat teksnya
             btn.style.padding = '0 10px';
         }

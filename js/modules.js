@@ -219,48 +219,48 @@ async function saveForm() {
 }
 
   async function deleteMentor(id, nama) {
-    // 1. Konfirmasi (Penting agar tidak sengaja klik)
+    // 1. Konfirmasi
     if (!confirm(`Hapus mentor "${nama}"? Semua data terkait mentor ini akan dihapus.`)) return;
 
-    const btn = document.getElementById('mentor-tbody').querySelector(`button[onclick*="${id}"]`);
-
+    // 2. CARI TOMBOL (PENTING: Harus ada teks 'deleteMentor' di dalamnya!)
+    // Ini bedanya: Kalau cuma pakai ID, dia bakal milih tombol Edit yang paling kiri.
+    const btn = document.querySelector(`button[onclick*="deleteMentor('${id}')"]`);
     const originalContent = btn ? btn.innerHTML : ''; 
 
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
-            btn.style.width = 'auto'; 
-            btn.style.padding = '0 12px';
+            // Gunakan spinner minimalis (tanpa teks "Menghapus") agar kolom tabel rapi
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+            
+            // RESET STYLE: Hapus width auto & padding biar gak "jeleg" nabrak kolom
+            btn.style.width = ''; 
+            btn.style.padding = '';
         }
 
-        // 3. Panggil API Hapus Mentor
+        // 3. API Call
         const res = await API.mentor.delete(id);
 
         if (res.status === 'OK') {
             UI.toast(`Mentor "${nama}" berhasil dihapus`, 'success');
             
-            // --- RESET MEMORI & REFRESH ---
+            // --- REFRESH DATA ---
             allData = [];
             isFetched = false;
             load(); 
         } else {
-            UI.toast(res.message || 'Gagal menghapus mentor', 'error');
-            // Kembalikan tombol jika gagal dari server
+            UI.toast(res.message || 'Gagal menghapus', 'error');
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
-                btn.style.padding = ''; // Balikin padding asli
             }
         }
     } catch (e) {
         console.error("Error Delete Mentor:", e);
         UI.toast('Gagal terhubung ke server', 'error');
-        // Kembalikan tombol jika koneksi putus
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = originalContent;
-            btn.style.padding = '';
         }
     }
 }
