@@ -1205,18 +1205,19 @@ async function saveForm() {
 }
 
   async function deleteBuku(id, nama) {
-    // 1. Konfirmasi dengan nama modul agar lebih aman
+    // 1. Konfirmasi dengan nama modul
     if (!confirm(`Hapus modul "${nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
 
-    // 2. Cari tombol hapus di tabel untuk pasang spinner loading
-    // Ini mencari button yang onclick-nya mengandung ID buku tersebut
+    // 2. Cari tombol hapus berdasarkan ID buku
     const btn = document.querySelector(`button[onclick*="deleteBuku('${id}'"]`);
     const originalContent = btn ? btn.innerHTML : '';
 
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div> Menghapus...';
+            // Hapus teks "Menghapus...", cukup spinner saja agar kolom tidak melebar
+            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+            btn.style.width = '40px'; // Paksa lebar tombol tetap kecil
         }
 
         const res = await API.buku.delete(id);
@@ -1225,19 +1226,29 @@ async function saveForm() {
             UI.toast(`Modul "${nama}" berhasil dihapus`, 'success');
             
             // --- SINKRONISASI DATA ---
-            allData = [];       // Kosongkan cache lokal
-            isFetched = false;  // BUKA GEMBOK: Paksa load() ambil data terbaru dari Google Sheets
-            load();             // Refresh tabel agar baris yang dihapus hilang
+            // Gunakan pengecekan typeof agar tidak error jika variabel ada di dalam Modul/IIFE
+            if (typeof allData !== 'undefined') allData = [];
+            if (typeof isFetched !== 'undefined') isFetched = false;
+            
+            // Panggil load() untuk refresh tabel
+            if (typeof load === 'function') load();
+            
         } else {
             UI.toast(res.message || 'Gagal menghapus modul', 'error');
-            // Kembalikan tombol jika gagal
-            if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+            if (btn) { 
+                btn.disabled = false; 
+                btn.innerHTML = originalContent; 
+                btn.style.width = ''; 
+            }
         }
     } catch (e) {
         console.error("Error Delete Buku:", e);
         UI.toast('Gagal terhubung ke server', 'error');
-        // Kembalikan tombol jika error koneksi
-        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = originalContent; 
+            btn.style.width = '';
+        }
     }
 }
 
