@@ -916,7 +916,7 @@ const SPPPage = (() => {
         // Gunakan spinner-sm agar rapi dan teks dinamis
         btn.innerHTML = id ? 
             '<div class="spinner spinner-sm"></div> Memperbarui paket...' : 
-            '<div class="spinner spinner-sm"></div> Menghitung pertemuan...';
+            '<div class="spinner spinner-sm"></div> Mennyimpan paket...';
       }
 
       // Gunakan API sesuai kondisi ID (update atau create)
