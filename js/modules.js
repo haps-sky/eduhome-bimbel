@@ -345,10 +345,10 @@ function renderTable(data) {
       <td>
         <div class="action-btns">
           <button class="btn-icon edit" onclick="PresensiPage.openEdit('${p.id}')" title="Edit Data">
-            <i class="lucide-edit-3"></i>
+            <i data-lucide="edit-3"></i> 
           </button>
           <button class="btn-icon delete" onclick="PresensiPage.deleteItem('${p.id}')" title="Hapus Data">
-            <i class="lucide-trash-2"></i>
+            <i data-lucide="trash-2"></i>
           </button>
         </div>
       </td>
@@ -356,7 +356,6 @@ function renderTable(data) {
 
   UI.renderTable('presensi-tbody', rows, 'Belum ada data presensi');
   
-  // WAJIB: Render ulang ikon lucide agar muncul setelah tabel digambar
   if (window.lucide) {
     lucide.createIcons();
   }
@@ -389,7 +388,6 @@ async function saveForm() {
   try {
     let idPaketTerpilih = '';
     
-    // --- KHUSUS TAMBAH BARU: VALIDASI KUOTA ---
     if (!id) {
       const sppRes = await API.spp.getAll();
       const paketAktif = (sppRes.data || []).find(p => 
