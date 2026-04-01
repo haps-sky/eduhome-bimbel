@@ -814,7 +814,7 @@ const SPPPage = (() => {
     let cur = new Date(mulai.replace(/-/g, '\/'));
     const end = new Date(akhir.replace(/-/g, '\/'));
     
-    while (cur <= end) {
+    while (cur < end) {
       if (targetDays.includes(cur.getDay())) count++;
       cur.setDate(cur.getDate() + 1);
     }
