@@ -1399,7 +1399,7 @@ async function saveForm() {
       mentors.map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
   }
 
-  function renderTable(data) {
+function renderTable(data) {
     const rows = data.map(g => `
       <tr>
         <td><span class="id-badge">${g.id_trx}</span></td>
@@ -1408,8 +1408,68 @@ async function saveForm() {
         <td><strong>${g.nama_mentor}</strong></td>
         <td><strong class="text-success">${UI.formatCurrency(g.jumlah)}</strong></td>
         <td>${g.metode}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon btn-warning" 
+                    onclick="GajiPage.openEdit('${g.id_trx}')" 
+                    title="Edit">
+              <i data-lucide="pencil"></i>
+            </button>
+            
+            <button class="btn-icon btn-danger" 
+                    data-delete-id="${g.id_trx}" 
+                    onclick="GajiPage.deleteGaji('${g.id_trx}', '${g.nama_mentor}')" 
+                    title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </td>
       </tr>`);
+    
     UI.renderTable('gaji-tbody', rows, 'Belum ada data penggajian');
+    
+    // Wajib panggil ini agar ikon trash & pencil muncul
+    if (window.lucide) lucide.createIcons(); 
+  }
+  
+  // Fungsi untuk reset modal saat tambah gaji baru
+  function openAdd() {
+    const title = document.getElementById('modal-gaji-title');
+    const idField = document.getElementById('gaji-id-field'); // Pastikan ada di HTML
+    const mentorSel = document.getElementById('gaji-mentor');
+
+    if (title) title.textContent = 'Catat Penggajian Baru';
+    if (idField) idField.value = '';
+    
+    // Reset form fields
+    if (mentorSel) {
+      mentorSel.value = '';
+      mentorSel.disabled = false;
+    }
+    document.getElementById('gaji-bulan').value = '';
+    document.getElementById('gaji-tgl').value = new Date().toISOString().split('T')[0];
+    
+    UI.openModal('modal-gaji');
+  }
+
+  function openEdit(id) {
+    const g = allData.find(x => x.id_trx === id);
+    if (!g) return;
+
+    const title = document.getElementById('modal-gaji-title');
+    if (title) title.textContent = 'Edit Catatan Gaji';
+
+    document.getElementById('gaji-id-field').value = g.id_trx;
+    document.getElementById('gaji-mentor').value = g.id_mentor;
+    document.getElementById('gaji-bulan').value = g.bulan_gaji;
+    document.getElementById('gaji-tgl').value = g.tgl_bayar;
+    document.getElementById('gaji-metode').value = g.metode;
+
+    // Kunci mentor agar tidak diubah saat edit
+    const mentorSel = document.getElementById('gaji-mentor');
+    if (mentorSel) mentorSel.disabled = true;
+
+    UI.openModal('modal-gaji');
   }
 
 async function saveForm() {
@@ -1466,7 +1526,46 @@ async function saveForm() {
     }
 }
 
-  return { load, saveForm };
+async function deleteGaji(id, nama) {
+  // 1. Konfirmasi
+  if (!confirm(`Hapus catatan gaji untuk "${nama}"?`)) return;
+
+  // 2. Cari tombol berdasarkan data-delete-id untuk pasang spinner
+  const btn = document.querySelector(`button[data-delete-id="${id}"]`);
+  const originalContent = btn ? btn.innerHTML : '';
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner spinner-sm"></div>'; // Spinner muncul di sini!
+      btn.style.width = '40px'; 
+    }
+
+    const res = await API.gaji.delete(id);
+
+    if (res.status === 'OK') {
+      UI.toast(`Catatan gaji "${nama}" berhasil dihapus`, 'success');
+      
+      // 3. Reset Cache & Refresh
+      allData = [];
+      isFetched = false;
+      load(); 
+      
+      // Invalidate Dashboard agar angka pengeluaran di dashboard update
+      if (window.Dashboard) Dashboard.isFetched = false;
+      
+    } else {
+      UI.toast(res.message || 'Gagal menghapus', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = originalContent; btn.style.width = ''; }
+    }
+  } catch (e) {
+    console.error("Error Delete Gaji:", e);
+    UI.toast('Gagal terhubung ke server', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = originalContent; btn.style.width = ''; }
+  }
+}
+
+  return { load, saveForm, openAdd, openEdit, deleteGaji };
 })();
 
 // ============================================================

@@ -358,7 +358,6 @@
     </button>
   </div>
 
-  <!-- Tabel Wrap: Ada Toolbar Pencarian -->
   <div class="table-wrap">
     <div class="table-toolbar">
       <div class="table-title">
@@ -404,7 +403,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="banknote"></i> Riwayat Penggajian</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>ID Trx</th><th>Tgl Bayar</th><th>Bulan Gaji</th><th>Mentor</th><th>Jumlah</th><th>Metode</th></tr></thead>
+              <thead><tr><th>ID Trx</th><th>Tgl Bayar</th><th>Bulan Gaji</th><th>Mentor</th><th>Jumlah</th><th>Metode</th><th>AKSI</th></tr></thead>
               <tbody id="gaji-tbody"></tbody>
             </table>
           </div>
@@ -717,6 +716,7 @@
   <div class="modal-content">
     <div class="modal-header"><h3>Hitung &amp; Bayar Gaji Mentor</h3><button class="modal-close" onclick="UI.closeModal('modal-gaji')">✕</button></div>
     <div class="modal-body">
+      <input type="hidden" id="gaji-id-field">
       <div class="form-group"><label>Mentor *</label><select id="gaji-mentor"><option value="">-- Pilih Mentor --</option></select></div>
       <div class="form-row">
         <div class="form-group"><label>Bulan Gaji * (MM-YYYY)</label><input type="text" id="gaji-bulan" placeholder="01-2025"></div>
