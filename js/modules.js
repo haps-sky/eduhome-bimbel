@@ -1364,7 +1364,7 @@ async function saveForm() {
     return; 
   }
 
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data gaji...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data gaji...</td></tr>';
 
   try {
     // 1. Definisikan gajiRes dan mentorRes
@@ -1431,7 +1431,7 @@ function renderTable(data) {
     // Wajib panggil ini agar ikon trash & pencil muncul
     if (window.lucide) lucide.createIcons(); 
   }
-  
+
   // Fungsi untuk reset modal saat tambah gaji baru
   function openAdd() {
     const title = document.getElementById('modal-gaji-title');
@@ -1504,14 +1504,14 @@ async function saveForm() {
       if (res.status === 'OK') {
         const d = res.data.salary_detail;
         // Notifikasi lebih personal dengan nama mentor
-        UI.toast(`Gaji ${d.nama_mentor} bulan ${bulan_gaji} berhasil dicatat! 💸`, 'success');
+        UI.toast(`Gaji ${d.nama_mentor} bulan ${bulan_gaji} berhasil dicatat! `, 'success');
         
         UI.closeModal('modal-gaji');
         
         // --- REFRESH DATA ---
         allData = [];
         isFetched = false;
-        load(); 
+        await load();
       } else {
         UI.toast(res.message || 'Gagal mencatat gaji', 'error');
       }
@@ -1549,7 +1549,7 @@ async function deleteGaji(id, nama) {
       // 3. Reset Cache & Refresh
       allData = [];
       isFetched = false;
-      load(); 
+      await load(); 
       
       // Invalidate Dashboard agar angka pengeluaran di dashboard update
       if (window.Dashboard) Dashboard.isFetched = false;
