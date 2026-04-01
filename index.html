@@ -636,8 +636,9 @@
 
 <div id="modal-pembayaran" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3>Catat Pembayaran</h3><button class="modal-close" onclick="UI.closeModal('modal-pembayaran')">✕</button></div>
+    <div class="modal-header"><h3 id="modal-pembayaran-title">Catat Pembayaran</h3> <button class="modal-close" onclick="UI.closeModal('modal-pembayaran')">✕</button></div>
     <div class="modal-body">
+      <input type="hidden" id="pay-id-field"> </div>
       <div class="form-group"><label>Murid *</label><select id="pay-murid"><option value="">-- Pilih Murid --</option></select></div>
       <div class="form-group">
         <label>Paket SPP (untuk validasi cicilan)</label>

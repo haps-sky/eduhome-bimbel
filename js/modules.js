@@ -635,18 +635,78 @@ const PembayaranPage = (() => {
   }
 
   function renderTable(data) {
-    const rows = data.map(p => `
-      <tr>
-        <td>${UI.formatDate(p.tanggal)}</td>
-        <td><strong>${p.nama}</strong></td>
-        <td><span class="program-tag">${p.jenis}</span></td>
-        <td>${p.periode || '-'}</td>
-        <td><strong>${UI.formatCurrency(p.jumlah)}</strong></td>
-        <td>${p.metode}</td>
-        <td>${p.keterangan || '-'}</td>
-      </tr>`);
-    UI.renderTable('pay-tbody', rows, 'Belum ada data pembayaran');
+  const rows = data.map(p => `
+    <tr>
+      <td>${UI.formatDate(p.tanggal)}</td>
+      <td><strong>${p.nama}</strong></td>
+      <td><span class="program-tag">${p.jenis}</span></td>
+      <td>${p.periode || '-'}</td>
+      <td>${UI.formatCurrency(p.jumlah)}</td>
+      <td>${p.metode}</td>
+      <td>${p.keterangan || '-'}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-icon btn-warning" onclick="PembayaranPage.openEdit('${p.id}')" title="Edit">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button class="btn-icon btn-danger" 
+                  data-delete-id="${p.id}" 
+                  onclick="PembayaranPage.deletePembayaran('${p.id}', '${p.nama}')" 
+                  title="Hapus">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`);
+
+  UI.renderTable('pay-tbody', rows, 'Belum ada riwayat pembayaran');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAdd() {
+    const idField = document.getElementById('pay-id-field');
+    const muridSel = document.getElementById('pay-murid');
+    const title = document.getElementById('modal-pembayaran-title');
+    const sisaInfo = document.getElementById('pay-sisa-info');
+    
+    // Reset Judul & ID
+    if (title) title.textContent = 'Catat Pembayaran Baru';
+    if (idField) idField.value = '';
+    
+    // Reset Form & Aktifkan kembali dropdown murid
+    if (muridSel) {
+      muridSel.value = '';
+      muridSel.disabled = false;
+    }
+    
+    // Kosongkan info sisa tagihan & jumlah
+    if (sisaInfo) sisaInfo.textContent = '';
+    document.getElementById('pay-jumlah').value = '';
+    document.getElementById('pay-keterangan').value = '';
+    
+    UI.openModal('modal-pembayaran');
   }
+
+// Fungsi untuk membuka modal edit
+function openEdit(id) {
+  const p = allData.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById('modal-pembayaran-title').textContent = 'Edit Pembayaran';
+  document.getElementById('pay-id-field').value = p.id; // Pastikan ada input hidden ID di modal
+  
+  document.getElementById('pay-murid').value = p.id_murid;
+  document.getElementById('pay-tanggal').value = p.tanggal;
+  document.getElementById('pay-jenis').value = p.jenis;
+  document.getElementById('pay-jumlah').value = p.jumlah;
+  document.getElementById('pay-metode').value = p.metode;
+  document.getElementById('pay-keterangan').value = p.keterangan || '';
+  
+  // Murid tidak boleh diubah saat edit agar sinkronisasi SPP tidak kacau
+  document.getElementById('pay-murid').disabled = true;
+
+  UI.openModal('modal-pembayaran');
+}
 
   function updateSummary() {
     const today = new Date().toISOString().split('T')[0];
@@ -726,8 +786,54 @@ const PembayaranPage = (() => {
       }
     }
 }
+
+async function deletePembayaran(id, nama) {
+  if (!confirm(`Hapus riwayat pembayaran untuk "${nama}"? Saldo laporan akan disesuaikan.`)) return;
+
+  // Gunakan selector [data-delete-id] agar lebih akurat
+  const btn = document.querySelector(`button[data-delete-id="${id}"]`);
+  const originalContent = btn ? btn.innerHTML : '';
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+      btn.style.width = '40px'; // Menjaga lebar kolom tabel tetap rapi
+    }
+
+    const res = await API.pembayaran.delete(id);
+
+    if (res.status === 'OK') {
+      UI.toast(`Pembayaran "${nama}" berhasil dihapus`, 'success');
+      
+      // Reset state dan muat ulang data
+      allData = [];
+      isFetched = false;
+      load(); 
+      
+      // Pastikan Dashboard refresh angka keuangan saat dibuka nanti
+      if (window.Dashboard) Dashboard.isFetched = false;
+      
+    } else {
+      UI.toast(res.message || 'Gagal menghapus pembayaran', 'error');
+      if (btn) { 
+        btn.disabled = false; 
+        btn.innerHTML = originalContent; 
+        btn.style.width = ''; 
+      }
+    }
+  } catch (e) {
+    console.error("Error Delete Pembayaran:", e);
+    UI.toast('Gagal terhubung ke server', 'error');
+    if (btn) { 
+      btn.disabled = false; 
+      btn.innerHTML = originalContent; 
+      btn.style.width = ''; 
+    }
+  }
+}
   
-  return { load, saveForm };
+  return { load, saveForm, openAdd, openEdit, deletePembayaran };
 })();
 
 // ============================================================

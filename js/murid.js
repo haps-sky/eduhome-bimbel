@@ -308,10 +308,8 @@ async function deleteMurid(id, nama) {
     try {
         if (btn) {
             btn.disabled = true;
-            // Kita ganti icon sampah jadi spinner + teks
             btn.innerHTML = '<div class="spinner spinner-sm"></div>';
-            btn.style.width = 'auto'; // Biar muat teksnya
-            btn.style.padding = '0 10px';
+            btn.style.width = '40px';
         }
 
         const res = await API.murid.delete(id);
