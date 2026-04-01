@@ -118,11 +118,14 @@ async function post(body) {
   };
 
   // PEMBAYARAN
-  const pembayaran = {
-    getAll:     () => get('getPembayaran'),
-    getByMurid: (id_murid) => get('getPembayaran', { id_murid }),
-    add:        (data) => post({ action: 'addPembayaran', ...data })
-  };
+const pembayaran = {
+  getAll:     () => get('getPembayaran'),
+  getByMurid: (id_murid) => get('getPembayaran', { id_murid }),
+  add:        (data) => post({ action: 'addPembayaran', ...data }),
+  update:     (data) => post({ action: 'updatePembayaran', ...data }), // TAMBAHKAN INI
+  delete:     (id)   => post({ action: 'deletePembayaran', id })       // TAMBAHKAN INI
+};
+
 
   // GAJI
   const gaji = {
