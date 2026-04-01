@@ -127,11 +127,13 @@ const pembayaran = {
 };
 
 
-  // GAJI
+// GAJI
   const gaji = {
     getAll:      () => get('getGaji'),
     getByMentor: (id_mentor) => get('getGaji', { id_mentor }),
-    record:      (data) => post({ action: 'recordMentorSalary', ...data })
+    record:      (data) => post({ action: 'recordMentorSalary', ...data }),
+    update:      (data) => post({ action: 'updateGaji', ...data }), // TAMBAHNO IKI
+    delete:      (id)   => post({ action: 'deleteGaji', id })       // LAN IKI
   };
 
   // BUKU
