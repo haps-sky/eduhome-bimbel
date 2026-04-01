@@ -601,7 +601,7 @@ const PembayaranPage = (() => {
         }
 
         renderTable(allData.slice(-50).reverse());
-        // updateSummary(); // Aktifkan jika ada fungsi rekap harian
+        updateSummary();
       }
 
     } catch (e) {
@@ -664,6 +664,8 @@ const PembayaranPage = (() => {
 }
 
 function openAdd() {
+  clearForm();
+
     const idField = document.getElementById('pay-id-field');
     const muridSel = document.getElementById('pay-murid');
     const title = document.getElementById('modal-pembayaran-title');
@@ -691,6 +693,8 @@ function openAdd() {
 function openEdit(id) {
   const p = allData.find(x => x.id === id);
   if (!p) return;
+
+  clearForm();
 
   document.getElementById('modal-pembayaran-title').textContent = 'Edit Pembayaran';
   document.getElementById('pay-id-field').value = p.id; // Pastikan ada input hidden ID di modal
@@ -786,6 +790,28 @@ function openEdit(id) {
       }
     }
 }
+
+function clearForm() {
+    const form = document.getElementById('form-pembayaran'); // Pastikan <form> punya ID ini
+    if (form) form.reset();
+
+    // Reset elemen manual yang tidak terpengaruh form.reset()
+    const idField = document.getElementById('pay-id-field');
+    const sisaInfo = document.getElementById('pay-sisa-info');
+    const sppSel = document.getElementById('pay-spp');
+    const muridSel = document.getElementById('pay-murid');
+
+    if (idField) idField.value = '';
+    if (sisaInfo) sisaInfo.textContent = '';
+    if (muridSel) muridSel.disabled = false;
+    
+    if (sppSel) {
+      sppSel.innerHTML = '<option value="">-- Pilih Paket SPP (opsional) --</option>';
+    }
+
+    const tglInput = document.getElementById('pay-tanggal');
+    if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+  }
 
 async function deletePembayaran(id, nama) {
   if (!confirm(`Hapus riwayat pembayaran untuk "${nama}"? Saldo laporan akan disesuaikan.`)) return;
@@ -1434,6 +1460,9 @@ function renderTable(data) {
 
   // Fungsi untuk reset modal saat tambah gaji baru
   function openAdd() {
+
+    clearForm();
+    
     const title = document.getElementById('modal-gaji-title');
     const idField = document.getElementById('gaji-id-field'); // Pastikan ada di HTML
     const mentorSel = document.getElementById('gaji-mentor');
@@ -1456,6 +1485,8 @@ function renderTable(data) {
     const g = allData.find(x => x.id_trx === id);
     if (!g) return;
 
+    clearForm();
+
     const title = document.getElementById('modal-gaji-title');
     if (title) title.textContent = 'Edit Catatan Gaji';
 
@@ -1473,56 +1504,60 @@ function renderTable(data) {
   }
 
 async function saveForm() {
-    // 1. Ambil Elemen Tombol dan Input
-    const btn       = document.querySelector('#modal-gaji .btn-primary');
+    const btn = document.querySelector('#modal-gaji .btn-primary');
+    const id = document.getElementById('gaji-id-field').value; // Ambil ID untuk cek mode
     const mentorSel = document.getElementById('gaji-mentor');
     const bulan_gaji = document.getElementById('gaji-bulan').value;
-    const tgl_bayar  = document.getElementById('gaji-tgl').value;
-    const metode     = document.getElementById('gaji-metode').value;
+    const tgl_bayar = document.getElementById('gaji-tgl').value;
+    const metode = document.getElementById('gaji-metode').value;
 
-    // 2. Validasi
+    // Validasi (Saat edit, mentorSel disabled tapi value tetap ada di element)
     if (!mentorSel.value || !bulan_gaji) { 
-      UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); 
-      return; 
+        UI.toast('Mentor dan bulan gaji wajib diisi', 'error'); 
+        return; 
     }
 
-    try {
-      if (btn) { 
-        btn.disabled = true; 
-        // Gunakan spinner-sm agar konsisten dengan modul lainnya
-        btn.innerHTML = '<div class="spinner spinner-sm"></div> Memproses gaji...'; 
-      }
-
-      // 3. Kirim Data ke API
-      const res = await API.gaji.record({ 
+    const payload = { 
         id_mentor: mentorSel.value, 
         bulan_gaji, 
         tgl_bayar, 
         metode 
-      });
+    };
 
-      if (res.status === 'OK') {
-        const d = res.data.salary_detail;
-        // Notifikasi lebih personal dengan nama mentor
-        UI.toast(`Gaji ${d.nama_mentor} bulan ${bulan_gaji} berhasil dicatat! `, 'success');
-        
-        UI.closeModal('modal-gaji');
-        
-        // --- REFRESH DATA ---
-        allData = [];
-        isFetched = false;
-        await load();
-      } else {
-        UI.toast(res.message || 'Gagal mencatat gaji', 'error');
-      }
+    try {
+        if (btn) { 
+            btn.disabled = true; 
+            btn.innerHTML = id ? 
+                '<div class="spinner spinner-sm"></div> Memperbarui...' : 
+                '<div class="spinner spinner-sm"></div> Memproses gaji...'; 
+        }
+
+        // TERNARY: Jika ada ID panggil Update, jika kosong panggil Record (Add)
+        const res = id ? 
+            await API.gaji.update({ id, ...payload }) : 
+            await API.gaji.record(payload);
+
+        if (res.status === 'OK') {
+            const pesan = id ? 'Data gaji berhasil diperbarui' : 'Gaji berhasil dicatat!';
+            UI.toast(pesan, 'success');
+            
+            UI.closeModal('modal-gaji');
+            
+            // RESET & REFRESH
+            allData = [];
+            isFetched = false;
+            await load(); 
+        } else {
+            UI.toast(res.message || 'Gagal menyimpan data', 'error');
+        }
     } catch (e) {
-      console.error("Error Gaji:", e);
-      UI.toast('Terjadi kesalahan koneksi ke server', 'error');
+        console.error("Error Gaji:", e);
+        UI.toast('Terjadi kesalahan koneksi ke server', 'error');
     } finally {
-      if (btn) { 
-        btn.disabled = false; 
-        btn.innerHTML = 'Simpan Penggajian'; // Balikin teks tombol
-      }
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = 'Simpan Penggajian'; 
+        }
     }
 }
 
@@ -1565,7 +1600,30 @@ async function deleteGaji(id, nama) {
   }
 }
 
-  return { load, saveForm, openAdd, openEdit, deleteGaji };
+function clearForm() {
+    // Reset ID hidden agar mode kembali ke 'Add'
+    const idField = document.getElementById('gaji-id-field');
+    if (idField) idField.value = '';
+
+    // Reset Dropdown Mentor & Aktifkan kembali
+    const mentorSel = document.getElementById('gaji-mentor');
+    if (mentorSel) {
+      mentorSel.value = '';
+      mentorSel.disabled = false;
+    }
+
+    // Reset Bulan, Tanggal (ke hari ini), dan Metode
+    const bulanInput = document.getElementById('gaji-bulan');
+    if (bulanInput) bulanInput.value = '';
+
+    const tglInput = document.getElementById('gaji-tgl');
+    if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+
+    const metodeInput = document.getElementById('gaji-metode');
+    if (metodeInput) metodeInput.value = 'TRANSFER'; // Default metode
+  }
+
+  return { load, saveForm, openAdd, openEdit, deleteGaji, clearForm };
 })();
 
 // ============================================================
