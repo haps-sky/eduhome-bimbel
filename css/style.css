@@ -560,7 +560,21 @@ select option { background: var(--bg-card); }
   letter-spacing: 0.06em;
   color: var(--text-dim);
   white-space: nowrap;
+  cursor: default;
 }
+/* Sort icon di header — paksa kecil sejajar teks */
+.data-table thead th .sort-icon,
+.data-table thead th svg {
+  width: 11px;
+  height: 11px;
+  vertical-align: middle;
+  margin-left: 3px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.data-table thead th[onclick] { cursor: pointer; }
+.data-table thead th[onclick]:hover { color: var(--text-primary); }
+.data-table thead th[onclick]:hover svg { opacity: 1; }
 .data-table tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
