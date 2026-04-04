@@ -299,13 +299,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nama</th>
-            <th>KONTAK</th>
-            <th>Program</th>
-            <th>Status</th>
-            <th>Fee/Anak</th>
-            <th>Fee/Sesi</th>
+            <th onclick="MentorPage.sortBy('id')" style="cursor:pointer;user-select:none;">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="MentorPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th>Kontak</th>
+            <th onclick="MentorPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="MentorPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="MentorPage.sortBy('fee_anak')" style="cursor:pointer;user-select:none;">Fee/Anak <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="MentorPage.sortBy('fee_harian')" style="cursor:pointer;user-select:none;">Fee/Sesi <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -330,7 +330,7 @@
           </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Tanggal</th><th>Murid</th><th>Mentor</th><th>Program</th><th>Status</th><th>Catatan</th><th>Bintang</th><th>AKSI</th></tr></thead>
+              <thead><tr><th onclick="PresensiPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Catatan</th><th onclick="PresensiPage.sortBy('bintang')" style="cursor:pointer;user-select:none;">Bintang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
               <tbody id="presensi-tbody"></tbody>
             </table>
           </div>
@@ -349,7 +349,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="credit-card"></i> Riwayat Pembayaran</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Tanggal</th><th>Nama</th><th>Jenis</th><th>Periode</th><th>Jumlah</th><th>Metode</th><th>Keterangan</th><th>AKSI</th></tr></thead>
+              <thead><tr><th onclick="PembayaranPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('jenis')" style="cursor:pointer;user-select:none;">Jenis <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Periode</th><th onclick="PembayaranPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Keterangan</th><th>Aksi</th></tr></thead>
               <tbody id="pay-tbody"></tbody>
             </table>
           </div>
@@ -371,9 +371,7 @@
     </div>
     <div style="overflow-x:auto">
       <table class="data-table">
-        <thead><tr><th>ID</th><th>Murid</th><th>Program</th><th>Periode</th><th>Total</th><th>Hadir/Sisa</th><th>Progress</th><th>Status</th><th>Harga</th><th>Terbayar</th><th>Bayar</th><th>AKSI</th>
-          </tr>
-        </thead>
+        <thead><tr><th>ID</th><th onclick="SPPPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('periode_mulai')" style="cursor:pointer;user-select:none;">Periode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('total_pertemuan')" style="cursor:pointer;user-select:none;">Total <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('sisa_pertemuan')" style="cursor:pointer;user-select:none;">Hadir/Sisa <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Progress</th><th onclick="SPPPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('harga')" style="cursor:pointer;user-select:none;">Harga <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('terbayar')" style="cursor:pointer;user-select:none;">Terbayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('status_bayar')" style="cursor:pointer;user-select:none;">Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
         <tbody id="spp-tbody"></tbody>
       </table>
     </div>
@@ -411,9 +409,9 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Nama Modul</th>
-            <th>Jenjang</th>
-            <th>Program</th>
+            <th onclick="BukuPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama Modul <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="BukuPage.sortBy('jenjang')" style="cursor:pointer;user-select:none;">Jenjang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+            <th onclick="BukuPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
             <th>Keterangan</th>
             <th style="text-align:center">Aksi</th>
           </tr>
@@ -437,7 +435,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="banknote"></i> Riwayat Penggajian</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>ID Trx</th><th>Tgl Bayar</th><th>Bulan Gaji</th><th>Mentor</th><th>Jumlah</th><th>Metode</th><th>AKSI</th></tr></thead>
+              <thead><tr><th>ID Trx</th><th onclick="GajiPage.sortBy('tgl_bayar')" style="cursor:pointer;user-select:none;">Tgl Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('bulan_gaji')" style="cursor:pointer;user-select:none;">Bulan Gaji <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
               <tbody id="gaji-tbody"></tbody>
             </table>
           </div>

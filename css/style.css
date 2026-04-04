@@ -575,6 +575,14 @@ select option { background: var(--bg-card); }
 .data-table thead th[onclick] { cursor: pointer; }
 .data-table thead th[onclick]:hover { color: var(--text-primary); }
 .data-table thead th[onclick]:hover svg { opacity: 1; }
+/* Sort aktif — kolom yang sedang diurutkan */
+.data-table thead th.sort-asc svg,
+.data-table thead th.sort-desc svg {
+  opacity: 1;
+  color: var(--primary);
+}
+.data-table thead th.sort-asc  { color: var(--primary); }
+.data-table thead th.sort-desc { color: var(--primary); }
 .data-table tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
