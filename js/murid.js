@@ -1,8 +1,12 @@
   const MuridPage = (() => {
+    let currentSort = { col: 'id', asc: true };
     const DAYS = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU'];
 
   let allData = [];
   let isFetched = false;
+  let lastDeletedData = null;
+  let lastAction = null;
+  let lastAddedId = null;
 
  // Tambahkan default parameter false
 async function load(forceRefresh = false) {
@@ -56,6 +60,43 @@ async function load(forceRefresh = false) {
   function updateSummary(data) {
     const el = document.getElementById('murid-count');
     if (el) el.textContent = 'Total: ' + data.length + ' murid';
+  }
+
+  function sortBy(col) {
+    // Balik urutan jika kolom yang sama diklik lagi
+    currentSort.asc = currentSort.col === col ? !currentSort.asc : true;
+    currentSort.col = col;
+
+    allData.sort((a, b) => {
+      let valA = (a[col] || '').toString().toLowerCase();
+      let valB = (b[col] || '').toString().toLowerCase();
+      
+      return currentSort.asc 
+        ? valA.localeCompare(valB, undefined, { numeric: true }) 
+        : valB.localeCompare(valA, undefined, { numeric: true });
+    });
+
+    renderTable(allData);
+    updateSortIcons(col, currentSort.asc);
+  }
+
+  // 3. Fungsi untuk mengubah visual ikon
+  function updateSortIcons(activeCol, isAsc) {
+    // Reset semua ikon header ke default (up-down)
+    document.querySelectorAll('th i[data-lucide]').forEach(icon => {
+      icon.setAttribute('data-lucide', 'chevrons-up-down');
+      icon.classList.remove('active-sort');
+    });
+
+    // Cari header yang aktif dan ganti ikonnya
+    const activeHeader = document.querySelector(`th[onclick*="'${activeCol}'"] i`);
+    if (activeHeader) {
+      activeHeader.setAttribute('data-lucide', isAsc ? 'arrow-up-narrow' : 'arrow-down-wide');
+      activeHeader.classList.add('active-sort');
+    }
+    
+    // Render ulang ikon Lucide
+    lucide.createIcons();
   }
 
   function renderTable(data) {
@@ -276,6 +317,12 @@ async function saveForm() {
         if (res.status === 'OK') {
             UI.toast(id ? 'Data murid diperbarui' : 'Murid berhasil ditambahkan', 'success');
             UI.closeModal('modal-murid');
+
+            lastAddedId = res.id;
+            lastAction = 'ADD'; 
+        
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) undoBtn.disabled = false;
             
             // --- REFRESH DATA DENGAN JEDA (Penting!) ---
             setTimeout(() => {
@@ -296,48 +343,189 @@ async function saveForm() {
     }
 }
 
-async function deleteMurid(id, nama) {
-    // 1. Konfirmasi dulu
-    if (!confirm(`Hapus murid "${nama}"? Semua jadwal terkait akan ikut terhapus.`)) return;
+async function redo() {
+    // Redo hanya jalan kalau ada aksi yang baru saja di-Undo
+    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
 
-    // 2. Cari tombol yang diklik (biar loading-nya muncul di situ)
-    // Kita cari button yang punya fungsi deleteMurid dengan ID ini
-    const btn = document.querySelector(`button[onclick*="deleteMurid('${id}'"]`);
-    const originalContent = btn ? btn.innerHTML : ''; // Simpan icon sampah aslinya
+    const redoBtn = document.getElementById('redo-btn');
+    UI.toast(`Mengulang penambahan ${lastDeletedData.nama}...`, 'info');
 
     try {
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner spinner-sm"></div>';
-            btn.style.width = '40px';
-        }
+      if (redoBtn) redoBtn.disabled = true;
 
-        const res = await API.murid.delete(id);
+      // Kirim lagi ke Sheets
+      const res = await API.murid.add(lastDeletedData);
 
-        if (res.status === 'OK') {
-            UI.toast(`Data "${nama}" berhasil dihapus`, 'success');
-            
-            // --- RESET CACHE AGAR TABEL REFRESH ---
-            allData = [];
-            isFetched = false;
-            load(); 
-        } else {
-            UI.toast(res.message || 'Gagal menghapus', 'error');
-            // Balikin tombol kalau gagal
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            }
-        }
+      if (res.status === 'OK') {
+        UI.toast('Redo Berhasil: Data dipulihkan kembali!', 'success');
+        lastAction = 'DELETE'; // Balikin status ke Delete agar bisa di-Undo lagi kalau mau
+        
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) undoBtn.disabled = false;
+        if (redoBtn) redoBtn.disabled = true;
+
+        isFetched = false;
+        load();
+      }
     } catch (e) {
-        console.error(e);
-        UI.toast('Gagal terhubung ke server', 'error');
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalContent;
-        }
+      UI.toast('Gagal melakukan Redo', 'error');
+      if (redoBtn) redoBtn.disabled = false;
     }
+  }
+
+async function undo() {
+  // Cek apakah ada aksi terakhir (entah itu ADD atau DELETE)
+  if (!lastAction) return;
+
+  const undoBtn = document.getElementById('undo-btn');
+  const redoBtn = document.getElementById('redo-btn');
+
+  try {
+    if (undoBtn) undoBtn.disabled = true;
+    let res;
+
+    // KONDISI A: Membatalkan Penghapusan (Kembalikan data)
+    if (lastAction === 'DELETE' && lastDeletedData) {
+      res = await API.murid.add(lastDeletedData);
+      if (res.status === 'OK') {
+        UI.toast('Undo Berhasil: Data dikembalikan!', 'success');
+        lastAction = 'UNDO_DELETE'; // Tandai buat Redo
+        if (redoBtn) redoBtn.disabled = false; 
+      }
+    } 
+    
+    // KONDISI B: Membatalkan Penambahan (Hapus kembali data baru)
+    else if (lastAction === 'ADD' && lastAddedId) {
+      res = await API.murid.delete(lastAddedId); // <--- lastAddedId TERPAKAI DI SINI
+      if (res.status === 'OK') {
+        UI.toast('Undo Berhasil: Pendaftaran dibatalkan!', 'warning');
+        lastAction = null; // Biasanya tambah baru jarang di-redo, jadi kita reset
+      }
+    }
+
+    // Refresh data dari Sheets
+    isFetched = false;
+    load(); 
+
+  } catch (e) {
+    console.error("Error Undo:", e);
+    UI.toast('Gagal melakukan Undo', 'error');
+    if (undoBtn) undoBtn.disabled = false;
+  }
 }
+
+async function deleteMurid(id, nama) {
+    // 1. Cari data lengkapnya dulu buat cadangan (Backup)
+    const m = allData.find(x => x.id === id);
+    if (!m) return;
+
+    // 2. Konfirmasi Ketik Nama
+    const verifikasi = prompt(`Ketik nama murid "${nama}" untuk mengonfirmasi penghapusan:`);
+    if (verifikasi !== nama) {
+      if (verifikasi !== null) UI.toast('Konfirmasi nama salah!', 'error');
+      return;
+    }
+
+    // 3. Simpan data ke memori sebelum dihapus (Buat Undo)
+    lastDeletedData = JSON.parse(JSON.stringify(m)); 
+    lastAction = 'DELETE';
+
+    const btn = document.querySelector(`button[onclick*="deleteMurid('${id}'"]`);
+    const originalContent = btn ? btn.innerHTML : '';
+
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+        btn.style.width = '40px';
+      }
+
+      const res = await API.murid.delete(id);
+
+      if (res.status === 'OK') {
+        UI.toast(`Data "${nama}" berhasil dihapus. Salah klik? Klik tombol Undo di atas!`, 'warning');
+        
+        // Update tampilan secara instan (tanpa reload full dulu)
+        allData = allData.filter(x => x.id !== id);
+        renderTable(allData);
+        
+        // Aktifkan tombol Undo di UI (jika kamu punya tombolnya)
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) undoBtn.disabled = false;
+
+      } else {
+        UI.toast(res.message || 'Gagal menghapus', 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+      }
+    } catch (e) {
+      console.error(e);
+      UI.toast('Gagal terhubung ke server', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = originalContent; }
+    }
+  }
+
+  // FUNGSI UNDO (Kirim balik data ke Sheets)
+  async function undo() {
+    if (!lastAction || !lastDeletedData) return;
+
+    const undoBtn = document.getElementById('undo-btn');
+    UI.toast(`Mengembalikan data ${lastDeletedData.nama}...`, 'info');
+
+    try {
+      if (undoBtn) undoBtn.disabled = true;
+
+      let res;
+      if (lastAction === 'DELETE') {
+        // Panggil fungsi ADD kembali dengan data yang tadi disimpan
+        res = await API.murid.add(lastDeletedData);
+      }
+
+      if (res.status === 'OK') {
+        UI.toast('Data berhasil dipulihkan ke database!', 'success');
+        lastAction = null;
+        lastDeletedData = null;
+        
+        // Refresh data dari Sheets agar sinkron
+        isFetched = false;
+        load(); 
+      }
+    } catch (e) {
+      UI.toast('Gagal memulihkan data', 'error');
+      if (undoBtn) undoBtn.disabled = false;
+    }
+  }
+
+  async function deleteAll() {
+    const total = allData.length;
+    if (total === 0) return UI.toast('Tidak ada data untuk dihapus', 'info');
+
+    // Pengamanan 1: Konfirmasi Biasa
+    if (!confirm(`PERINGATAN! Kamu akan menghapus SEMUA (${total}) data murid beserta jadwalnya.`)) return;
+
+    // Pengamanan 2: Ketik Kata Kunci (Hard Confirmation)
+    const konfirmasi = prompt("Tindakan ini permanen! Ketik 'HAPUS SEMUA MURID' untuk melanjutkan:");
+    
+    if (konfirmasi !== 'HAPUS SEMUA MURID') {
+      UI.toast('Penghapusan massal dibatalkan.', 'error');
+      return;
+    }
+
+    UI.toast('Sedang membersihkan database...', 'info');
+
+    try {
+      // Kamu harus buat fungsi API.murid.deleteAll di script API kamu
+      const res = await API.murid.deleteAll(); 
+
+      if (res.status === 'OK') {
+        UI.toast('Seluruh data berhasil dihapus!', 'success');
+        allData = [];
+        isFetched = false;
+        load();
+      }
+    } catch (e) {
+      UI.toast('Gagal menghapus semua data', 'error');
+    }
+  }
 
 async function viewSchedule(id, nama) {
   const list = document.getElementById('schedule-detail-list');
@@ -373,5 +561,5 @@ async function viewSchedule(id, nama) {
   }
 }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule };
+  return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule, undo, redo, deleteAll, sortBy };
 })();

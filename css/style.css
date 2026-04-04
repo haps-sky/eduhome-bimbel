@@ -1,11 +1,5 @@
-/* ============================================================
-   EduHome — Production Dashboard CSS
-   Theme: Deep Navy + Warm Amber accent, editorial clean
-   ============================================================ */
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── Reset & Variables ─────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -43,10 +37,7 @@
   --font-mono:   'DM Mono', monospace;
 }
 
-/* ── Light Mode Variables ──────────────────────────────── */
-/* [BARU] Class .light-mode — Tema Soft Blue Aesthetic */
 .light-mode {
-  /* Latar: biru langit pucat → putih kebiruan */
   --bg:           #e8f0fe;
   --bg-surface:   #f0f6ff;
   --bg-card:      #ffffff;
@@ -54,7 +45,6 @@
   --border:       #b8d0f5;
   --border-light: #93b8f0;
 
-  /* Aksen biru vivid */
   --primary:      #1d6ef5;
   --primary-dim:  #ddeaff;
   --accent:       #f59e0b;
@@ -67,7 +57,6 @@
   --warning-dim:  #fef9e7;
   --muted:        #6b8cba;
 
-  /* Teks: biru tua gelap agar kontras di atas biru muda */
   --text-primary:   #0d1f3c;
   --text-secondary: #3a5a8a;
   --text-dim:       #7fa0cc;
@@ -76,7 +65,6 @@
   --shadow-lg:  0 6px 24px rgba(29,110,245,0.15);
 }
 
-/* [BARU] Light mode overrides untuk elemen hardcoded & sidebar/topbar */
 .light-mode .day-card         { background: #ddeaff; border-color: #93b8f0; color: #0d1f3c; }
 .light-mode .day-card.active  { background: #bdd4fb; border-color: #1d6ef5; }
 .light-mode .day-card label   { color: #1d3a6e; }
@@ -84,7 +72,6 @@
 .light-mode .modal            { background: rgba(10,30,70,0.4); }
 .light-mode select option     { background: #ffffff; color: #0d1f3c; }
 
-/* Sidebar & topbar biru es */
 .light-mode #sidebar            { background: #dce8fd; border-right-color: #b8d0f5; }
 .light-mode #topbar             { background: #e4effe; border-bottom-color: #b8d0f5; }
 .light-mode .nav-item           { color: #3a5a8a; }
@@ -94,8 +81,6 @@
 .light-mode .sidebar-footer     { border-top-color: #b8d0f5; }
 .light-mode .nav-section-label  { color: #7fa0cc; }
 
-/* ── Theme Transition ──────────────────────────────────── */
-/* [BARU] Efek transisi halus saat ganti tema, tidak menyentuh animasi lainnya */
 body,
 #sidebar, #topbar, #main-area,
 .card, .kpi-card, .finance-card, .table-wrap,
@@ -117,12 +102,10 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 8px; }
 
-/* ── Login Screen ───────────────────────────────────────── */
 #login-screen {
   display: flex;
   align-items: center;
@@ -163,7 +146,6 @@ body {
 .login-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
 .login-card p  { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 28px; }
 
-/* ── Form Controls ──────────────────────────────────────── */
 .form-group { margin-bottom: 16px; }
 .form-group label {
   display: block;
@@ -199,7 +181,6 @@ textarea { resize: vertical; min-height: 80px; }
 
 select option { background: var(--bg-card); }
 
-/* ── Buttons ────────────────────────────────────────────── */
 .btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 20px; min-height: 42px;
@@ -243,14 +224,12 @@ select option { background: var(--bg-card); }
   flex-shrink: 0;
 }
 
-/* ── App Shell ──────────────────────────────────────────── */
 #app-shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ── Sidebar ────────────────────────────────────────────── */
 #sidebar {
   width: var(--sidebar-w);
   background: var(--bg-surface);
@@ -310,7 +289,6 @@ select option { background: var(--bg-card); }
   border-top: 1px solid var(--border);
 }
 
-/* ── Main Area ──────────────────────────────────────────── */
 #main-area {
   flex: 1;
   display: flex;
@@ -342,7 +320,6 @@ select option { background: var(--bg-card); }
   padding: 28px;
 }
 
-/* ── Page Sections ──────────────────────────────────────── */
 .page-section { display: none; }
 
 .page-header {
@@ -355,7 +332,6 @@ select option { background: var(--bg-card); }
 }
 .page-header h2 svg { color: var(--primary); }
 
-/* ── KPI Cards ──────────────────────────────────────────── */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -403,7 +379,6 @@ select option { background: var(--bg-card); }
 .kpi-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
 .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
 
-/* ── Dashboard Grid ─────────────────────────────────────── */
 .dash-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -417,7 +392,6 @@ select option { background: var(--bg-card); }
   margin-bottom: 24px;
 }
 
-/* ── Cards ──────────────────────────────────────────────── */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -437,7 +411,6 @@ select option { background: var(--bg-card); }
 .card-header h3 svg { width: 15px; height: 15px; color: var(--primary); }
 .card-body { padding: 16px 20px; }
 
-/* ── Finance Cards ──────────────────────────────────────── */
 .finance-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -457,7 +430,6 @@ select option { background: var(--bg-card); }
 .finance-card.sav   .amount { color: var(--success); }
 .finance-card.rev   .amount { color: var(--accent); }
 
-/* ── Tables ─────────────────────────────────────────────── */
 .table-wrap {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -518,7 +490,6 @@ select option { background: var(--bg-card); }
 .data-table td { padding: 10px 14px; vertical-align: middle; }
 .empty-row { text-align: center; color: var(--text-dim); padding: 32px !important; }
 
-/* ── Badges ─────────────────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center;
   padding: 3px 8px;
@@ -544,7 +515,6 @@ select option { background: var(--bg-card); }
   padding: 3px 8px;
 }
 
-/* ── Avatar/Name cells ──────────────────────────────────── */
 .name-cell { display: flex; align-items: center; gap: 10px; }
 .avatar-initial {
   width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
@@ -555,7 +525,6 @@ select option { background: var(--bg-card); }
 .mentor-avatar { background: #2e1f5e; color: #a78bfa; }
 .name-cell strong { display: block; font-weight: 600; }
 
-/* Gaya dasar untuk sub-teks JK */
 .name-cell small {
   display: flex;
   align-items: center;
@@ -564,9 +533,8 @@ select option { background: var(--bg-card); }
   margin-top: 1px;
 }
 
-/* Warna khusus jika data-jk="L" (Biru) */
 .name-cell small[data-jk="L"] {
-  color: #3b82f6 !important; /* Biru soft */
+  color: #3b82f6 !important; 
   font-weight: 500;
 }
 
@@ -576,10 +544,8 @@ select option { background: var(--bg-card); }
   font-weight: 500;
 }
 
-/* ── Action buttons group ───────────────────────────────── */
 .action-btns { display: flex; gap: 6px; }
 
-/* ── Progress bar ───────────────────────────────────────── */
 .progress-bar-wrap {
   background: var(--bg-surface);
   border-radius: 99px; height: 6px; min-width: 80px;
@@ -590,7 +556,6 @@ select option { background: var(--bg-card); }
   transition: width 0.4s;
 }
 
-/* ── Stars ──────────────────────────────────────────────── */
 .stars { color: var(--accent); font-size: 0.85rem; }
 .rank-badge {
   width: 22px; height: 22px; border-radius: 50%;
@@ -604,7 +569,6 @@ select option { background: var(--bg-card); }
   font-size: 0.75rem; font-weight: 600;
 }
 
-/* ── Activity Feed ──────────────────────────────────────── */
 .activity-feed { display: flex; flex-direction: column; gap: 12px; }
 .activity-item { display: flex; align-items: center; gap: 12px; }
 .activity-icon {
@@ -621,7 +585,6 @@ select option { background: var(--bg-card); }
 .activity-date { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
 .empty-feed { color: var(--text-dim); font-size: 0.82rem; padding: 16px 0; text-align: center; }
 
-/* ── Alert rows ─────────────────────────────────────────── */
 .alert-row {
   display: flex; align-items: center; gap: 12px;
   padding: 10px;
@@ -635,7 +598,6 @@ select option { background: var(--bg-card); }
 .alert-row small  { font-size: 0.72rem; color: var(--text-secondary); }
 .icon-warning-sm { width: 16px; height: 16px; color: var(--warning); flex-shrink: 0; }
 
-/* ── Schedule rows ──────────────────────────────────────── */
 .schedule-row {
   display: flex; align-items: center; gap: 16px;
   padding: 10px 0;
@@ -645,7 +607,6 @@ select option { background: var(--bg-card); }
 .schedule-row:last-child { border-bottom: none; }
 .schedule-row svg { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
 
-/* ── Day checkboxes ─────────────────────────────────────── */
 .day-check-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .day-check {
   display: flex; align-items: center; gap: 6px;
@@ -660,7 +621,6 @@ select option { background: var(--bg-card); }
 .day-check:has(input:checked) { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
 .day-check input { display: none; }
 
-/* ── Modal ──────────────────────────────────────────────── */
 .modal {
   display: none;
   position: fixed; inset: 0;
@@ -697,7 +657,6 @@ select option { background: var(--bg-card); }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
 .modal-content::-webkit-scrollbar { width: 4px; }
 
-/* ── Toast ──────────────────────────────────────────────── */
 #toast-container {
   position: fixed; bottom: 24px; right: 24px;
   z-index: 9999;
@@ -728,8 +687,6 @@ select option { background: var(--bg-card); }
 .toast-info    { border-left: 3px solid var(--primary); }
 .toast-info    svg { color: var(--primary); }
 
-/* ── Theme Toggle Button ────────────────────────────────── */
-/* [BARU] Styling tombol toggle tema di topbar */
 #theme-toggle-btn {
   width: 36px; height: 36px; min-height: 36px;
   background: var(--bg-hover);
@@ -748,7 +705,6 @@ select option { background: var(--bg-card); }
 }
 #theme-toggle-btn svg { width: 16px; height: 16px; }
 
-/* ── Misc ───────────────────────────────────────────────── */
 .text-success { color: var(--success) !important; }
 .text-muted   { color: var(--text-secondary); }
 .section-label {
@@ -1083,4 +1039,57 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   .data-table td, .data-table th { padding: 8px 10px; }
   
   .form-row, .form-row-3 { grid-template-columns: 1fr; } /* Biar form ga dempet di HP */
+}
+
+th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sort-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  vertical-align: middle;
+  color: #ccc; /* Warna default saat tidak aktif */
+}
+
+.active-sort {
+  color: #2563eb !important; /* Warna biru saat kolom aktif di-sort */
+}
+
+/* --- BAGIAN 1: TOMBOL DI ATAS TABEL --- */
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- BAGIAN 2: HEADER TABEL (SORTING) --- */
+th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  padding: 12px 8px;
+  background-color: #1e293b; /* Sesuaikan warna tema gelapmu */
+}
+
+.sort-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  vertical-align: middle;
+  color: #64748b; /* Warna abu-abu saat diam */
+  transition: color 0.2s;
+}
+
+.active-sort {
+  color: #3b82f6 !important; /* Warna biru cerah saat aktif */
 }

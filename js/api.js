@@ -67,12 +67,16 @@ async function post(body) {
     login: (username, password) => get('login', { username, password })
   };
 
-  const murid = {
+const murid = {
     getAll:  (params = {}) => get('getMurid', params),
     getById: (id) => get('getMurid', { id }),
     add:     (data) => post({ action: 'addMurid', ...data }),
     update:  (data) => post({ action: 'updateMurid', ...data }),
-    delete:  (id)   => post({ action: 'deleteMurid', id })
+    delete:  (id, all = false) => post({ 
+      action: 'deleteMurid', 
+      id: id, 
+      all: all
+    })
   };
 
   // MENTOR

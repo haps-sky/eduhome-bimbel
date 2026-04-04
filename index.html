@@ -234,9 +234,35 @@
             <div class="table-title"><i data-lucide="users"></i> Daftar Murid <span id="murid-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span></div>
             <div class="table-controls"><input class="search-input" type="text" placeholder="Cari nama / program..." oninput="MuridPage.search(this.value)"></div>
           </div>
+          <div class="table-controls">
+            <div class="control-group">
+              <button class="btn-icon btn-secondary" onclick="MuridPage.load(true)" title="Refresh Data">
+                <i data-lucide="refresh-cw"></i>
+              </button>
+              <button class="btn-icon btn-secondary" id="undo-btn" disabled title="Undo">
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="btn-icon btn-secondary" id="redo-btn" disabled title="Redo">
+                <i data-lucide="redo-2"></i>
+              </button>
+          </div>
+          <div class="control-group">
+           <button class="btn-danger btn-sm" onclick="MuridPage.deleteAll()" title="Hapus Semua">
+            <i data-lucide="trash-2"></i> Hapus Semua
+          </button>
+        </div>
+      </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>ID</th><th>Nama</th><th>Kelas</th><th>Program</th><th>Mulai</th><th>Status</th><th>Aksi</th></tr></thead>
+              <thead>
+              <tr>
+                <th onclick="MuridPage.sortBy('id')">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="MuridPage.sortBy('nama')">NAMA <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="MuridPage.sortBy('kelas')">KELAS <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="MuridPage.sortBy('program')">PROGRAM <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="MuridPage.sortBy('tgl_mulai')">MULAI <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="MuridPage.sortBy('status')">STATUS <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Aksi</th></tr></thead>
               <tbody id="murid-tbody"></tbody>
             </table>
           </div>
