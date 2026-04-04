@@ -231,27 +231,33 @@
         </div>
         <div class="table-wrap">
           <div class="table-toolbar">
-            <div class="table-title"><i data-lucide="users"></i> Daftar Murid <span id="murid-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span></div>
-            <div class="table-controls"><input class="search-input" type="text" placeholder="Cari nama / program..." oninput="MuridPage.search(this.value)"></div>
-          </div>
-          <div class="table-controls">
-          <div class="control-group">
-            <button class="btn-control" onclick="MuridPage.load(true)" title="Refresh Data">
-              <i data-lucide="refresh-cw"></i>
-            </button>
-            <button id="undo-btn" class="btn-control" disabled onclick="MuridPage.undo()" title="Undo">
-              <i data-lucide="undo-2"></i>
-            </button>
-            <button id="redo-btn" class="btn-control" disabled onclick="MuridPage.redo()" title="Redo">
-              <i data-lucide="redo-2"></i>
-            </button>
-          </div>
-          
-          <div class="control-group">
-            <button class="btn-delete-all" onclick="MuridPage.deleteAll()">
-              <i data-lucide="trash-2"></i>
-              <span>Hapus Semua</span>
-            </button>
+            <div class="table-title">
+              <i data-lucide="users"></i>
+              Daftar Murid
+              <span id="murid-count" class="text-muted" style="font-size:0.75rem;font-weight:400;"></span>
+            </div>
+            <div class="table-controls">
+              <input class="search-input" type="text"
+                     placeholder="Cari nama / program..."
+                     oninput="MuridPage.search(this.value)"
+                     style="width:180px;">
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn" onclick="MuridPage.load(true)" title="Refresh data">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only" id="undo-btn"
+                      onclick="MuridPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only" id="redo-btn"
+                      onclick="MuridPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-danger"
+                      onclick="MuridPage.deleteAll()" title="Hapus semua murid">
+                <i data-lucide="trash-2"></i> Hapus Semua
+              </button>
             </div>
           </div>
           <div style="overflow-x:auto">
