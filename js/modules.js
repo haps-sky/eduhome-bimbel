@@ -1347,7 +1347,7 @@ async function saveForm() {
       // Kirim ke API
       const res = id ? 
           await API.buku.update({ id, ...payload }) : 
-          await API.addBuku(payload); // Sesuaikan dengan nama fungsi di api.js kamu
+          await API.buku.add(payload);
       
       if (res.status === 'OK') {
         UI.toast(id ? 'Modul diperbarui' : 'Modul berhasil ditambahkan!', 'success');
