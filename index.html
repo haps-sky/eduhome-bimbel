@@ -7,6 +7,33 @@
   <link rel="stylesheet" href="css/style.css">
  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script>window.EDUHOME_API_URL = 'https://script.google.com/macros/s/AKfycbyQ9N5mKaLDOO9mdzn611zDb38BtetDqqzRFOu2HPwQpVesMcrAh2BKQ99AtxqZVAVVxQ/exec';</script>
+<style>
+  /* Tombol aksen untuk Pilih Item di toolbar Pembayaran */
+  .ctrl-btn.ctrl-accent {
+    border-color: #c7d2fe;
+    color: #6366f1;
+    background: #eef2ff;
+  }
+  .ctrl-btn.ctrl-accent:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+  }
+  /* Baris di modal Pilih Item */
+  .item-picker-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+    gap: 8px;
+  }
+  .item-picker-row:hover {
+    background: var(--bg-secondary, #f8fafc);
+    border-color: var(--primary, #6366f1);
+  }
+</style>
 </head>
 <body>
 
@@ -293,7 +320,32 @@
 
   <div class="table-wrap">
     <div class="table-toolbar">
-      <div class="table-title"><i data-lucide="user-check"></i> Daftar Mentor</div>
+      <div class="table-title">
+        <i data-lucide="user-check"></i> Daftar Mentor
+      </div>
+      <div class="table-controls">
+        <input class="search-input" type="text"
+               placeholder="Cari nama / program..."
+               oninput="MentorPage.search(this.value)"
+               style="width:180px;">
+        <div class="ctrl-divider"></div>
+        <button class="ctrl-btn" onclick="MentorPage.load(true)" title="Refresh data">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+        <button class="ctrl-btn icon-only" id="mentor-undo-btn"
+                onclick="MentorPage.undo()" title="Undo" disabled>
+          <i data-lucide="undo-2"></i>
+        </button>
+        <button class="ctrl-btn icon-only" id="mentor-redo-btn"
+                onclick="MentorPage.redo()" title="Redo" disabled>
+          <i data-lucide="redo-2"></i>
+        </button>
+        <div class="ctrl-divider"></div>
+        <button class="ctrl-btn ctrl-danger"
+                onclick="MentorPage.deleteAll()" title="Hapus semua mentor">
+          <i data-lucide="trash-2"></i> Hapus Semua
+        </button>
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table class="data-table">
@@ -309,9 +361,7 @@
             <th>Aksi</th>
           </tr>
         </thead>
-        <tbody id="mentor-tbody">
-          
-        </tbody>
+        <tbody id="mentor-tbody"></tbody>
       </table>
     </div>
   </div>
@@ -325,12 +375,48 @@
         </div>
         <div class="table-wrap">
           <div class="table-toolbar">
-            <div class="table-title"><i data-lucide="calendar-check"></i> Riwayat Presensi</div>
-            <div class="table-controls"><input type="date" class="search-input" style="width:160px" onchange="PresensiPage.filterByDate(this.value)"></div>
+            <div class="table-title">
+              <i data-lucide="calendar-check"></i> Riwayat Presensi
+            </div>
+            <div class="table-controls">
+              <input class="search-input" type="text"
+                     placeholder="Cari murid / mentor..."
+                     oninput="PresensiPage.search(this.value)"
+                     style="width:180px;">
+              <input type="date" class="search-input" style="width:150px"
+                     onchange="PresensiPage.filterByDate(this.value)"
+                     title="Filter tanggal">
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn" onclick="PresensiPage.load(true)" title="Refresh data">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only" id="presensi-undo-btn"
+                      onclick="PresensiPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only" id="presensi-redo-btn"
+                      onclick="PresensiPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-danger"
+                      onclick="PresensiPage.deleteAll()" title="Hapus semua presensi">
+                <i data-lucide="trash-2"></i> Hapus Semua
+              </button>
+            </div>
           </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th onclick="PresensiPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PresensiPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Catatan</th><th onclick="PresensiPage.sortBy('bintang')" style="cursor:pointer;user-select:none;">Bintang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
+              <thead><tr>
+                <th onclick="PresensiPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PresensiPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PresensiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PresensiPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PresensiPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Catatan</th>
+                <th onclick="PresensiPage.sortBy('bintang')" style="cursor:pointer;user-select:none;">Bintang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Aksi</th>
+              </tr></thead>
               <tbody id="presensi-tbody"></tbody>
             </table>
           </div>
@@ -346,10 +432,51 @@
         </div>
         <div id="pay-today-summary" style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:12px;"></div>
         <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="credit-card"></i> Riwayat Pembayaran</div></div>
+          <div class="table-toolbar">
+            <div class="table-title">
+              <i data-lucide="credit-card"></i> Riwayat Pembayaran
+            </div>
+            <div class="table-controls">
+              <input class="search-input" type="text"
+                     placeholder="Cari nama / jenis..."
+                     oninput="PembayaranPage.search(this.value)"
+                     style="width:180px;">
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn" onclick="PembayaranPage.load(true)" title="Refresh data">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only" id="pay-undo-btn"
+                      onclick="PembayaranPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only" id="pay-redo-btn"
+                      onclick="PembayaranPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-accent"
+                      onclick="PembayaranPage.openItemPicker()" title="Pilih item untuk auto-fill">
+                <i data-lucide="shopping-cart"></i> Pilih Item
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-danger"
+                      onclick="PembayaranPage.deleteAll()" title="Hapus semua pembayaran">
+                <i data-lucide="trash-2"></i> Hapus Semua
+              </button>
+            </div>
+          </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th onclick="PembayaranPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('jenis')" style="cursor:pointer;user-select:none;">Jenis <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Periode</th><th onclick="PembayaranPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="PembayaranPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Keterangan</th><th>Aksi</th></tr></thead>
+              <thead><tr>
+                <th onclick="PembayaranPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PembayaranPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PembayaranPage.sortBy('jenis')" style="cursor:pointer;user-select:none;">Jenis <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Periode</th>
+                <th onclick="PembayaranPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="PembayaranPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Keterangan</th>
+                <th>Aksi</th>
+              </tr></thead>
               <tbody id="pay-tbody"></tbody>
             </table>
           </div>
@@ -367,11 +494,49 @@
   
   <div class="table-wrap">
     <div class="table-toolbar">
-      <div class="table-title"><i data-lucide="package"></i> Daftar Paket SPP</div>
+      <div class="table-title">
+        <i data-lucide="package"></i> Daftar Paket SPP
+      </div>
+      <div class="table-controls">
+        <input class="search-input" type="text"
+               placeholder="Cari murid / program..."
+               oninput="SPPPage.search(this.value)"
+               style="width:180px;">
+        <div class="ctrl-divider"></div>
+        <button class="ctrl-btn" onclick="SPPPage.load(true)" title="Refresh data">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+        <button class="ctrl-btn icon-only" id="spp-undo-btn"
+                onclick="SPPPage.undo()" title="Undo" disabled>
+          <i data-lucide="undo-2"></i>
+        </button>
+        <button class="ctrl-btn icon-only" id="spp-redo-btn"
+                onclick="SPPPage.redo()" title="Redo" disabled>
+          <i data-lucide="redo-2"></i>
+        </button>
+        <div class="ctrl-divider"></div>
+        <button class="ctrl-btn ctrl-danger"
+                onclick="SPPPage.deleteAll()" title="Hapus semua paket SPP">
+          <i data-lucide="trash-2"></i> Hapus Semua
+        </button>
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table class="data-table">
-        <thead><tr><th>ID</th><th onclick="SPPPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('periode_mulai')" style="cursor:pointer;user-select:none;">Periode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('total_pertemuan')" style="cursor:pointer;user-select:none;">Total <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('sisa_pertemuan')" style="cursor:pointer;user-select:none;">Hadir/Sisa <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Progress</th><th onclick="SPPPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('harga')" style="cursor:pointer;user-select:none;">Harga <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('terbayar')" style="cursor:pointer;user-select:none;">Terbayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="SPPPage.sortBy('status_bayar')" style="cursor:pointer;user-select:none;">Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
+        <thead><tr>
+          <th>ID</th>
+          <th onclick="SPPPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('periode_mulai')" style="cursor:pointer;user-select:none;">Periode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('total_pertemuan')" style="cursor:pointer;user-select:none;">Total <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('sisa_pertemuan')" style="cursor:pointer;user-select:none;">Hadir/Sisa <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th>Progress</th>
+          <th onclick="SPPPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('harga')" style="cursor:pointer;user-select:none;">Harga <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('terbayar')" style="cursor:pointer;user-select:none;">Terbayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th onclick="SPPPage.sortBy('status_bayar')" style="cursor:pointer;user-select:none;">Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+          <th>Aksi</th>
+        </tr></thead>
         <tbody id="spp-tbody"></tbody>
       </table>
     </div>
@@ -388,26 +553,29 @@
     <div class="table-wrap">
       <div class="table-toolbar">
         <div class="table-title">
-          <i data-lucide="book-open"></i> Daftar Modul 
+          <i data-lucide="book-open"></i> Daftar Modul
           <span id="buku-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span>
         </div>
-        
         <div class="table-controls">
-          <input class="search-input" 
-                type="text" 
-                placeholder="Cari nama modul / program..." 
-                oninput="BukuPage.search(this.value)">
-          
-          <div class="control-group">
-            <button class="btn-control" onclick="BukuPage.load(true)" title="Refresh Data">
-              <i data-lucide="refresh-cw"></i>
-            </button>
-            <button id="buku-undo-btn" class="btn-control" disabled onclick="BukuPage.undo()" title="Undo">
-              <i data-lucide="undo-2"></i>
-            </button>
-          </div>
-
-          <button class="btn-delete-all" onclick="BukuPage.deleteAll()">
+          <input class="search-input" type="text"
+                 placeholder="Cari nama modul / program..."
+                 oninput="BukuPage.search(this.value)"
+                 style="width:200px;">
+          <div class="ctrl-divider"></div>
+          <button class="ctrl-btn" onclick="BukuPage.load(true)" title="Refresh data">
+            <i data-lucide="refresh-cw"></i> Refresh
+          </button>
+          <button class="ctrl-btn icon-only" id="buku-undo-btn"
+                  onclick="BukuPage.undo()" title="Undo" disabled>
+            <i data-lucide="undo-2"></i>
+          </button>
+          <button class="ctrl-btn icon-only" id="buku-redo-btn"
+                  onclick="BukuPage.redo()" title="Redo" disabled>
+            <i data-lucide="redo-2"></i>
+          </button>
+          <div class="ctrl-divider"></div>
+          <button class="ctrl-btn ctrl-danger"
+                  onclick="BukuPage.deleteAll()" title="Hapus semua modul">
             <i data-lucide="trash-2"></i> Hapus Semua
           </button>
         </div>
@@ -417,17 +585,17 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th onclick="BukuPage.sortBy('id')">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('nama_modul')">NAMA MODUL <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('jenjang')">JENJANG/PROG <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('stok')">STOK <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('harga_beli')">Hrg PUSAT <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('harga_jual')">Hrg MURID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('id')" style="cursor:pointer;user-select:none;">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('nama_modul')" style="cursor:pointer;user-select:none;">NAMA MODUL <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('jenjang')" style="cursor:pointer;user-select:none;">JENJANG/PROG <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('stok')" style="cursor:pointer;user-select:none;">STOK <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('harga_beli')" style="cursor:pointer;user-select:none;">Hrg PUSAT <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('harga_jual')" style="cursor:pointer;user-select:none;">Hrg MURID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th>KEUNTUNGAN</th>
               <th style="text-align:center">AKSI</th>
             </tr>
           </thead>
-          <tbody id="buku-tbody">
-            </tbody>
+          <tbody id="buku-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -440,10 +608,45 @@
           </button>
         </div>
         <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="banknote"></i> Riwayat Penggajian</div></div>
+          <div class="table-toolbar">
+            <div class="table-title">
+              <i data-lucide="banknote"></i> Riwayat Penggajian
+            </div>
+            <div class="table-controls">
+              <input class="search-input" type="text"
+                     placeholder="Cari mentor / bulan..."
+                     oninput="GajiPage.search(this.value)"
+                     style="width:180px;">
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn" onclick="GajiPage.load(true)" title="Refresh data">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only" id="gaji-undo-btn"
+                      onclick="GajiPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only" id="gaji-redo-btn"
+                      onclick="GajiPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-danger"
+                      onclick="GajiPage.deleteAll()" title="Hapus semua catatan gaji">
+                <i data-lucide="trash-2"></i> Hapus Semua
+              </button>
+            </div>
+          </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>ID Trx</th><th onclick="GajiPage.sortBy('tgl_bayar')" style="cursor:pointer;user-select:none;">Tgl Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('bulan_gaji')" style="cursor:pointer;user-select:none;">Bulan Gaji <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th onclick="GajiPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th><th>Aksi</th></tr></thead>
+              <thead><tr>
+                <th>ID Trx</th>
+                <th onclick="GajiPage.sortBy('tgl_bayar')" style="cursor:pointer;user-select:none;">Tgl Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="GajiPage.sortBy('bulan_gaji')" style="cursor:pointer;user-select:none;">Bulan Gaji <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="GajiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="GajiPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th onclick="GajiPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                <th>Aksi</th>
+              </tr></thead>
               <tbody id="gaji-tbody"></tbody>
             </table>
           </div>
