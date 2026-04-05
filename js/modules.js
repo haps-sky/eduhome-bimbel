@@ -1220,94 +1220,141 @@ async function deleteSPP(id, namaMurid) {
   }
 
 
-  function renderTable(data) {
-    const rows = data.map(b => `
-      <tr>
-        <td><span class="id-badge">${b.id}</span></td>
-        <td><strong>${b.nama}</strong></td>
-        <td>${b.jenjang || '-'}</td>
-        <td><span class="program-tag">${b.program}</span></td>
-        <td>${b.keterangan || '-'}</td>
-        <td>
-          <div class="action-btns">
-            <button class="btn-icon btn-warning" onclick="BukuPage.openEdit('${b.id}')" title="Edit"><i data-lucide="pencil"></i></button>
-            <button class="btn-icon btn-danger"  onclick="BukuPage.deleteBuku('${b.id}','${b.nama}')" title="Hapus"><i data-lucide="trash-2"></i></button>
-          </div>
-        </td>
-      </tr>`);
-    UI.renderTable('buku-tbody', rows, 'Belum ada modul pembelajaran');
-    lucide.createIcons();
-  }
+function renderTable(data) {
+  const rows = data.map(b => `
+    <tr>
+      <td><span class="id-badge">${b.id}</span></td>
+      <td><strong>${b.nama_modul}</strong></td>
+      <td>
+        <div class="program-tag">${b.jenjang || '-'}</div>
+        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">${b.program || '-'}</div>
+      </td>
+      <td><span class="pill">${b.stok || 0}</span></td>
+      <td style="font-family:var(--font-mono)">Rp${Number(b.harga_beli || 0).toLocaleString('id-ID')}</td>
+      <td style="font-family:var(--font-mono); font-weight:700; color:var(--primary)">Rp${Number(b.harga_jual || 0).toLocaleString('id-ID')}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-icon btn-warning" onclick="BukuPage.openEdit('${b.id}')" title="Edit">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button class="btn-icon btn-danger" onclick="BukuPage.deleteBuku('${b.id}','${b.nama_modul}')" title="Hapus">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`);
 
-  function openAdd() {
-    ['buku-id-field','buku-nama','buku-jenjang','buku-program','buku-ket'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.getElementById('buku-modal-title').textContent = 'Tambah Modul';
-    UI.openModal('modal-buku');
-  }
+  // Update total counter di toolbar
+  const countEl = document.getElementById('buku-count');
+  if (countEl) countEl.innerText = `Total: ${data.length} modul`;
 
-  function openEdit(id) {
-    const b = allData.find(x => x.id === id);
-    if (!b) return;
-    document.getElementById('buku-modal-title').textContent = 'Edit Modul';
-    document.getElementById('buku-id-field').value  = b.id;
-    document.getElementById('buku-nama').value      = b.nama;
-    document.getElementById('buku-jenjang').value   = b.jenjang;
-    document.getElementById('buku-program').value   = b.program;
-    document.getElementById('buku-ket').value       = b.keterangan;
-    UI.openModal('modal-buku');
-  }
+  UI.renderTable('buku-tbody', rows, 'Belum ada modul pembelajaran');
+  lucide.createIcons();
+}
+
+function openAdd() {
+  // Tambahkan ID input stok dan harga ke dalam array untuk dikosongkan
+  const fields = [
+    'buku-id-field', 
+    'buku-nama', 
+    'buku-jenjang', 
+    'buku-program', 
+    'buku-stok',
+    'buku-harga-beli',
+    'buku-harga-jual',
+    'buku-ket'
+  ];
+
+  fields.forEach(id => {
+    const el = document.getElementById(id); 
+    if (el) el.value = '';
+  });
+
+  // Pastikan judul modal kembali ke "Tambah Modul"
+  const titleEl = document.getElementById('buku-modal-title');
+  if (titleEl) titleEl.textContent = 'Tambah Modul';
+  
+  UI.openModal('modal-buku');
+}
+
+function openEdit(id) {
+  // 1. Cari data buku berdasarkan ID di dalam array allData
+  const b = allData.find(x => x.id === id);
+  if (!b) return;
+
+  // 2. Set Judul Modal jadi Edit
+  document.getElementById('buku-modal-title').textContent = 'Edit Modul';
+  
+  // 3. Isi field hidden ID
+  document.getElementById('buku-id-field').value = b.id;
+  
+  // 4. Isi data identitas (Ganti b.nama jadi b.nama_modul sesuai DB baru)
+  document.getElementById('buku-nama').value    = b.nama_modul || '';
+  document.getElementById('buku-jenjang').value = b.jenjang || '';
+  document.getElementById('buku-program').value = b.program || '';
+  
+  // 5. ISI DATA BARU (Stok & Harga)
+  document.getElementById('buku-stok').value        = b.stok || 0;
+  document.getElementById('buku-harga-beli').value  = b.harga_beli || 0;
+  document.getElementById('buku-harga-jual').value  = b.harga_jual || 0;
+  
+  // 6. Keterangan
+  document.getElementById('buku-ket').value = b.keterangan || '';
+  
+  // 7. Munculkan Modal
+  UI.openModal('modal-buku');
+}
 
 async function saveForm() {
     // 1. Ambil Elemen Tombol dan ID Field
     const btn = document.querySelector('#modal-buku .btn-primary');
     const id = document.getElementById('buku-id-field').value;
     
-    // 2. Ambil Input Data
-    const nama = document.getElementById('buku-nama').value.trim();
+    // 2. Ambil Input Data (Gunakan ID yang baru kita buat di Modal)
+    const nama_modul = document.getElementById('buku-nama').value.trim();
     const jenjang = document.getElementById('buku-jenjang').value.trim();
     const program = document.getElementById('buku-program').value.trim();
+    const stok = Number(document.getElementById('buku-stok').value) || 0;
+    const harga_beli = Number(document.getElementById('buku-harga-beli').value) || 0;
+    const harga_jual = Number(document.getElementById('buku-harga-jual').value) || 0;
     const keterangan = document.getElementById('buku-ket').value.trim();
 
     // 3. Validasi
-    if (!nama) { 
+    if (!nama_modul) { 
         UI.toast('Nama modul wajib diisi', 'error'); 
         return; 
     }
 
-    // 4. Bungkus Data ke Payload
+    // 4. Bungkus Data ke Payload (Pastikan nama key sinkron dengan DB BUKU)
     const payload = { 
-        nama, 
+        nama_modul, 
         jenjang, 
         program, 
+        stok,
+        harga_beli,
+        harga_jual,
         keterangan 
     };
 
     try {
       if (btn) { 
         btn.disabled = true; 
-        // Efek loading spinner-sm dengan teks dinamis
         btn.innerHTML = id ? 
-            '<div class="spinner spinner-sm"></div> Memperbarui modul...' : 
-            '<div class="spinner spinner-sm"></div> Menambahkan modul...'; 
+            '<div class="spinner spinner-sm"></div> Memperbarui...' : 
+            '<div class="spinner spinner-sm"></div> Menyimpan...'; 
       }
 
-      // Gunakan ternary: Update jika ada ID, Add jika ID kosong
+      // Kirim ke API
       const res = id ? 
           await API.buku.update({ id, ...payload }) : 
-          await API.buku.add(payload);
+          await API.addBuku(payload); // Sesuaikan dengan nama fungsi di api.js kamu
       
       if (res.status === 'OK') {
-        const pesanSukses = id ? 'Modul berhasil diperbarui' : 'Modul baru berhasil ditambahkan!';
-        UI.toast(pesanSukses, 'success');
-        
+        UI.toast(id ? 'Modul diperbarui' : 'Modul berhasil ditambahkan!', 'success');
         UI.closeModal('modal-buku');
         
-        // RESET CACHE & REFRESH TABEL
-        allData = [];
-        isFetched = false;
-        load(); 
+        // REFRESH DATA
+        load(true); 
       } else {
         UI.toast(res.message || 'Gagal menyimpan modul', 'error');
       }
@@ -1317,7 +1364,8 @@ async function saveForm() {
     } finally {
       if (btn) { 
         btn.disabled = false; 
-        btn.innerHTML = 'Simpan'; // Balikin teks tombol
+        btn.innerHTML = '<i data-lucide="save"></i> Simpan'; 
+        lucide.createIcons(); // Re-render icon save
       }
     }
 }

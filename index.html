@@ -378,51 +378,52 @@
   </div>
 </section>
 
-<section id="page-buku" class="page-section">
-  <!-- Header: Judul di kiri, Tombol di kanan -->
-  <div class="page-header">
-    <h2><i data-lucide="book-open"></i> Modul Pembelajaran</h2>
-    <button type="button" 
-            class="btn btn-primary" 
-            id="btn-tambah-buku" 
-            onclick="BukuPage.openAdd()">
-      <i data-lucide="plus"></i> Tambah Modul
-    </button>
-  </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <div class="table-title">
+          <i data-lucide="book-open"></i> Daftar Modul 
+          <span id="buku-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span>
+        </div>
+        
+        <div class="table-controls">
+          <input class="search-input" 
+                type="text" 
+                placeholder="Cari nama modul / program..." 
+                oninput="BukuPage.search(this.value)">
+          
+          <div class="control-group">
+            <button class="btn-control" onclick="BukuPage.load(true)" title="Refresh Data">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+            <button id="buku-undo-btn" class="btn-control" disabled onclick="BukuPage.undo()" title="Undo">
+              <i data-lucide="undo-2"></i>
+            </button>
+          </div>
 
-  <div class="table-wrap">
-    <div class="table-toolbar">
-      <div class="table-title">
-        <i data-lucide="book-open"></i> Daftar Modul 
-        <span id="buku-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span>
+          <button class="btn-delete-all" onclick="BukuPage.deleteAll()">
+            <i data-lucide="trash-2"></i> Hapus Semua
+          </button>
+        </div>
       </div>
-      <div class="table-controls">
-        <input class="search-input" 
-               type="text" 
-               placeholder="Cari nama modul / program..." 
-               oninput="BukuPage.search(this.value)">
+
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th onclick="BukuPage.sortBy('id')">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('nama_modul')">NAMA MODUL <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('jenjang')">JENJANG/PROG <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('stok')">STOK <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('harga_beli')">Hrg PUSAT <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th onclick="BukuPage.sortBy('harga_jual')">Hrg MURID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+              <th style="text-align:center">AKSI</th>
+            </tr>
+          </thead>
+          <tbody id="buku-tbody">
+            </tbody>
+        </table>
       </div>
     </div>
-
-    <div style="overflow-x:auto">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th onclick="BukuPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama Modul <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="BukuPage.sortBy('jenjang')" style="cursor:pointer;user-select:none;">Jenjang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="BukuPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th>Keterangan</th>
-            <th style="text-align:center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="buku-tbody">
-          <!-- Data akan diisi oleh JavaScript -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
 
       <section id="page-gaji" class="page-section">
         <div class="page-header">
@@ -725,20 +726,49 @@
 
 <div id="modal-buku" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3 id="buku-modal-title">Tambah Modul</h3><button class="modal-close" onclick="UI.closeModal('modal-buku')">✕</button></div>
+    <div class="modal-header">
+      <h3 id="buku-modal-title">Tambah Modul</h3>
+      <button class="modal-close" onclick="UI.closeModal('modal-buku')">✕</button>
+    </div>
     <div class="modal-body">
       <input type="hidden" id="buku-id-field">
-      <div class="form-group"><label>Nama Modul *</label><input type="text" id="buku-nama" placeholder="Nama buku / modul"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Jenjang</label><input type="text" id="buku-jenjang" placeholder="SD, SMP, SMA"></div>
-        <div class="form-group"><label>Program</label><input type="text" id="buku-program" placeholder="Matematika, dll"></div>
+      <div class="form-group">
+        <label>Nama Modul *</label>
+        <input type="text" id="buku-nama" placeholder="Contoh: Matematika SD 4">
       </div>
-      <div class="form-group"><label>Keterangan</label><textarea id="buku-ket" placeholder="Deskripsi singkat modul"></textarea></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jenjang</label>
+          <input type="text" id="buku-jenjang" placeholder="SD / SMP / SMA">
+        </div>
+        <div class="form-group">
+          <label>Program</label>
+          <input type="text" id="buku-program" placeholder="Matematika / Inggris">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jumlah Stok</label>
+          <input type="number" id="buku-stok" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Harga Pusat (Modal)</label>
+          <input type="number" id="buku-harga-beli" placeholder="20000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Harga Murid (Jual)</label>
+        <input type="number" id="buku-harga-jual" placeholder="25000">
+      </div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <textarea id="buku-ket" placeholder="Edisi revisi, Kurikulum Merdeka, dll"></textarea>
+      </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-buku')">Batal</button>
       <button type="button" class="btn btn-primary" id="buku-save-btn" onclick="BukuPage.saveForm()">
-      <i data-lucide="save"></i> Simpan
+        <i data-lucide="save"></i> Simpan Modul
       </button>
     </div>
   </div>
