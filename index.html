@@ -454,11 +454,6 @@
                 <i data-lucide="redo-2"></i>
               </button>
               <div class="ctrl-divider"></div>
-              <button class="ctrl-btn ctrl-accent"
-                      onclick="PembayaranPage.openItemPicker()" title="Pilih item untuk auto-fill">
-                <i data-lucide="shopping-cart"></i> Pilih Item
-              </button>
-              <div class="ctrl-divider"></div>
               <button class="ctrl-btn ctrl-danger"
                       onclick="PembayaranPage.deleteAll()" title="Hapus semua pembayaran">
                 <i data-lucide="trash-2"></i> Hapus Semua
@@ -879,30 +874,96 @@
 
 <div id="modal-pembayaran" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3 id="modal-pembayaran-title">Catat Pembayaran</h3> <button class="modal-close" onclick="UI.closeModal('modal-pembayaran')">✕</button></div>
+    <div class="modal-header">
+      <h3 id="modal-pembayaran-title">Catat Pembayaran</h3>
+      <button class="modal-close" onclick="UI.closeModal('modal-pembayaran')">✕</button>
+    </div>
     <div class="modal-body">
       <input type="hidden" id="pay-id-field">
-      <div class="form-group"><label>Murid *</label><select id="pay-murid"><option value="">-- Pilih Murid --</option></select></div>
+      <input type="hidden" id="pay-spp-id-hidden">
+
+      <!-- Murid -->
       <div class="form-group">
-        <label>Paket SPP (untuk validasi cicilan)</label>
-        <select id="pay-spp"><option value="">-- Pilih Paket SPP (opsional) --</option></select>
-        <small id="pay-sisa-info" style="color:var(--warning);font-size:0.78rem;display:block;margin-top:4px;"></small>
+        <label>Murid *</label>
+        <select id="pay-murid"><option value="">-- Pilih Murid --</option></select>
+      </div>
+
+      <!-- PILIH ITEM — gantikan dropdown Paket SPP lama -->
+      <div class="form-group">
+        <label>Item Pembayaran</label>
+        <div id="pay-item-selected" style="
+          display:flex; align-items:center; justify-content:space-between;
+          padding:10px 14px; border:1px dashed var(--border,#e2e8f0);
+          border-radius:10px; cursor:pointer; gap:10px;
+          background:var(--bg-secondary,#f8fafc); transition:.15s;
+        " onclick="PembayaranPage.openItemPicker()">
+          <span id="pay-item-label" style="color:var(--text-secondary,#64748b); font-size:0.85rem;">
+            Klik untuk memilih item (SPP / Pendaftaran / Buku)
+          </span>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;flex-shrink:0;color:var(--text-secondary,#94a3b8)"></i>
+        </div>
+        <small id="pay-sisa-info" style="color:var(--warning,#f59e0b);font-size:0.78rem;display:block;margin-top:4px;"></small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="pay-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Jenis</label>
+          <select id="pay-jenis">
+            <option value="SPP">SPP</option>
+            <option value="PENDAFTARAN">Pendaftaran</option>
+            <option value="BUKU">Buku</option>
+            <option value="LAINNYA">Lainnya</option>
+          </select>
+        </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Tanggal</label><input type="date" id="pay-tanggal"></div>
-        <div class="form-group"><label>Jenis</label><select id="pay-jenis"><option value="SPP">SPP</option><option value="BUKU">Buku</option><option value="LAINNYA">Lainnya</option></select></div>
+        <div class="form-group">
+          <label>Jumlah (Rp) *</label>
+          <input type="number" id="pay-jumlah" placeholder="500000">
+        </div>
+        <div class="form-group">
+          <label>Metode</label>
+          <select id="pay-metode">
+            <option value="TUNAI">Tunai</option>
+            <option value="TRANSFER">Transfer</option>
+            <option value="QRIS">QRIS</option>
+          </select>
+        </div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Jumlah (Rp) *</label><input type="number" id="pay-jumlah" placeholder="500000"></div>
-        <div class="form-group"><label>Metode</label><select id="pay-metode"><option value="TUNAI">Tunai</option><option value="TRANSFER">Transfer</option><option value="QRIS">QRIS</option></select></div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <input type="text" id="pay-keterangan" placeholder="Otomatis terisi saat pilih item">
       </div>
-      <div class="form-group"><label>Keterangan</label><input type="text" id="pay-keterangan" placeholder="Contoh: SPP Januari 2025"></div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-pembayaran')">Batal</button>
       <button type="button" class="btn btn-primary" id="pay-save-btn" onclick="PembayaranPage.saveForm()">
-      <i data-lucide="save"></i> Simpan
+        <i data-lucide="save"></i> Simpan
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ITEM PICKER (3 langkah) ===== -->
+<div id="modal-item-picker" class="modal">
+  <div class="modal-content" style="max-width:480px;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="item-picker-back" class="btn btn-outline"
+                style="padding:4px 10px;font-size:0.8rem;display:none;"
+                onclick="PembayaranPage.itemPickerBack()">
+          <i data-lucide="arrow-left"></i> Kembali
+        </button>
+        <h3 id="item-picker-title">Pilih Kategori</h3>
+      </div>
+      <button class="modal-close" onclick="UI.closeModal('modal-item-picker')">✕</button>
+    </div>
+    <div class="modal-body" id="item-picker-body" style="min-height:200px;">
+      <!-- diisi dinamis oleh JS -->
     </div>
   </div>
 </div>

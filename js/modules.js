@@ -1161,23 +1161,31 @@ const PembayaranPage = (() => {
   function clearForm() {
     const form = document.getElementById('form-pembayaran');
     if (form) form.reset();
-    const idField = document.getElementById('pay-id-field');
+    const idField  = document.getElementById('pay-id-field');
     const sisaInfo = document.getElementById('pay-sisa-info');
-    const sppSel = document.getElementById('pay-spp');
+    const sppId    = document.getElementById('pay-spp-id-hidden');
     const muridSel = document.getElementById('pay-murid');
-    if (idField) idField.value = '';
+    const labelEl  = document.getElementById('pay-item-label');
+
+    if (idField)  idField.value  = '';
+    if (sppId)    sppId.value    = '';
     if (sisaInfo) sisaInfo.textContent = '';
     if (muridSel) muridSel.disabled = false;
-    if (sppSel) sppSel.innerHTML = '<option value="">-- Pilih Paket SPP (opsional) --</option>';
+    if (labelEl)  labelEl.innerHTML = 'Klik untuk memilih item (SPP / Pendaftaran / Buku)';
+
     const tglInput = document.getElementById('pay-tanggal');
     if (tglInput) tglInput.value = new Date().toISOString().split('T')[0];
+
+    // Reset cache picker agar fresh
+    _pickerState.cachedSPP  = null;
+    _pickerState.cachedBuku = null;
   }
 
   async function saveForm() {
     const btn = document.querySelector('#modal-pembayaran .btn-primary');
     const id        = document.getElementById('pay-id-field')?.value;
     const muridSel  = document.getElementById('pay-murid');
-    const sppSel    = document.getElementById('pay-spp');
+    const sppId     = document.getElementById('pay-spp-id-hidden')?.value || '';
     const tanggal   = document.getElementById('pay-tanggal').value;
     const jumlah    = parseFloat(document.getElementById('pay-jumlah').value) || 0;
     const metode    = document.getElementById('pay-metode').value;
@@ -1191,7 +1199,7 @@ const PembayaranPage = (() => {
       tanggal: tanggal || new Date().toISOString().split('T')[0],
       id_murid: muridSel.value, nama: muridOpt.dataset.nama,
       jenis, jumlah, metode, keterangan,
-      spp_id: sppSel ? sppSel.value : ''
+      spp_id: sppId
     };
 
     try {
@@ -1291,116 +1299,351 @@ const PembayaranPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
-  // ── MASALAH 5: Modal "Pilih Item" untuk Auto-fill ──────────
-  async function openItemPicker() {
-    const modal = document.getElementById('modal-pilih-item');
-    if (!modal) {
-      // Buat modal dinamis jika belum ada di HTML
-      _createItemPickerModal();
+  // ── Item Picker 3-Langkah ─────────────────────────────────
+  // State picker disimpan di sini agar bisa diakses antar step
+  let _pickerState = { step: 'kategori', bukuMode: null, cachedSPP: null, cachedBuku: null };
+
+  function openItemPicker() {
+    _pickerState.step = 'kategori';
+    _showPickerStep();
+    UI.openModal('modal-item-picker');
+  }
+
+  function itemPickerBack() {
+    // Navigasi mundur antar step
+    if (_pickerState.step === 'buku-mode')     _pickerState.step = 'kategori';
+    else if (_pickerState.step === 'buku-list') _pickerState.step = 'buku-mode';
+    else if (_pickerState.step === 'spp-list')  _pickerState.step = 'kategori';
+    else if (_pickerState.step === 'daftar')    _pickerState.step = 'kategori';
+    else _pickerState.step = 'kategori';
+    _showPickerStep();
+  }
+
+  function _showPickerStep() {
+    const body     = document.getElementById('item-picker-body');
+    const title    = document.getElementById('item-picker-title');
+    const backBtn  = document.getElementById('item-picker-back');
+    if (!body) return;
+
+    const isRoot = _pickerState.step === 'kategori';
+    if (backBtn) backBtn.style.display = isRoot ? 'none' : 'inline-flex';
+
+    switch (_pickerState.step) {
+      case 'kategori': return _renderKategori(body, title);
+      case 'spp-list': return _renderSPPList(body, title);
+      case 'daftar':   return _renderDaftar(body, title);
+      case 'buku-mode':return _renderBukuMode(body, title);
+      case 'buku-list':return _renderBukuList(body, title);
     }
-    
-    const listEl = document.getElementById('item-picker-list');
-    if (listEl) listEl.innerHTML = '<div class="spinner spinner-sm"></div> Memuat item...';
-    UI.openModal('modal-pilih-item');
+  }
+
+  // STEP 1 — Pilih Kategori
+  function _renderKategori(body, title) {
+    title.textContent = 'Pilih Kategori';
+    const kategori = [
+      { key:'spp',    icon:'calendar-check', label:'SPP',          sub:'Tagihan paket belajar belum lunas',   color:'#6366f1' },
+      { key:'daftar', icon:'user-plus',      label:'Pendaftaran',  sub:'Biaya pendaftaran murid baru',        color:'#10b981' },
+      { key:'buku',   icon:'book-open',      label:'Buku / Modul', sub:'Pembelian modul pembelajaran',        color:'#f59e0b' },
+    ];
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+        ${kategori.map(k => `
+          <div onclick="PembayaranPage._pilihKategori('${k.key}')"
+               style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                      border:1px solid var(--border,#e2e8f0);border-radius:12px;
+                      cursor:pointer;transition:.15s;"
+               onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
+               onmouseout="this.style.background=''">
+            <div style="width:42px;height:42px;border-radius:10px;background:${k.color}20;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="${k.icon}" style="width:20px;height:20px;color:${k.color}"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:0.92rem;">${k.label}</div>
+              <div style="font-size:0.78rem;color:var(--text-secondary,#64748b);margin-top:2px;">${k.sub}</div>
+            </div>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--text-secondary,#94a3b8)"></i>
+          </div>`).join('')}
+      </div>`;
+    lucide.createIcons({ nodes: [body] });
+  }
+
+  function _pilihKategori(key) {
+    _pickerState.step = key === 'buku' ? 'buku-mode' : key === 'spp' ? 'spp-list' : 'daftar';
+    _showPickerStep();
+  }
+
+  // STEP 2a — SPP: list tagihan belum lunas
+  async function _renderSPPList(body, title) {
+    title.textContent = 'Pilih Tagihan SPP';
+    body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-secondary)">
+      <div class="spinner spinner-sm" style="margin:0 auto 8px"></div> Memuat tagihan...</div>`;
 
     try {
-      // Ambil SPP yang belum lunas & Buku yang stok tersedia
-      const [sppRes, bukuRes] = await Promise.all([
-        API.spp.getAll(), API.buku.getAll()
-      ]);
+      if (!_pickerState.cachedSPP) {
+        const res = await API.spp.getAll();
+        _pickerState.cachedSPP = (res.data || []).filter(s =>
+          s.status_bayar !== 'PAID' && s.status === 'AKTIF'
+        );
+      }
+      const list = _pickerState.cachedSPP;
 
-      const sppItems = (sppRes.data || [])
-        .filter(s => s.status_bayar !== 'PAID' && s.status === 'AKTIF')
-        .map(s => ({
-          id:    s.id,
-          label: `[SPP] ${s.nama_murid} — ${s.program} (${s.periode_mulai} s/d ${s.periode_akhir})`,
-          nama:  s.nama_murid,
-          harga: Number(s.harga) - Number(s.terbayar || 0),  // Sisa tagihan
-          jenis: 'SPP',
-          badge: 'spp'
-        }));
-
-      const bukuItems = (bukuRes.data || [])
-        .filter(b => Number(b.stok) > 0)
-        .map(b => ({
-          id:    b.id,
-          label: `[BUKU] ${b.nama_modul || b.nama} — Stok: ${b.stok}`,
-          nama:  b.nama_modul || b.nama,
-          harga: Number(b.harga_jual) || 0,
-          jenis: 'BUKU',
-          badge: 'buku'
-        }));
-
-      const allItems = [...sppItems, ...bukuItems];
-
-      if (!allItems.length) {
-        if (listEl) listEl.innerHTML = '<div class="empty-feed">Tidak ada item tersedia (SPP sudah lunas / stok buku kosong)</div>';
+      if (!list.length) {
+        body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary)">
+          <i data-lucide="check-circle" style="width:32px;height:32px;margin-bottom:8px;color:#10b981"></i>
+          <div>Semua tagihan SPP sudah lunas 🎉</div></div>`;
+        lucide.createIcons({ nodes:[body] });
         return;
       }
 
-      if (listEl) listEl.innerHTML = allItems.map((item, idx) => `
-        <div class="item-picker-row" onclick="PembayaranPage.selectItem(${idx})" 
-             data-idx="${idx}"
-             data-nama="${item.nama}" data-harga="${item.harga}" data-jenis="${item.jenis}">
-          <span class="program-tag">${item.jenis}</span>
-          <span style="flex:1;margin-left:8px;">${item.label}</span>
-          <strong style="color:var(--primary)">${UI.formatCurrency(item.harga)}</strong>
-        </div>`).join('');
-
-      // Simpan items di data attribute untuk diakses selectItem
-      if (listEl) listEl.dataset.items = JSON.stringify(allItems);
-      lucide.createIcons();
-
+      body.innerHTML = `
+        <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:10px;">
+          ${list.length} tagihan belum lunas</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;">
+          ${list.map((s, i) => {
+            const sisa = Number(s.harga) - Number(s.terbayar || 0);
+            const pct  = s.harga > 0 ? Math.round((s.terbayar/s.harga)*100) : 0;
+            return `
+            <div onclick="PembayaranPage._pilihSPP(${i})"
+                 style="padding:12px 14px;border:1px solid var(--border,#e2e8f0);
+                        border-radius:10px;cursor:pointer;transition:.15s;"
+                 onmouseover="this.style.borderColor='#6366f1'"
+                 onmouseout="this.style.borderColor='var(--border,#e2e8f0)'">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div>
+                  <div style="font-weight:600;">${s.nama_murid}</div>
+                  <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
+                    ${s.program} · ${s.periode_mulai} s/d ${s.periode_akhir}
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div style="font-weight:700;color:#6366f1;">${UI.formatCurrency(sisa)}</div>
+                  <div style="font-size:0.72rem;color:var(--text-secondary);">sisa tagihan</div>
+                </div>
+              </div>
+              <div style="margin-top:8px;height:4px;background:var(--border,#e2e8f0);border-radius:99px;">
+                <div style="height:100%;width:${pct}%;background:#6366f1;border-radius:99px;"></div>
+              </div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:3px;">
+                Terbayar ${pct}% · Total ${UI.formatCurrency(s.harga)}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
     } catch(e) {
-      if (listEl) listEl.innerHTML = '<div class="empty-feed">Gagal memuat data item.</div>';
+      body.innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">Gagal memuat data SPP</div>`;
     }
   }
 
-  function selectItem(idx) {
-    const listEl = document.getElementById('item-picker-list');
-    if (!listEl) return;
-    const items = JSON.parse(listEl.dataset.items || '[]');
-    const item = items[idx];
-    if (!item) return;
+  function _pilihSPP(idx) {
+    const s    = _pickerState.cachedSPP[idx];
+    if (!s) return;
+    const sisa = Number(s.harga) - Number(s.terbayar || 0);
 
-    // FIX MASALAH 5: Auto-fill form pembayaran
-    const jenisEl = document.getElementById('pay-jenis');
-    const jumlahEl = document.getElementById('pay-jumlah');
-    const ketEl = document.getElementById('pay-keterangan');
-
-    if (jenisEl)  jenisEl.value  = item.jenis;
-    if (jumlahEl) jumlahEl.value = item.harga;
-    if (ketEl)    ketEl.value    = item.nama;
-
-    UI.toast(`Item "${item.nama}" dipilih — form sudah diisi otomatis`,'success');
-    UI.closeModal('modal-pilih-item');
+    // Auto-fill form pembayaran
+    _autoFill({
+      jenis:      'SPP',
+      jumlah:     sisa,
+      keterangan: `SPP ${s.program} ${s.periode_mulai} s/d ${s.periode_akhir}`,
+      spp_id:     s.id,
+      label:      `SPP · ${s.nama_murid} · sisa ${UI.formatCurrency(sisa)}`
+    });
+    UI.closeModal('modal-item-picker');
   }
 
-  function _createItemPickerModal() {
-    const div = document.createElement('div');
-    div.id = 'modal-pilih-item';
-    div.className = 'modal-overlay';
-    div.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-header">
-          <h3><i data-lucide="shopping-cart"></i> Pilih Item Pembayaran</h3>
-          <button class="modal-close" onclick="UI.closeModal('modal-pilih-item')">
-            <i data-lucide="x"></i>
-          </button>
+  // STEP 2b — Pendaftaran: input nominal manual
+  function _renderDaftar(body, title) {
+    title.textContent = 'Biaya Pendaftaran';
+    body.innerHTML = `
+      <div style="padding:8px 0;">
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">
+          Masukkan nominal biaya pendaftaran murid baru.
+        </p>
+        <div class="form-group">
+          <label>Nominal (Rp) *</label>
+          <input type="number" id="picker-daftar-nominal" class="form-input"
+                 placeholder="Contoh: 150000" min="0"
+                 style="width:100%;padding:10px 12px;border:1px solid var(--border,#e2e8f0);
+                        border-radius:8px;font-size:0.9rem;background:var(--bg,#fff);color:inherit;">
         </div>
-        <div class="modal-body">
-          <p style="color:var(--text-secondary);margin-bottom:12px;font-size:0.85rem;">
-            Klik item untuk mengisi form pembayaran secara otomatis.
-          </p>
-          <div id="item-picker-list" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;">
+        <div class="form-group" style="margin-top:12px;">
+          <label>Keterangan (opsional)</label>
+          <input type="text" id="picker-daftar-ket" class="form-input"
+                 placeholder="Contoh: Pendaftaran semester ganjil"
+                 style="width:100%;padding:10px 12px;border:1px solid var(--border,#e2e8f0);
+                        border-radius:8px;font-size:0.9rem;background:var(--bg,#fff);color:inherit;">
+        </div>
+        <button onclick="PembayaranPage._pilihDaftar()"
+                style="margin-top:16px;width:100%;padding:12px;background:#10b981;
+                       color:#fff;border:none;border-radius:10px;font-weight:600;
+                       font-size:0.9rem;cursor:pointer;">
+          <i data-lucide="check"></i> Gunakan Nominal Ini
+        </button>
+      </div>`;
+    lucide.createIcons({ nodes:[body] });
+    setTimeout(() => document.getElementById('picker-daftar-nominal')?.focus(), 100);
+  }
+
+  function _pilihDaftar() {
+    const nominal = parseFloat(document.getElementById('picker-daftar-nominal')?.value) || 0;
+    const ket     = document.getElementById('picker-daftar-ket')?.value || 'Biaya Pendaftaran';
+    if (nominal <= 0) { UI.toast('Masukkan nominal yang valid','error'); return; }
+    _autoFill({
+      jenis:      'PENDAFTARAN',
+      jumlah:     nominal,
+      keterangan: ket,
+      label:      `Pendaftaran · ${UI.formatCurrency(nominal)}`
+    });
+    UI.closeModal('modal-item-picker');
+  }
+
+  // STEP 2c — Buku: pilih mode Beli / Jual
+  function _renderBukuMode(body, title) {
+    title.textContent = 'Transaksi Buku';
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+        <div onclick="PembayaranPage._pilihBukuMode('jual')"
+             style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                    border:1px solid var(--border,#e2e8f0);border-radius:12px;cursor:pointer;transition:.15s;"
+             onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
+             onmouseout="this.style.background=''">
+          <div style="width:42px;height:42px;border-radius:10px;background:#f59e0b20;
+                      display:flex;align-items:center;justify-content:center;">
+            <i data-lucide="shopping-bag" style="color:#f59e0b;width:20px;height:20px;"></i>
           </div>
+          <div>
+            <div style="font-weight:600;">Jual ke Murid</div>
+            <div style="font-size:0.78rem;color:var(--text-secondary);">Harga jual — stok berkurang</div>
+          </div>
+          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-secondary)"></i>
+        </div>
+        <div onclick="PembayaranPage._pilihBukuMode('beli')"
+             style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                    border:1px solid var(--border,#e2e8f0);border-radius:12px;cursor:pointer;transition:.15s;"
+             onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
+             onmouseout="this.style.background=''">
+          <div style="width:42px;height:42px;border-radius:10px;background:#3b82f620;
+                      display:flex;align-items:center;justify-content:center;">
+            <i data-lucide="package" style="color:#3b82f6;width:20px;height:20px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;">Beli dari Pusat</div>
+            <div style="font-size:0.78rem;color:var(--text-secondary);">Harga beli — stok bertambah</div>
+          </div>
+          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-secondary)"></i>
         </div>
       </div>`;
-    document.body.appendChild(div);
-    lucide.createIcons();
+    lucide.createIcons({ nodes:[body] });
   }
 
-  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, selectItem };
+  async function _pilihBukuMode(mode) {
+    _pickerState.bukuMode = mode;
+    _pickerState.step = 'buku-list';
+    _showPickerStep();
+  }
+
+  // STEP 3 — Buku: list buku
+  async function _renderBukuList(body, title) {
+    const mode = _pickerState.bukuMode;
+    title.textContent = mode === 'jual' ? 'Pilih Modul (Jual)' : 'Pilih Modul (Beli)';
+    body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-secondary)">
+      <div class="spinner spinner-sm" style="margin:0 auto 8px"></div> Memuat modul...</div>`;
+
+    try {
+      if (!_pickerState.cachedBuku) {
+        const res = await API.buku.getAll();
+        _pickerState.cachedBuku = res.data || [];
+      }
+      const list = _pickerState.cachedBuku.filter(b =>
+        mode === 'jual' ? Number(b.stok) > 0 : true
+      );
+
+      if (!list.length) {
+        body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary)">
+          ${mode === 'jual' ? 'Semua stok habis' : 'Belum ada modul terdaftar'}</div>`;
+        return;
+      }
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;">
+          ${list.map((b, i) => {
+            const harga = mode === 'jual' ? Number(b.harga_jual) : Number(b.harga_beli);
+            const untung = Number(b.harga_jual) - Number(b.harga_beli);
+            return `
+            <div onclick="PembayaranPage._pilihBuku(${i})"
+                 style="padding:12px 14px;border:1px solid var(--border,#e2e8f0);
+                        border-radius:10px;cursor:pointer;transition:.15s;"
+                 onmouseover="this.style.borderColor='#f59e0b'"
+                 onmouseout="this.style.borderColor='var(--border,#e2e8f0)'">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <div>
+                  <div style="font-weight:600;">${b.nama_modul}</div>
+                  <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
+                    ${b.jenjang||'-'} · ${b.program||'-'} · Stok: <strong>${b.stok}</strong>
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div style="font-weight:700;color:${mode==='jual'?'#f59e0b':'#3b82f6'};">
+                    ${UI.formatCurrency(harga)}
+                  </div>
+                  ${mode==='jual' ? `<div style="font-size:0.72rem;color:#10b981;">+${UI.formatCurrency(untung)} untung</div>` : ''}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    } catch(e) {
+      body.innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">Gagal memuat data modul</div>`;
+    }
+  }
+
+  function _pilihBuku(idx) {
+    const b    = _pickerState.cachedBuku.filter(b =>
+      _pickerState.bukuMode === 'jual' ? Number(b.stok) > 0 : true
+    )[idx];
+    if (!b) return;
+    const mode  = _pickerState.bukuMode;
+    const harga = mode === 'jual' ? Number(b.harga_jual) : Number(b.harga_beli);
+    _autoFill({
+      jenis:      'BUKU',
+      jumlah:     harga,
+      keterangan: b.nama_modul,
+      label:      `${mode === 'jual' ? 'Jual' : 'Beli'} Buku · ${b.nama_modul} · ${UI.formatCurrency(harga)}`
+    });
+    UI.closeModal('modal-item-picker');
+  }
+
+  // Auto-fill form pembayaran dari item picker
+  function _autoFill({ jenis, jumlah, keterangan, spp_id, label }) {
+    const jenisEl  = document.getElementById('pay-jenis');
+    const jumlahEl = document.getElementById('pay-jumlah');
+    const ketEl    = document.getElementById('pay-keterangan');
+    const sppIdEl  = document.getElementById('pay-spp-id-hidden');
+    const labelEl  = document.getElementById('pay-item-label');
+    const sisaEl   = document.getElementById('pay-sisa-info');
+
+    if (jenisEl)  { jenisEl.value  = jenis;      }
+    if (jumlahEl) { jumlahEl.value = jumlah;     }
+    if (ketEl)    { ketEl.value    = keterangan; }
+    if (sppIdEl)  { sppIdEl.value  = spp_id || ''; }
+
+    // Update tampilan tombol item di form utama
+    if (labelEl) {
+      labelEl.innerHTML = `<span class="program-tag" style="font-size:0.75rem;">${jenis}</span>
+        <span style="margin-left:6px;font-weight:500;">${label}</span>`;
+    }
+    if (sisaEl && jenis === 'SPP') {
+      sisaEl.textContent = `Sisa tagihan: ${UI.formatCurrency(jumlah)}`;
+    } else if (sisaEl) {
+      sisaEl.textContent = '';
+    }
+
+    // Pastikan _pickerState.cachedSPP & cachedBuku di-reset agar fresh next time
+    _pickerState.cachedSPP  = null;
+    _pickerState.cachedBuku = null;
+  }
+
+  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku };
 })();
 
 
