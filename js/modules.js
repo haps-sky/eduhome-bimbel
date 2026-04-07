@@ -8,6 +8,44 @@
 // ============================================================
 
 // ============================================================
+// MoreMenu — dropdown ⋯ untuk mobile toolbar
+// ============================================================
+const MoreMenu = (() => {
+  let _active = null;
+
+  function toggle(key) {
+    const menu = document.getElementById(key + '-more-menu');
+    if (!menu) return;
+    const isOpen = menu.classList.contains('open');
+    closeAll();
+    if (!isOpen) {
+      menu.classList.add('open');
+      _active = key;
+      lucide.createIcons({ nodes: [menu] });
+    }
+  }
+
+  function close(key) {
+    const menu = document.getElementById((key || _active) + '-more-menu');
+    if (menu) menu.classList.remove('open');
+    _active = null;
+  }
+
+  function closeAll() {
+    document.querySelectorAll('.ctrl-more-menu.open')
+      .forEach(m => m.classList.remove('open'));
+    _active = null;
+  }
+
+  // Tutup saat klik di luar
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.ctrl-more-btn')) closeAll();
+  });
+
+  return { toggle, close, closeAll };
+})();
+
+// ============================================================
 // SelectionManager — sistem multi-select reusable semua modul
 // ============================================================
 const Selection = (() => {

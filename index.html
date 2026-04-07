@@ -110,6 +110,48 @@
     color: var(--primary);
   }
 
+  /* ── Mobile Toolbar Dropdown ── */
+  .ctrl-more-btn {
+    display: none;
+    position: relative;
+  }
+  .ctrl-more-btn > .ctrl-btn { padding: 0 10px; }
+
+  .ctrl-more-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    min-width: 180px;
+    z-index: 999;
+    overflow: hidden;
+  }
+  .ctrl-more-menu.open { display: block; }
+
+  .ctrl-more-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    font-size: 0.83rem; color: var(--text-secondary);
+    cursor: pointer; border: none; background: transparent;
+    width: 100%; text-align: left;
+    transition: background .12s;
+  }
+  .ctrl-more-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .ctrl-more-item i { width: 14px; height: 14px; flex-shrink: 0; }
+  .ctrl-more-item.danger { color: var(--danger); }
+  .ctrl-more-item.danger:hover { background: var(--danger-dim); }
+  .ctrl-more-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  @media (max-width: 640px) {
+    /* Sembunyikan tombol-tombol toolbar di mobile, tampilkan ⋯ */
+    .ctrl-hide-mobile { display: none !important; }
+    .ctrl-more-btn    { display: block; }
+  }
+
   /* ── Item Picker Styles ── */
   .picker-item {
     display: flex; align-items: center; gap: 14px;
@@ -419,24 +461,46 @@
                      placeholder="Cari nama / program..."
                      oninput="MuridPage.search(this.value)"
                      style="width:180px;">
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn" onclick="MuridPage.load(true)" title="Refresh data">
+              <div class="ctrl-divider ctrl-hide-mobile"></div>
+              <button class="ctrl-btn ctrl-hide-mobile" onclick="MuridPage.load(true)" title="Refresh data">
                 <i data-lucide="refresh-cw"></i> Refresh
               </button>
-              <button class="ctrl-btn icon-only" id="undo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="undo-btn"
                       onclick="MuridPage.undo()" title="Undo" disabled>
                 <i data-lucide="undo-2"></i>
               </button>
-              <button class="ctrl-btn icon-only" id="redo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="redo-btn"
                       onclick="MuridPage.redo()" title="Redo" disabled>
                 <i data-lucide="redo-2"></i>
               </button>
               <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only" id="murid-select-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="murid-select-btn"
                       onclick="Selection.toggle('murid')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-
+              <div class="ctrl-more-btn" id="murid-more-wrap">
+                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('murid')" title="Lainnya">
+                  <i data-lucide="more-horizontal"></i>
+                </button>
+                <div class="ctrl-more-menu" id="murid-more-menu">
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.load(true)">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.undo()">
+                    <i data-lucide="undo-2"></i> Undo
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.redo()">
+                    <i data-lucide="redo-2"></i> Redo
+                  </button>
+                  <div class="ctrl-more-divider"></div>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');Selection.toggle('murid')">
+                    <i data-lucide="check-square"></i> Pilih Item
+                  </button>
+                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('murid');MuridPage.deleteSelected()">
+                    <i data-lucide="trash-2"></i> Hapus Terpilih
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
               <div class="selection-bar" id="murid-sel-bar">
@@ -495,24 +559,46 @@
                placeholder="Cari nama / program..."
                oninput="MentorPage.search(this.value)"
                style="width:180px;">
-        <div class="ctrl-divider"></div>
-        <button class="ctrl-btn" onclick="MentorPage.load(true)" title="Refresh data">
+        <div class="ctrl-divider ctrl-hide-mobile"></div>
+        <button class="ctrl-btn ctrl-hide-mobile" onclick="MentorPage.load(true)" title="Refresh data">
           <i data-lucide="refresh-cw"></i> Refresh
         </button>
-        <button class="ctrl-btn icon-only" id="mentor-undo-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-undo-btn"
                 onclick="MentorPage.undo()" title="Undo" disabled>
           <i data-lucide="undo-2"></i>
         </button>
-        <button class="ctrl-btn icon-only" id="mentor-redo-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-redo-btn"
                 onclick="MentorPage.redo()" title="Redo" disabled>
           <i data-lucide="redo-2"></i>
         </button>
         <div class="ctrl-divider"></div>
-        <button class="ctrl-btn icon-only" id="mentor-select-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-select-btn"
                 onclick="Selection.toggle('mentor')" title="Pilih item">
           <i data-lucide="check-square"></i>
         </button>
-
+        <div class="ctrl-more-btn" id="mentor-more-wrap">
+          <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('mentor')" title="Lainnya">
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <div class="ctrl-more-menu" id="mentor-more-menu">
+            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.load(true)">
+              <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.undo()">
+              <i data-lucide="undo-2"></i> Undo
+            </button>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.redo()">
+              <i data-lucide="redo-2"></i> Redo
+            </button>
+            <div class="ctrl-more-divider"></div>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');Selection.toggle('mentor')">
+              <i data-lucide="check-square"></i> Pilih Item
+            </button>
+            <button class="ctrl-more-item danger" onclick="MoreMenu.close('mentor');MentorPage.deleteSelected()">
+              <i data-lucide="trash-2"></i> Hapus Terpilih
+            </button>
+          </div>
+        </div>
       </div>
     </div>
         <div class="selection-bar" id="mentor-sel-bar">
@@ -569,24 +655,46 @@
               <input type="date" class="search-input" style="width:150px"
                      onchange="PresensiPage.filterByDate(this.value)"
                      title="Filter tanggal">
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn" onclick="PresensiPage.load(true)" title="Refresh data">
+              <div class="ctrl-divider ctrl-hide-mobile"></div>
+              <button class="ctrl-btn ctrl-hide-mobile" onclick="PresensiPage.load(true)" title="Refresh data">
                 <i data-lucide="refresh-cw"></i> Refresh
               </button>
-              <button class="ctrl-btn icon-only" id="presensi-undo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-undo-btn"
                       onclick="PresensiPage.undo()" title="Undo" disabled>
                 <i data-lucide="undo-2"></i>
               </button>
-              <button class="ctrl-btn icon-only" id="presensi-redo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-redo-btn"
                       onclick="PresensiPage.redo()" title="Redo" disabled>
                 <i data-lucide="redo-2"></i>
               </button>
               <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only" id="presensi-select-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-select-btn"
                       onclick="Selection.toggle('presensi')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-
+              <div class="ctrl-more-btn" id="presensi-more-wrap">
+                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('presensi')" title="Lainnya">
+                  <i data-lucide="more-horizontal"></i>
+                </button>
+                <div class="ctrl-more-menu" id="presensi-more-menu">
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.load(true)">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.undo()">
+                    <i data-lucide="undo-2"></i> Undo
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.redo()">
+                    <i data-lucide="redo-2"></i> Redo
+                  </button>
+                  <div class="ctrl-more-divider"></div>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');Selection.toggle('presensi')">
+                    <i data-lucide="check-square"></i> Pilih Item
+                  </button>
+                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('presensi');PresensiPage.deleteSelected()">
+                    <i data-lucide="trash-2"></i> Hapus Terpilih
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
               <div class="selection-bar" id="presensi-sel-bar">
@@ -640,24 +748,46 @@
                      placeholder="Cari nama / jenis..."
                      oninput="PembayaranPage.search(this.value)"
                      style="width:180px;">
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn" onclick="PembayaranPage.load(true)" title="Refresh data">
+              <div class="ctrl-divider ctrl-hide-mobile"></div>
+              <button class="ctrl-btn ctrl-hide-mobile" onclick="PembayaranPage.load(true)" title="Refresh data">
                 <i data-lucide="refresh-cw"></i> Refresh
               </button>
-              <button class="ctrl-btn icon-only" id="pay-undo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-undo-btn"
                       onclick="PembayaranPage.undo()" title="Undo" disabled>
                 <i data-lucide="undo-2"></i>
               </button>
-              <button class="ctrl-btn icon-only" id="pay-redo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-redo-btn"
                       onclick="PembayaranPage.redo()" title="Redo" disabled>
                 <i data-lucide="redo-2"></i>
               </button>
               <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only" id="pay-select-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-select-btn"
                       onclick="Selection.toggle('pay')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-
+              <div class="ctrl-more-btn" id="pay-more-wrap">
+                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('pay')" title="Lainnya">
+                  <i data-lucide="more-horizontal"></i>
+                </button>
+                <div class="ctrl-more-menu" id="pay-more-menu">
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.load(true)">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.undo()">
+                    <i data-lucide="undo-2"></i> Undo
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.redo()">
+                    <i data-lucide="redo-2"></i> Redo
+                  </button>
+                  <div class="ctrl-more-divider"></div>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');Selection.toggle('pay')">
+                    <i data-lucide="check-square"></i> Pilih Item
+                  </button>
+                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('pay');PembayaranPage.deleteSelected()">
+                    <i data-lucide="trash-2"></i> Hapus Terpilih
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
               <div class="selection-bar" id="pay-sel-bar">
@@ -712,24 +842,46 @@
                placeholder="Cari murid / program..."
                oninput="SPPPage.search(this.value)"
                style="width:180px;">
-        <div class="ctrl-divider"></div>
-        <button class="ctrl-btn" onclick="SPPPage.load(true)" title="Refresh data">
+        <div class="ctrl-divider ctrl-hide-mobile"></div>
+        <button class="ctrl-btn ctrl-hide-mobile" onclick="SPPPage.load(true)" title="Refresh data">
           <i data-lucide="refresh-cw"></i> Refresh
         </button>
-        <button class="ctrl-btn icon-only" id="spp-undo-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-undo-btn"
                 onclick="SPPPage.undo()" title="Undo" disabled>
           <i data-lucide="undo-2"></i>
         </button>
-        <button class="ctrl-btn icon-only" id="spp-redo-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-redo-btn"
                 onclick="SPPPage.redo()" title="Redo" disabled>
           <i data-lucide="redo-2"></i>
         </button>
         <div class="ctrl-divider"></div>
-        <button class="ctrl-btn icon-only" id="spp-select-btn"
+        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-select-btn"
                 onclick="Selection.toggle('spp')" title="Pilih item">
           <i data-lucide="check-square"></i>
         </button>
-
+        <div class="ctrl-more-btn" id="spp-more-wrap">
+          <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('spp')" title="Lainnya">
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <div class="ctrl-more-menu" id="spp-more-menu">
+            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.load(true)">
+              <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.undo()">
+              <i data-lucide="undo-2"></i> Undo
+            </button>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.redo()">
+              <i data-lucide="redo-2"></i> Redo
+            </button>
+            <div class="ctrl-more-divider"></div>
+            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');Selection.toggle('spp')">
+              <i data-lucide="check-square"></i> Pilih Item
+            </button>
+            <button class="ctrl-more-item danger" onclick="MoreMenu.close('spp');SPPPage.deleteSelected()">
+              <i data-lucide="trash-2"></i> Hapus Terpilih
+            </button>
+          </div>
+        </div>
       </div>
     </div>
         <div class="selection-bar" id="spp-sel-bar">
@@ -787,24 +939,46 @@
                  placeholder="Cari nama modul / program..."
                  oninput="BukuPage.search(this.value)"
                  style="width:200px;">
-          <div class="ctrl-divider"></div>
-          <button class="ctrl-btn" onclick="BukuPage.load(true)" title="Refresh data">
+          <div class="ctrl-divider ctrl-hide-mobile"></div>
+          <button class="ctrl-btn ctrl-hide-mobile" onclick="BukuPage.load(true)" title="Refresh data">
             <i data-lucide="refresh-cw"></i> Refresh
           </button>
-          <button class="ctrl-btn icon-only" id="buku-undo-btn"
+          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-undo-btn"
                   onclick="BukuPage.undo()" title="Undo" disabled>
             <i data-lucide="undo-2"></i>
           </button>
-          <button class="ctrl-btn icon-only" id="buku-redo-btn"
+          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-redo-btn"
                   onclick="BukuPage.redo()" title="Redo" disabled>
             <i data-lucide="redo-2"></i>
           </button>
           <div class="ctrl-divider"></div>
-          <button class="ctrl-btn icon-only" id="buku-select-btn"
+          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-select-btn"
                   onclick="Selection.toggle('buku')" title="Pilih item">
             <i data-lucide="check-square"></i>
           </button>
-
+          <div class="ctrl-more-btn" id="buku-more-wrap">
+            <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('buku')" title="Lainnya">
+              <i data-lucide="more-horizontal"></i>
+            </button>
+            <div class="ctrl-more-menu" id="buku-more-menu">
+              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.load(true)">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.undo()">
+                <i data-lucide="undo-2"></i> Undo
+              </button>
+              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.redo()">
+                <i data-lucide="redo-2"></i> Redo
+              </button>
+              <div class="ctrl-more-divider"></div>
+              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');Selection.toggle('buku')">
+                <i data-lucide="check-square"></i> Pilih Item
+              </button>
+              <button class="ctrl-more-item danger" onclick="MoreMenu.close('buku');BukuPage.deleteSelected()">
+                <i data-lucide="trash-2"></i> Hapus Terpilih
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -860,24 +1034,46 @@
                      placeholder="Cari mentor / bulan..."
                      oninput="GajiPage.search(this.value)"
                      style="width:180px;">
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn" onclick="GajiPage.load(true)" title="Refresh data">
+              <div class="ctrl-divider ctrl-hide-mobile"></div>
+              <button class="ctrl-btn ctrl-hide-mobile" onclick="GajiPage.load(true)" title="Refresh data">
                 <i data-lucide="refresh-cw"></i> Refresh
               </button>
-              <button class="ctrl-btn icon-only" id="gaji-undo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-undo-btn"
                       onclick="GajiPage.undo()" title="Undo" disabled>
                 <i data-lucide="undo-2"></i>
               </button>
-              <button class="ctrl-btn icon-only" id="gaji-redo-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-redo-btn"
                       onclick="GajiPage.redo()" title="Redo" disabled>
                 <i data-lucide="redo-2"></i>
               </button>
               <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only" id="gaji-select-btn"
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-select-btn"
                       onclick="Selection.toggle('gaji')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-
+              <div class="ctrl-more-btn" id="gaji-more-wrap">
+                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('gaji')" title="Lainnya">
+                  <i data-lucide="more-horizontal"></i>
+                </button>
+                <div class="ctrl-more-menu" id="gaji-more-menu">
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.load(true)">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.undo()">
+                    <i data-lucide="undo-2"></i> Undo
+                  </button>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.redo()">
+                    <i data-lucide="redo-2"></i> Redo
+                  </button>
+                  <div class="ctrl-more-divider"></div>
+                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');Selection.toggle('gaji')">
+                    <i data-lucide="check-square"></i> Pilih Item
+                  </button>
+                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('gaji');GajiPage.deleteSelected()">
+                    <i data-lucide="trash-2"></i> Hapus Terpilih
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
               <div class="selection-bar" id="gaji-sel-bar">
@@ -1156,14 +1352,14 @@
         <label>Item Pembayaran</label>
         <div id="pay-item-selected" style="
           display:flex; align-items:center; justify-content:space-between;
-          padding:10px 14px; border:1px dashed var(--border,#e2e8f0);
+          padding:10px 14px; border:1px dashed var(--border);
           border-radius:10px; cursor:pointer; gap:10px;
-          background:var(--bg-secondary,#f8fafc); transition:.15s;
+          background:var(--bg-surface); transition:.15s;
         " onclick="PembayaranPage.openItemPicker()">
-          <span id="pay-item-label" style="color:var(--text-secondary,#64748b); font-size:0.85rem;">
+          <span id="pay-item-label" style="color:var(--text-secondary); font-size:0.85rem;">
             Klik untuk memilih item (SPP / Pendaftaran / Buku)
           </span>
-          <i data-lucide="chevron-right" style="width:16px;height:16px;flex-shrink:0;color:var(--text-secondary,#94a3b8)"></i>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;flex-shrink:0;color:var(--text-dim)"></i>
         </div>
         <small id="pay-sisa-info" style="color:var(--warning,#f59e0b);font-size:0.78rem;display:block;margin-top:4px;"></small>
       </div>
@@ -1217,9 +1413,9 @@
     <div class="modal-header">
       <div style="display:flex;align-items:center;gap:8px;">
         <button id="item-picker-back" class="btn btn-outline"
-                style="padding:4px 10px;font-size:0.8rem;display:none;"
+                style="padding:4px 10px;font-size:0.8rem;display:none;gap:4px;"
                 onclick="PembayaranPage.itemPickerBack()">
-          <i data-lucide="arrow-left"></i> Kembali
+          <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Kembali
         </button>
         <h3 id="item-picker-title">Pilih Kategori</h3>
       </div>
