@@ -54,7 +54,6 @@
   .sel-btn i { width: 13px; height: 13px; flex-shrink: 0; }
 
   /* Pilih Semua */
-  .sel-btn-all { }
   .sel-btn-all:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
@@ -109,6 +108,65 @@
     background: var(--primary-dim);
     border-color: var(--primary);
     color: var(--primary);
+  }
+
+  /* ── Item Picker Styles ── */
+  .picker-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    background: var(--bg-card);
+  }
+  .picker-item:hover { background: var(--bg-hover); border-color: var(--border-light); }
+
+  .picker-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .picker-item-title { font-weight: 600; font-size: 0.92rem; color: var(--text-primary); }
+  .picker-item-sub   { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+
+  .picker-row {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--bg-card);
+  }
+  .picker-row:hover { border-color: var(--primary); background: var(--bg-hover); }
+
+  .picker-btn-confirm {
+    margin-top: 16px; width: 100%; padding: 12px;
+    background: var(--success); color: #fff;
+    border: none; border-radius: 10px;
+    font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .picker-btn-confirm:hover { opacity: .88; }
+
+  .picker-empty {
+    text-align: center; padding: 32px;
+    color: var(--text-secondary);
+  }
+  .picker-error {
+    text-align: center; padding: 24px;
+    color: var(--danger);
+  }
+  .picker-loading {
+    text-align: center; padding: 24px;
+    color: var(--text-secondary);
+  }
+
+  .picker-progress-track {
+    height: 4px; background: var(--border); border-radius: 99px; margin-top: 8px;
+  }
+  .picker-progress-fill {
+    height: 100%; border-radius: 99px; background: var(--primary);
   }
 
   /* Baris di modal Pilih Item */

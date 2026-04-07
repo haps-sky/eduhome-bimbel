@@ -1482,28 +1482,22 @@ const PembayaranPage = (() => {
   function _renderKategori(body, title) {
     title.textContent = 'Pilih Kategori';
     const kategori = [
-      { key:'spp',    icon:'calendar-check', label:'SPP',          sub:'Tagihan paket belajar belum lunas',   color:'#6366f1' },
-      { key:'daftar', icon:'user-plus',      label:'Pendaftaran',  sub:'Biaya pendaftaran murid baru',        color:'#10b981' },
-      { key:'buku',   icon:'book-open',      label:'Buku / Modul', sub:'Pembelian modul pembelajaran',        color:'#f59e0b' },
+      { key:'spp',    icon:'calendar-check', label:'SPP',          sub:'Tagihan paket belajar belum lunas', color:'var(--primary)',  bg:'var(--primary-dim)' },
+      { key:'daftar', icon:'user-plus',      label:'Pendaftaran',  sub:'Biaya pendaftaran murid baru',      color:'var(--success)',  bg:'var(--success-dim)' },
+      { key:'buku',   icon:'book-open',      label:'Buku / Modul', sub:'Pembelian modul pembelajaran',      color:'var(--warning)',  bg:'var(--warning-dim)' },
     ];
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
         ${kategori.map(k => `
-          <div onclick="PembayaranPage._pilihKategori('${k.key}')"
-               style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-                      border:1px solid var(--border,#e2e8f0);border-radius:12px;
-                      cursor:pointer;transition:.15s;"
-               onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
-               onmouseout="this.style.background=''">
-            <div style="width:42px;height:42px;border-radius:10px;background:${k.color}20;
-                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <div class="picker-item" onclick="PembayaranPage._pilihKategori('${k.key}')">
+            <div class="picker-icon" style="background:${k.bg};">
               <i data-lucide="${k.icon}" style="width:20px;height:20px;color:${k.color}"></i>
             </div>
             <div style="flex:1;">
-              <div style="font-weight:600;font-size:0.92rem;">${k.label}</div>
-              <div style="font-size:0.78rem;color:var(--text-secondary,#64748b);margin-top:2px;">${k.sub}</div>
+              <div class="picker-item-title">${k.label}</div>
+              <div class="picker-item-sub">${k.sub}</div>
             </div>
-            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--text-secondary,#94a3b8)"></i>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--text-dim)"></i>
           </div>`).join('')}
       </div>`;
     lucide.createIcons({ nodes: [body] });
@@ -1517,7 +1511,7 @@ const PembayaranPage = (() => {
   // STEP 2a — SPP: list tagihan belum lunas
   async function _renderSPPList(body, title) {
     title.textContent = 'Pilih Tagihan SPP';
-    body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-secondary)">
+    body.innerHTML = `<div class="picker-loading">
       <div class="spinner spinner-sm" style="margin:0 auto 8px"></div> Memuat tagihan...</div>`;
 
     try {
@@ -1530,8 +1524,8 @@ const PembayaranPage = (() => {
       const list = _pickerState.cachedSPP;
 
       if (!list.length) {
-        body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary)">
-          <i data-lucide="check-circle" style="width:32px;height:32px;margin-bottom:8px;color:#10b981"></i>
+        body.innerHTML = `<div class="picker-empty">
+          <i data-lucide="check-circle" style="width:32px;height:32px;margin-bottom:8px;color:var(--success)"></i>
           <div>Semua tagihan SPP sudah lunas 🎉</div></div>`;
         lucide.createIcons({ nodes:[body] });
         return;
@@ -1545,25 +1539,21 @@ const PembayaranPage = (() => {
             const sisa = Number(s.harga) - Number(s.terbayar || 0);
             const pct  = s.harga > 0 ? Math.round((s.terbayar/s.harga)*100) : 0;
             return `
-            <div onclick="PembayaranPage._pilihSPP(${i})"
-                 style="padding:12px 14px;border:1px solid var(--border,#e2e8f0);
-                        border-radius:10px;cursor:pointer;transition:.15s;"
-                 onmouseover="this.style.borderColor='#6366f1'"
-                 onmouseout="this.style.borderColor='var(--border,#e2e8f0)'">
+            <div class="picker-row" onclick="PembayaranPage._pilihSPP(${i})">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                 <div>
-                  <div style="font-weight:600;">${s.nama_murid}</div>
+                  <div style="font-weight:600;color:var(--text-primary);">${s.nama_murid}</div>
                   <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
                     ${s.program} · ${s.periode_mulai} s/d ${s.periode_akhir}
                   </div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
-                  <div style="font-weight:700;color:#6366f1;">${UI.formatCurrency(sisa)}</div>
+                  <div style="font-weight:700;color:var(--primary);">${UI.formatCurrency(sisa)}</div>
                   <div style="font-size:0.72rem;color:var(--text-secondary);">sisa tagihan</div>
                 </div>
               </div>
-              <div style="margin-top:8px;height:4px;background:var(--border,#e2e8f0);border-radius:99px;">
-                <div style="height:100%;width:${pct}%;background:#6366f1;border-radius:99px;"></div>
+              <div class="picker-progress-track">
+                <div class="picker-progress-fill" style="width:${pct}%"></div>
               </div>
               <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:3px;">
                 Terbayar ${pct}% · Total ${UI.formatCurrency(s.harga)}
@@ -1572,7 +1562,7 @@ const PembayaranPage = (() => {
           }).join('')}
         </div>`;
     } catch(e) {
-      body.innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">Gagal memuat data SPP</div>`;
+      body.innerHTML = `<div class="picker-error">Gagal memuat data SPP</div>`;
     }
   }
 
@@ -1602,22 +1592,23 @@ const PembayaranPage = (() => {
         </p>
         <div class="form-group">
           <label>Nominal (Rp) *</label>
-          <input type="number" id="picker-daftar-nominal" class="form-input"
+          <input type="number" id="picker-daftar-nominal"
                  placeholder="Contoh: 150000" min="0"
-                 style="width:100%;padding:10px 12px;border:1px solid var(--border,#e2e8f0);
-                        border-radius:8px;font-size:0.9rem;background:var(--bg,#fff);color:inherit;">
+                 style="width:100%;padding:10px 12px;
+                        border:1px solid var(--border);border-radius:8px;
+                        font-size:0.9rem;background:var(--bg-surface);
+                        color:var(--text-primary);outline:none;">
         </div>
         <div class="form-group" style="margin-top:12px;">
           <label>Keterangan (opsional)</label>
-          <input type="text" id="picker-daftar-ket" class="form-input"
+          <input type="text" id="picker-daftar-ket"
                  placeholder="Contoh: Pendaftaran semester ganjil"
-                 style="width:100%;padding:10px 12px;border:1px solid var(--border,#e2e8f0);
-                        border-radius:8px;font-size:0.9rem;background:var(--bg,#fff);color:inherit;">
+                 style="width:100%;padding:10px 12px;
+                        border:1px solid var(--border);border-radius:8px;
+                        font-size:0.9rem;background:var(--bg-surface);
+                        color:var(--text-primary);outline:none;">
         </div>
-        <button onclick="PembayaranPage._pilihDaftar()"
-                style="margin-top:16px;width:100%;padding:12px;background:#10b981;
-                       color:#fff;border:none;border-radius:10px;font-weight:600;
-                       font-size:0.9rem;cursor:pointer;">
+        <button class="picker-btn-confirm" onclick="PembayaranPage._pilihDaftar()">
           <i data-lucide="check"></i> Gunakan Nominal Ini
         </button>
       </div>`;
@@ -1643,35 +1634,25 @@ const PembayaranPage = (() => {
     title.textContent = 'Transaksi Buku';
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-        <div onclick="PembayaranPage._pilihBukuMode('jual')"
-             style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-                    border:1px solid var(--border,#e2e8f0);border-radius:12px;cursor:pointer;transition:.15s;"
-             onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
-             onmouseout="this.style.background=''">
-          <div style="width:42px;height:42px;border-radius:10px;background:#f59e0b20;
-                      display:flex;align-items:center;justify-content:center;">
-            <i data-lucide="shopping-bag" style="color:#f59e0b;width:20px;height:20px;"></i>
+        <div class="picker-item" onclick="PembayaranPage._pilihBukuMode('jual')">
+          <div class="picker-icon" style="background:var(--warning-dim);">
+            <i data-lucide="shopping-bag" style="color:var(--warning);width:20px;height:20px;"></i>
           </div>
           <div>
-            <div style="font-weight:600;">Jual ke Murid</div>
-            <div style="font-size:0.78rem;color:var(--text-secondary);">Harga jual — stok berkurang</div>
+            <div class="picker-item-title">Jual ke Murid</div>
+            <div class="picker-item-sub">Harga jual — stok berkurang</div>
           </div>
-          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-secondary)"></i>
+          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-dim)"></i>
         </div>
-        <div onclick="PembayaranPage._pilihBukuMode('beli')"
-             style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-                    border:1px solid var(--border,#e2e8f0);border-radius:12px;cursor:pointer;transition:.15s;"
-             onmouseover="this.style.background='var(--bg-secondary,#f8fafc)'"
-             onmouseout="this.style.background=''">
-          <div style="width:42px;height:42px;border-radius:10px;background:#3b82f620;
-                      display:flex;align-items:center;justify-content:center;">
-            <i data-lucide="package" style="color:#3b82f6;width:20px;height:20px;"></i>
+        <div class="picker-item" onclick="PembayaranPage._pilihBukuMode('beli')">
+          <div class="picker-icon" style="background:var(--primary-dim);">
+            <i data-lucide="package" style="color:var(--primary);width:20px;height:20px;"></i>
           </div>
           <div>
-            <div style="font-weight:600;">Beli dari Pusat</div>
-            <div style="font-size:0.78rem;color:var(--text-secondary);">Harga beli — stok bertambah</div>
+            <div class="picker-item-title">Beli dari Pusat</div>
+            <div class="picker-item-sub">Harga beli — stok bertambah</div>
           </div>
-          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-secondary)"></i>
+          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-dim)"></i>
         </div>
       </div>`;
     lucide.createIcons({ nodes:[body] });
@@ -1687,7 +1668,7 @@ const PembayaranPage = (() => {
   async function _renderBukuList(body, title) {
     const mode = _pickerState.bukuMode;
     title.textContent = mode === 'jual' ? 'Pilih Modul (Jual)' : 'Pilih Modul (Beli)';
-    body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-secondary)">
+    body.innerHTML = `<div class="picker-loading">
       <div class="spinner spinner-sm" style="margin:0 auto 8px"></div> Memuat modul...</div>`;
 
     try {
@@ -1700,7 +1681,7 @@ const PembayaranPage = (() => {
       );
 
       if (!list.length) {
-        body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary)">
+        body.innerHTML = `<div class="picker-empty">
           ${mode === 'jual' ? 'Semua stok habis' : 'Belum ada modul terdaftar'}</div>`;
         return;
       }
@@ -1708,33 +1689,28 @@ const PembayaranPage = (() => {
       body.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;">
           ${list.map((b, i) => {
-            const harga = mode === 'jual' ? Number(b.harga_jual) : Number(b.harga_beli);
+            const harga  = mode === 'jual' ? Number(b.harga_jual) : Number(b.harga_beli);
             const untung = Number(b.harga_jual) - Number(b.harga_beli);
+            const warna  = mode === 'jual' ? 'var(--warning)' : 'var(--primary)';
             return `
-            <div onclick="PembayaranPage._pilihBuku(${i})"
-                 style="padding:12px 14px;border:1px solid var(--border,#e2e8f0);
-                        border-radius:10px;cursor:pointer;transition:.15s;"
-                 onmouseover="this.style.borderColor='#f59e0b'"
-                 onmouseout="this.style.borderColor='var(--border,#e2e8f0)'">
+            <div class="picker-row" onclick="PembayaranPage._pilihBuku(${i})">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                 <div>
-                  <div style="font-weight:600;">${b.nama_modul}</div>
+                  <div style="font-weight:600;color:var(--text-primary);">${b.nama_modul}</div>
                   <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
                     ${b.jenjang||'-'} · ${b.program||'-'} · Stok: <strong>${b.stok}</strong>
                   </div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
-                  <div style="font-weight:700;color:${mode==='jual'?'#f59e0b':'#3b82f6'};">
-                    ${UI.formatCurrency(harga)}
-                  </div>
-                  ${mode==='jual' ? `<div style="font-size:0.72rem;color:#10b981;">+${UI.formatCurrency(untung)} untung</div>` : ''}
+                  <div style="font-weight:700;color:${warna};">${UI.formatCurrency(harga)}</div>
+                  ${mode==='jual' ? `<div style="font-size:0.72rem;color:var(--success);">+${UI.formatCurrency(untung)} untung</div>` : ''}
                 </div>
               </div>
             </div>`;
           }).join('')}
         </div>`;
     } catch(e) {
-      body.innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">Gagal memuat data modul</div>`;
+      body.innerHTML = `<div class="picker-error">Gagal memuat data modul</div>`;
     }
   }
 
