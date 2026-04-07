@@ -24,65 +24,91 @@
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    background: var(--bg-secondary, #f1f5f9);
-    border: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-bottom: none;
     border-radius: 10px 10px 0 0;
-    color: var(--text-secondary, #64748b);
     font-size: 0.8rem;
     font-weight: 500;
   }
   .selection-bar.active { display: flex; }
+
   .selection-bar .sel-count {
     flex: 1;
     font-variant-numeric: tabular-nums;
-    color: var(--text, #1e293b);
+    color: var(--text-primary);
     font-weight: 600;
+    font-size: 0.82rem;
   }
+
   .sel-btn {
     display: flex; align-items: center; gap: 4px;
-    padding: 4px 10px; border-radius: 6px; border: 1px solid transparent;
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border);
     font-size: 0.78rem; font-weight: 500; cursor: pointer;
-    transition: .15s; line-height: 1;
+    transition: background .15s, color .15s;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    line-height: 1;
   }
-  .sel-btn i { width: 13px; height: 13px; }
+  .sel-btn i { width: 13px; height: 13px; flex-shrink: 0; }
 
-  .sel-btn-all {
-    background: transparent;
-    border-color: var(--border, #e2e8f0);
-    color: var(--text-secondary, #64748b);
+  /* Pilih Semua */
+  .sel-btn-all { }
+  .sel-btn-all:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
   }
-  .sel-btn-all:hover { background: var(--bg, #fff); color: var(--text, #1e293b); }
 
+  /* Hapus */
   .sel-btn-delete {
-    background: transparent;
-    border-color: #fca5a5;
-    color: #dc2626;
+    background: var(--danger-dim);
+    border-color: var(--danger-dim);
+    color: var(--danger);
   }
-  .sel-btn-delete:hover:not(:disabled) { background: #fef2f2; }
-  .sel-btn-delete:disabled { opacity: .35; cursor: not-allowed; }
+  .sel-btn-delete:hover:not(:disabled) {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+  .sel-btn-delete:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 
+  /* Batal (X) */
   .sel-btn-cancel {
     background: transparent;
     border-color: transparent;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-dim);
     padding: 4px 6px;
   }
-  .sel-btn-cancel:hover { color: var(--text, #1e293b); }
+  .sel-btn-cancel:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
 
   /* Checkbox di baris tabel */
   .row-checkbox {
     display: none;
     width: 14px; height: 14px;
-    cursor: pointer; accent-color: var(--primary, #6366f1);
+    cursor: pointer;
+    accent-color: var(--primary);
     flex-shrink: 0;
   }
   .selection-mode .row-checkbox { display: inline-block; }
-  tr.row-selected td { background: color-mix(in srgb, var(--primary,#6366f1) 6%, transparent); }
 
-  /* Tombol aktif mode seleksi */
+  /* Baris terpilih — pakai primary-dim agar ikut tema */
+  tr.row-selected td { background: var(--primary-dim) !important; }
+
+  /* Tombol ☑ aktif */
   .ctrl-btn.select-active {
-    background: #eef2ff; border-color: #a5b4fc; color: #6366f1;
+    background: var(--primary-dim);
+    border-color: var(--primary);
+    color: var(--primary);
   }
 
   /* Baris di modal Pilih Item */
