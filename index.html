@@ -22,43 +22,67 @@
   .selection-bar {
     display: none;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: var(--primary, #6366f1);
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--bg-secondary, #f1f5f9);
+    border: 1px solid var(--border, #e2e8f0);
+    border-bottom: none;
     border-radius: 10px 10px 0 0;
-    color: #fff;
-    font-size: 0.82rem;
-    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.8rem;
+    font-weight: 500;
   }
   .selection-bar.active { display: flex; }
-  .selection-bar .sel-count { flex: 1; }
-  .sel-btn {
-    display: flex; align-items: center; gap: 5px;
-    padding: 5px 12px; border-radius: 7px; border: none;
-    font-size: 0.8rem; font-weight: 600; cursor: pointer;
-    transition: .15s;
+  .selection-bar .sel-count {
+    flex: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text, #1e293b);
+    font-weight: 600;
   }
-  .sel-btn-cancel  { background: rgba(255,255,255,.18); color: #fff; }
-  .sel-btn-cancel:hover { background: rgba(255,255,255,.3); }
-  .sel-btn-all    { background: rgba(255,255,255,.18); color: #fff; }
-  .sel-btn-all:hover { background: rgba(255,255,255,.3); }
-  .sel-btn-delete { background: #ef4444; color: #fff; }
-  .sel-btn-delete:hover { background: #dc2626; }
-  .sel-btn-delete:disabled { opacity: .5; cursor: not-allowed; }
+  .sel-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid transparent;
+    font-size: 0.78rem; font-weight: 500; cursor: pointer;
+    transition: .15s; line-height: 1;
+  }
+  .sel-btn i { width: 13px; height: 13px; }
+
+  .sel-btn-all {
+    background: transparent;
+    border-color: var(--border, #e2e8f0);
+    color: var(--text-secondary, #64748b);
+  }
+  .sel-btn-all:hover { background: var(--bg, #fff); color: var(--text, #1e293b); }
+
+  .sel-btn-delete {
+    background: transparent;
+    border-color: #fca5a5;
+    color: #dc2626;
+  }
+  .sel-btn-delete:hover:not(:disabled) { background: #fef2f2; }
+  .sel-btn-delete:disabled { opacity: .35; cursor: not-allowed; }
+
+  .sel-btn-cancel {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary, #94a3b8);
+    padding: 4px 6px;
+  }
+  .sel-btn-cancel:hover { color: var(--text, #1e293b); }
 
   /* Checkbox di baris tabel */
   .row-checkbox {
     display: none;
-    width: 16px; height: 16px;
+    width: 14px; height: 14px;
     cursor: pointer; accent-color: var(--primary, #6366f1);
     flex-shrink: 0;
   }
   .selection-mode .row-checkbox { display: inline-block; }
-  tr.row-selected { background: color-mix(in srgb, var(--primary,#6366f1) 8%, transparent); }
+  tr.row-selected td { background: color-mix(in srgb, var(--primary,#6366f1) 6%, transparent); }
 
   /* Tombol aktif mode seleksi */
   .ctrl-btn.select-active {
-    background: #eef2ff; border-color: #6366f1; color: #6366f1;
+    background: #eef2ff; border-color: #a5b4fc; color: #6366f1;
   }
 
   /* Baris di modal Pilih Item */
@@ -328,23 +352,21 @@
                       onclick="Selection.toggle('murid')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-              <button class="ctrl-btn ctrl-danger"
-                      onclick="MuridPage.deleteAll()" title="Hapus semua murid">
-                <i data-lucide="trash-2"></i> Hapus Semua
-              </button>
+
             </div>
           </div>
               <div class="selection-bar" id="murid-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="murid-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('murid')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('murid')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="murid-sel-delete"
-              onclick="MuridPage.deleteSelected()" disabled>
+              onclick="MuridPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('murid')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('murid')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -406,23 +428,21 @@
                 onclick="Selection.toggle('mentor')" title="Pilih item">
           <i data-lucide="check-square"></i>
         </button>
-        <button class="ctrl-btn ctrl-danger"
-                onclick="MentorPage.deleteAll()" title="Hapus semua mentor">
-          <i data-lucide="trash-2"></i> Hapus Semua
-        </button>
+
       </div>
     </div>
         <div class="selection-bar" id="mentor-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="mentor-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('mentor')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('mentor')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="mentor-sel-delete"
-              onclick="MentorPage.deleteSelected()" disabled>
+              onclick="MentorPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('mentor')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('mentor')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -482,23 +502,21 @@
                       onclick="Selection.toggle('presensi')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-              <button class="ctrl-btn ctrl-danger"
-                      onclick="PresensiPage.deleteAll()" title="Hapus semua presensi">
-                <i data-lucide="trash-2"></i> Hapus Semua
-              </button>
+
             </div>
           </div>
               <div class="selection-bar" id="presensi-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="presensi-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('presensi')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('presensi')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="presensi-sel-delete"
-              onclick="PresensiPage.deleteSelected()" disabled>
+              onclick="PresensiPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('presensi')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('presensi')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -555,23 +573,21 @@
                       onclick="Selection.toggle('pay')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-              <button class="ctrl-btn ctrl-danger"
-                      onclick="PembayaranPage.deleteAll()" title="Hapus semua pembayaran">
-                <i data-lucide="trash-2"></i> Hapus Semua
-              </button>
+
             </div>
           </div>
               <div class="selection-bar" id="pay-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="pay-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('pay')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('pay')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="pay-sel-delete"
-              onclick="PembayaranPage.deleteSelected()" disabled>
+              onclick="PembayaranPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('pay')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('pay')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -629,23 +645,21 @@
                 onclick="Selection.toggle('spp')" title="Pilih item">
           <i data-lucide="check-square"></i>
         </button>
-        <button class="ctrl-btn ctrl-danger"
-                onclick="SPPPage.deleteAll()" title="Hapus semua paket SPP">
-          <i data-lucide="trash-2"></i> Hapus Semua
-        </button>
+
       </div>
     </div>
         <div class="selection-bar" id="spp-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="spp-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('spp')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('spp')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="spp-sel-delete"
-              onclick="SPPPage.deleteSelected()" disabled>
+              onclick="SPPPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('spp')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('spp')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -706,24 +720,22 @@
                   onclick="Selection.toggle('buku')" title="Pilih item">
             <i data-lucide="check-square"></i>
           </button>
-          <button class="ctrl-btn ctrl-danger"
-                  onclick="BukuPage.deleteAll()" title="Hapus semua modul">
-            <i data-lucide="trash-2"></i> Hapus Semua
-          </button>
+
         </div>
       </div>
 
           <div class="selection-bar" id="buku-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="buku-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('buku')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('buku')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="buku-sel-delete"
-              onclick="BukuPage.deleteSelected()" disabled>
+              onclick="BukuPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('buku')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('buku')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
@@ -781,23 +793,21 @@
                       onclick="Selection.toggle('gaji')" title="Pilih item">
                 <i data-lucide="check-square"></i>
               </button>
-              <button class="ctrl-btn ctrl-danger"
-                      onclick="GajiPage.deleteAll()" title="Hapus semua catatan gaji">
-                <i data-lucide="trash-2"></i> Hapus Semua
-              </button>
+
             </div>
           </div>
               <div class="selection-bar" id="gaji-sel-bar">
+      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
       <span class="sel-count" id="gaji-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('gaji')">
-        <i data-lucide="check-square"></i> Semua
+      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('gaji')" title="Pilih semua">
+        <i data-lucide="list-checks"></i> Pilih Semua
       </button>
       <button class="sel-btn sel-btn-delete" id="gaji-sel-delete"
-              onclick="GajiPage.deleteSelected()" disabled>
+              onclick="GajiPage.deleteSelected()" disabled title="Hapus yang dipilih">
         <i data-lucide="trash-2"></i> Hapus
       </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('gaji')">
-        <i data-lucide="x"></i> Batal
+      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('gaji')" title="Batalkan seleksi">
+        <i data-lucide="x"></i>
       </button>
     </div>
 <div style="overflow-x:auto">
