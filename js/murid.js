@@ -107,6 +107,7 @@ async function load(forceRefresh = false) {
 
     return `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('murid', m.id)}</td>
         <td><span class="id-badge">${m.id}</span></td>
         <td>
           <div class="name-cell">
@@ -561,5 +562,7 @@ async function viewSchedule(id, nama) {
   }
 }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule, undo, redo, deleteAll, sortBy };
+  function deleteSelected() { return Selection.deleteSelected('murid'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule, undo, redo, deleteAll, sortBy, deleteSelected, renderTable, _getCurrentData };
 })();

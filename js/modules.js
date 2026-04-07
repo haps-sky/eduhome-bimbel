@@ -7,6 +7,134 @@
 // MentorPage — Masalah 2 (toolbar), 4 (undo/redo/hapusAll)
 // ============================================================
 
+// ============================================================
+// SelectionManager — sistem multi-select reusable semua modul
+// ============================================================
+const Selection = (() => {
+  // State per modul: { active, selected: Set }
+  const state = {};
+
+  // Daftar konfigurasi per modul
+  const CONFIG = {
+    murid:    { page: () => MuridPage,       deleteOne: (id) => API.murid.delete(id),       getId: r => r.id    },
+    mentor:   { page: () => MentorPage,      deleteOne: (id) => API.mentor.delete(id),      getId: r => r.id    },
+    presensi: { page: () => PresensiPage,    deleteOne: (id) => API.presensi.delete(id),    getId: r => r.id    },
+    pay:      { page: () => PembayaranPage,  deleteOne: (id) => API.pembayaran.delete(id),  getId: r => r.id    },
+    spp:      { page: () => SPPPage,         deleteOne: (id) => API.spp.delete(id),         getId: r => r.id    },
+    buku:     { page: () => BukuPage,        deleteOne: (id) => API.buku.delete(id),        getId: r => r.id    },
+    gaji:     { page: () => GajiPage,        deleteOne: (id) => API.gaji.delete(id),        getId: r => r.id_trx},
+  };
+
+  function _getState(key) {
+    if (!state[key]) state[key] = { active: false, selected: new Set() };
+    return state[key];
+  }
+
+  // Toggle mode seleksi on/off
+  function toggle(key) {
+    const s    = _getState(key);
+    s.active   = !s.active;
+    s.selected = new Set();
+
+    const bar    = document.getElementById(`${key}-sel-bar`);
+    const btn    = document.getElementById(`${key}-select-btn`);
+    const tbody  = document.getElementById(
+      key === 'pay' ? 'pay-tbody' : key === 'gaji' ? 'gaji-tbody' : `${key}-tbody`
+    );
+
+    if (bar)   bar.classList.toggle('active', s.active);
+    if (btn)   btn.classList.toggle('select-active', s.active);
+    if (tbody) tbody.closest('table')?.classList.toggle('selection-mode', s.active);
+
+    // Re-render tabel agar checkbox muncul/hilang
+    const page = CONFIG[key]?.page();
+    if (page?.renderTable) page.renderTable(page._getCurrentData ? page._getCurrentData() : []);
+
+    _updateBar(key);
+    lucide.createIcons();
+  }
+
+  // Toggle satu baris
+  function toggleRow(key, id, checkbox) {
+    const s = _getState(key);
+    if (!s.active) return;
+    if (checkbox.checked) s.selected.add(String(id));
+    else s.selected.delete(String(id));
+    _updateBar(key);
+
+    // Warnai baris
+    const row = checkbox.closest('tr');
+    if (row) row.classList.toggle('row-selected', checkbox.checked);
+  }
+
+  // Toggle pilih semua
+  function toggleAll(key) {
+    const s       = _getState(key);
+    const checks  = document.querySelectorAll(`#${key === 'pay' ? 'pay' : key === 'gaji' ? 'gaji' : key}-tbody .row-checkbox`);
+    const allChecked = checks.length > 0 && [...checks].every(c => c.checked);
+
+    checks.forEach(cb => {
+      cb.checked = !allChecked;
+      const id   = cb.dataset.id;
+      const row  = cb.closest('tr');
+      if (!allChecked) { s.selected.add(String(id)); if (row) row.classList.add('row-selected'); }
+      else             { s.selected.delete(String(id)); if (row) row.classList.remove('row-selected'); }
+    });
+    _updateBar(key);
+  }
+
+  function _updateBar(key) {
+    const s      = _getState(key);
+    const countEl = document.getElementById(`${key}-sel-count`);
+    const delBtn  = document.getElementById(`${key}-sel-delete`);
+    if (countEl) countEl.textContent = `${s.selected.size} dipilih`;
+    if (delBtn)  delBtn.disabled = s.selected.size === 0;
+  }
+
+  // Hapus semua yang dipilih
+  async function deleteSelected(key) {
+    const s    = _getState(key);
+    const cfg  = CONFIG[key];
+    if (!s.active || s.selected.size === 0) return;
+
+    const n = s.selected.size;
+    if (!confirm(`Hapus ${n} item yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+    const delBtn = document.getElementById(`${key}-sel-delete`);
+    if (delBtn) { delBtn.disabled = true; delBtn.innerHTML = '<div class="spinner spinner-sm"></div>'; }
+
+    let berhasil = 0, gagal = 0;
+    for (const id of s.selected) {
+      try {
+        const res = await cfg.deleteOne(id);
+        if (res.status === 'OK') berhasil++;
+        else gagal++;
+      } catch(e) { gagal++; }
+    }
+
+    if (berhasil > 0) UI.toast(`${berhasil} item berhasil dihapus${gagal > 0 ? `, ${gagal} gagal` : ''}`, gagal > 0 ? 'warning' : 'success');
+    else UI.toast('Gagal menghapus item','error');
+
+    // Matikan mode seleksi & refresh
+    toggle(key); // off
+    const page = cfg.page();
+    if (page?.load) page.load(true);
+
+    lucide.createIcons();
+  }
+
+  // Render helper — buat elemen checkbox untuk dipasang di baris tabel
+  function checkbox(key, id) {
+    return `<input type="checkbox" class="row-checkbox" data-id="${id}"
+      onchange="Selection.toggleRow('${key}', '${id}', this)">`;
+  }
+
+  // Apakah mode seleksi aktif?
+  function isActive(key) { return _getState(key).active; }
+
+  return { toggle, toggleRow, toggleAll, deleteSelected, checkbox, isActive };
+})();
+
 const MentorPage = (() => {
   let allData      = [];
   let filteredData = [];
@@ -54,6 +182,7 @@ const MentorPage = (() => {
       const jkText = m.jk === 'L' ? '♂ Laki-laki' : '♀ Perempuan';
       return `
         <tr>
+          <td style="width:32px;">${Selection.checkbox('mentor', m.id)}</td>
           <td><span class="id-badge">${m.id}</span></td>
           <td>
             <div class="name-cell">
@@ -265,7 +394,9 @@ const MentorPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteMentor, updateSummary, undo, redo, deleteAll };
+  function deleteSelected() { return Selection.deleteSelected('mentor'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, openAdd, openEdit, saveForm, deleteMentor, updateSummary, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
@@ -333,6 +464,7 @@ const PresensiPage = (() => {
     const canEdit = role === 'ADMIN' || role === 'MENTOR';
     const rows = data.map(p => `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('presensi', p.id)}</td>
         <td>${UI.formatDate(p.tanggal)}</td>
         <td><strong>${p.nama_murid}</strong></td>
         <td>${p.nama_mentor}</td>
@@ -524,7 +656,9 @@ const PresensiPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
-  return { load, search, saveForm, filterByDate, openAdd, openEdit, deleteItem, undo, redo, deleteAll };
+  function deleteSelected() { return Selection.deleteSelected('presensi'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, saveForm, filterByDate, openAdd, openEdit, deleteItem, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
@@ -612,6 +746,7 @@ const SPPPage = (() => {
   function renderTable(data) {
     const rows = data.map(s => `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('spp', s.id)}</td>
         <td><span class="id-badge">${s.id}</span></td>
         <td><strong>${s.nama_murid}</strong></td>
         <td><span class="program-tag">${s.program}</span></td>
@@ -773,7 +908,9 @@ const SPPPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
-  return { load, search, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions, undo, redo, deleteAll };
+  function deleteSelected() { return Selection.deleteSelected('spp'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
@@ -838,6 +975,7 @@ const BukuPage = (() => {
     const canEdit = role === 'ADMIN';
     const rows = data.map(b => `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('buku', b.id)}</td>
         <td><span class="id-badge">${b.id}</span></td>
         <td><strong>${b.nama_modul}</strong></td>
         <td>
@@ -1014,7 +1152,9 @@ const BukuPage = (() => {
   // Getter untuk dipakai PembayaranPage (Masalah 5)
   function getData() { return allData; }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteBuku, undo, redo, deleteAll, getData };
+  function deleteSelected() { return Selection.deleteSelected('buku'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, openAdd, openEdit, saveForm, deleteBuku, undo, redo, deleteAll, getData, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
@@ -1098,6 +1238,7 @@ const PembayaranPage = (() => {
   function renderTable(data) {
     const rows = data.map(p => `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('pay', p.id)}</td>
         <td>${UI.formatDate(p.tanggal)}</td>
         <td><strong>${p.nama}</strong></td>
         <td><span class="program-tag">${p.jenis}</span></td>
@@ -1643,7 +1784,9 @@ const PembayaranPage = (() => {
     _pickerState.cachedBuku = null;
   }
 
-  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku };
+  function deleteSelected() { return Selection.deleteSelected('pay'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
@@ -1703,6 +1846,7 @@ const GajiPage = (() => {
   function renderTable(data) {
     const rows = data.map(g => `
       <tr>
+        <td style="width:32px;">${Selection.checkbox('gaji', g.id_trx)}</td>
         <td><span class="id-badge">${g.id_trx}</span></td>
         <td>${UI.formatDate(g.tgl_bayar)}</td>
         <td>${g.bulan_gaji}</td>
@@ -1865,7 +2009,9 @@ const GajiPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
-  return { load, search, saveForm, openAdd, openEdit, deleteGaji, clearForm, undo, redo, deleteAll };
+  function deleteSelected() { return Selection.deleteSelected('gaji'); }
+  function _getCurrentData() { return allData; }
+  return { load, search, saveForm, openAdd, openEdit, deleteGaji, clearForm, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
 
 
