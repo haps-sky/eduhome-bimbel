@@ -17,7 +17,8 @@ const MoreMenu = (() => {
     const menu = document.getElementById(key + '-more-menu');
     if (!menu) return;
     const isOpen = menu.classList.contains('open');
-    closeAll();
+    // Tutup semua dulu
+    _closeAll();
     if (!isOpen) {
       menu.classList.add('open');
       _active = key;
@@ -26,23 +27,27 @@ const MoreMenu = (() => {
   }
 
   function close(key) {
-    const menu = document.getElementById((key || _active) + '-more-menu');
+    const id = (key || _active);
+    if (!id) return;
+    const menu = document.getElementById(id + '-more-menu');
     if (menu) menu.classList.remove('open');
-    _active = null;
+    if (_active === id) _active = null;
   }
 
-  function closeAll() {
+  function _closeAll() {
     document.querySelectorAll('.ctrl-more-menu.open')
       .forEach(m => m.classList.remove('open'));
     _active = null;
   }
 
-  // Tutup saat klik di luar
+  // Tutup saat klik di luar — pakai capture agar lebih responsif
   document.addEventListener('click', e => {
-    if (!e.target.closest('.ctrl-more-btn')) closeAll();
-  });
+    // Jika klik di dalam tombol ⋯ atau menu, biarkan toggle() yang handle
+    if (e.target.closest('.ctrl-more-btn')) return;
+    _closeAll();
+  }, true);
 
-  return { toggle, close, closeAll };
+  return { toggle, close };
 })();
 
 // ============================================================
