@@ -1,1482 +1,1344 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EduHome — Sistem Manajemen Bimbingan Belajar</title>
-  <link rel="stylesheet" href="css/style.css">
- <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<script>window.EDUHOME_API_URL = 'https://script.google.com/macros/s/AKfycbyQ9N5mKaLDOO9mdzn611zDb38BtetDqqzRFOu2HPwQpVesMcrAh2BKQ99AtxqZVAVVxQ/exec';</script>
-<style>
-  /* ══════════════════════════════════════════════
-     EduHome Patch — 5 Fixes
-     ══════════════════════════════════════════════ */
+/* ============================================================
+   EduHome — Production Dashboard CSS
+   Theme: Deep Navy + Warm Amber accent, editorial clean
+   ============================================================ */
 
-  /* ① Light Mode: avatar Mentor & Presensi lebih tajam */
-  .light-mode .mentor-avatar { background:#dde8ff; color:#1d4ed8; }
-  .light-mode .avatar-initial { background:#dde8ff; color:#1d4ed8; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-  /* ② Mobile ⋯ dropdown — z-index tinggi, open sekali klik */
-  .ctrl-more-btn { display:none; position:relative; }
-  .ctrl-more-btn > .ctrl-btn { padding:0 8px; }
-  .ctrl-more-menu {
-    display:none; position:absolute; top:calc(100% + 6px); right:0;
-    background:var(--bg-card); border:1px solid var(--border);
-    border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.25);
-    min-width:176px; z-index:9999; overflow:hidden;
-    pointer-events:auto;
-  }
-  .ctrl-more-menu.open { display:block !important; }
-  .ctrl-more-item {
-    display:flex; align-items:center; gap:8px; padding:10px 14px;
-    font-size:0.82rem; color:var(--text-secondary);
-    cursor:pointer; border:none; background:transparent;
-    width:100%; text-align:left; transition:background .12s; white-space:nowrap;
-  }
-  .ctrl-more-item:hover { background:var(--bg-hover); color:var(--text-primary); }
-  .ctrl-more-item i { width:13px; height:13px; flex-shrink:0; }
-  .ctrl-more-item.danger { color:var(--danger); }
-  .ctrl-more-item.danger:hover { background:var(--danger-dim); }
-  .ctrl-more-divider { height:1px; background:var(--border); margin:3px 0; }
+/* ── Reset & Variables ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  @media (max-width:640px) {
-    .ctrl-hide-mobile { display:none !important; }
-    .ctrl-more-btn    { display:block; }
-  }
+:root {
+  --bg:          #0f1117;
+  --bg-surface:  #161b27;
+  --bg-card:     #1c2333;
+  --bg-hover:    #222d42;
+  --border:      #2a3550;
+  --border-light:#334060;
 
-  /* ③ Horizontal scroll tabel di mobile — anti data terpotong */
-  @media (max-width:640px) {
-    .table-wrap { overflow:visible; }
-    .table-wrap > div { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    #murid-tbody    { min-width:620px; }
-    #mentor-tbody   { min-width:700px; }
-    #presensi-tbody { min-width:680px; }
-    #pay-tbody      { min-width:640px; }
-    #spp-tbody      { min-width:900px; }
-    #buku-tbody     { min-width:580px; }
-    #gaji-tbody     { min-width:520px; }
-  }
+  --primary:     #4f8ef7;
+  --primary-dim: #1e3a6e;
+  --accent:      #f5a623;
+  --accent-dim:  #4a3200;
+  --success:     #34d399;
+  --success-dim: #0a3d2e;
+  --danger:      #f87171;
+  --danger-dim:  #3d0f0f;
+  --warning:     #fbbf24;
+  --warning-dim: #3d2a00;
+  --muted:       #8896b3;
 
-  /* ④ Toolbar — rapatkan gap & perkecil ikon */
-  .table-controls { gap:3px !important; }
-  .ctrl-divider   { margin:0 1px !important; }
-  .ctrl-btn       { height:29px !important; padding:0 8px !important; font-size:0.73rem !important; gap:3px !important; }
-  .ctrl-btn.icon-only { width:28px !important; padding:0 !important; }
-  .ctrl-btn svg,
-  .ctrl-btn i     { width:12px !important; height:12px !important; }
+  --text-primary: #e8edf5;
+  --text-secondary:#8896b3;
+  --text-dim:     #5a6a88;
 
-  /* ctrl-accent (Pilih Item pembayaran) */
-  .ctrl-btn.ctrl-accent { border-color:var(--primary-dim); color:var(--primary); background:var(--primary-dim); }
-  .ctrl-btn.ctrl-accent:hover { opacity:.85; }
+  --sidebar-w:    240px;
+  --topbar-h:     60px;
+  --radius:       10px;
+  --radius-lg:    16px;
+  --shadow:       0 2px 12px rgba(0,0,0,0.35);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
 
-  /* ⑤ Seleksi multi-baris */
-  .selection-bar {
-    display:none; align-items:center; gap:6px; padding:7px 14px;
-    background:var(--bg-card); border:1px solid var(--border);
-    border-bottom:none; border-radius:10px 10px 0 0;
-    font-size:0.8rem; font-weight:500;
-  }
-  .selection-bar.active { display:flex; }
-  .selection-bar .sel-count {
-    flex:1; font-variant-numeric:tabular-nums;
-    color:var(--text-primary); font-weight:600; font-size:0.82rem;
-  }
-  .sel-btn {
-    display:flex; align-items:center; gap:4px; padding:4px 10px;
-    border-radius:6px; border:1px solid var(--border);
-    font-size:0.78rem; font-weight:500; cursor:pointer;
-    transition:background .15s,color .15s;
-    background:var(--bg-surface); color:var(--text-secondary); line-height:1;
-  }
-  .sel-btn i { width:13px; height:13px; flex-shrink:0; }
-  .sel-btn-all:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--border-light); }
-  .sel-btn-delete { background:var(--danger-dim); border-color:var(--danger-dim); color:var(--danger); }
-  .sel-btn-delete:hover:not(:disabled) { background:var(--danger); color:#fff; border-color:var(--danger); }
-  .sel-btn-delete:disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
-  .sel-btn-cancel { background:transparent; border-color:transparent; color:var(--text-dim); padding:4px 6px; }
-  .sel-btn-cancel:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--border); }
-  .row-checkbox { display:none; width:14px; height:14px; cursor:pointer; accent-color:var(--primary); flex-shrink:0; }
-  .selection-mode .row-checkbox { display:inline-block; }
-  tr.row-selected td { background:var(--primary-dim) !important; }
-  .ctrl-btn.select-active { background:var(--primary-dim); border-color:var(--primary); color:var(--primary); }
+  --font:        'DM Sans', sans-serif;
+  --font-mono:   'DM Mono', monospace;
 
-  /* Item Picker */
-  .picker-item {
-    display:flex; align-items:center; gap:14px; padding:14px 16px;
-    border:1px solid var(--border); border-radius:12px; cursor:pointer;
-    transition:background .15s,border-color .15s; background:var(--bg-card);
-  }
-  .picker-item:hover { background:var(--bg-hover); border-color:var(--border-light); }
-  .picker-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .picker-item-title { font-weight:600; font-size:0.92rem; color:var(--text-primary); }
-  .picker-item-sub   { font-size:0.78rem; color:var(--text-secondary); margin-top:2px; }
-  .picker-row {
-    padding:12px 14px; border:1px solid var(--border); border-radius:10px;
-    cursor:pointer; transition:border-color .15s,background .15s; background:var(--bg-card);
-  }
-  .picker-row:hover { border-color:var(--primary); background:var(--bg-hover); }
-  .picker-btn-confirm {
-    margin-top:16px; width:100%; padding:12px; background:var(--success);
-    color:#fff; border:none; border-radius:10px; font-weight:600;
-    font-size:0.9rem; cursor:pointer; transition:opacity .15s;
-  }
-  .picker-btn-confirm:hover { opacity:.88; }
-  .picker-empty   { text-align:center; padding:32px; color:var(--text-secondary); }
-  .picker-error   { text-align:center; padding:24px; color:var(--danger); }
-  .picker-loading { text-align:center; padding:24px; color:var(--text-secondary); }
-  .picker-progress-track { height:4px; background:var(--border); border-radius:99px; margin-top:8px; }
-  .picker-progress-fill  { height:100%; border-radius:99px; background:var(--primary); }
-  .item-picker-row {
-    display:flex; align-items:center; padding:10px 12px;
-    border:1px solid var(--border); border-radius:8px;
-    cursor:pointer; transition:background .15s; gap:8px;
-  }
-  .item-picker-row:hover { background:var(--bg-hover); border-color:var(--primary); }
-</style>
-</head>
-<body>
-
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="logo-icon"><i data-lucide="graduation-cap"></i></div>
-      <div><h1>EduHome</h1><span>Sistem Manajemen Bimbingan Belajar</span></div>
-    </div>
-    <h2>Selamat Datang</h2>
-    <p>Masuk untuk mengakses sistem</p>
-    <form id="login-form">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="login-username" placeholder="Masukkan username" autocomplete="username" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-        <div id="login-spinner" class="spinner-sm" style="display:none;"></div>
-        <span id="login-text">Masuk</span>
-        <i data-lucide="log-in" id="login-icon"></i>
-      </button>
-    </form>
-    <div class="login-roles">
-      <div class="login-role-item"><span class="role-badge role-owner">Owner</span> Laporan &amp; analitik penuh</div>
-      <div class="login-role-item"><span class="role-badge role-admin">Admin</span> Kelola operasional harian</div>
-      <div class="login-role-item"><span class="role-badge role-mentor">Mentor</span> Presensi &amp; murid saya</div>
-    </div>
-  </div>
-</div>
-
-<div id="app-shell" style="display:none">
-
-  <aside id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon"><i data-lucide="graduation-cap"></i></div>
-      <div class="brand-text">
-        <h2>EduHome</h2>
-        <span id="sidebar-role-label" class="role-badge">—</span>
-      </div>
-    </div>
-    <nav class="sidebar-nav" id="sidebar-nav"></nav>
-    <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="avatar" id="user-avatar">?</div>
-        <span id="user-display">—</span>
-      </div>
-      <button class="btn btn-outline btn-full" id="logout-btn" style="font-size:0.8rem;padding:8px 14px;">
-        <i data-lucide="log-out"></i> Keluar
-      </button>
-    </div>
-  </aside>
-
-  <div id="main-area">
-    <header id="topbar">
-      <div class="topbar-left">
-        <button id="mobile-menu-btn"><i data-lucide="menu"></i></button>
-        <span id="page-title">Dashboard</span>
-      </div>
-      <div class="topbar-right">
-        <span class="text-muted" style="font-size:0.78rem;" id="current-date"></span>
-        <!-- [BARU] Tombol toggle tema Dark/Light per-user -->
-        <button id="theme-toggle-btn" title="Ganti Tema" onclick="Theme.toggle()">
-          <i data-lucide="moon" id="theme-icon-moon"></i>
-          <i data-lucide="sun"  id="theme-icon-sun" style="display:none;"></i>
-        </button>
-      </div>
-    </header>
-
-    <main id="content">
-
-      <section id="page-dashboard" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="layout-dashboard"></i> Dashboard</h2>
-          <button class="btn btn-outline" onclick="Dashboard.load()"><i data-lucide="refresh-cw"></i> Refresh</button>
-        </div>
-
-        <div class="kpi-grid" id="dash-kpi-section">
-          <div class="kpi-card blue">
-            <div class="kpi-icon"><i data-lucide="users"></i></div>
-            <div class="kpi-label">Murid Aktif / Total</div>
-            <div class="kpi-value" id="kpi-murid">—</div>
-          </div>
-          <div class="kpi-card purple">
-            <div class="kpi-icon"><i data-lucide="user-check"></i></div>
-            <div class="kpi-label">Mentor Aktif / Total</div>
-            <div class="kpi-value" id="kpi-mentor">—</div>
-          </div>
-          <div class="kpi-card green">
-            <div class="kpi-icon"><i data-lucide="package"></i></div>
-            <div class="kpi-label">Paket SPP Aktif</div>
-            <div class="kpi-value" id="kpi-spp">—</div>
-          </div>
-          <div class="kpi-card teal">
-            <div class="kpi-icon"><i data-lucide="calendar-check"></i></div>
-            <div class="kpi-label">Presensi Hari Ini</div>
-            <div class="kpi-value" id="kpi-presensi">—</div>
-          </div>
-          <div class="kpi-card amber" id="kpi-card-pembayaran">
-            <div class="kpi-icon"><i data-lucide="credit-card"></i></div>
-            <div class="kpi-label">Pembayaran Hari Ini</div>
-            <div class="kpi-value" id="kpi-pembayaran">—</div>
-          </div>
-          <div class="kpi-card red" id="kpi-card-unpaid">
-            <div class="kpi-icon"><i data-lucide="alert-circle"></i></div>
-            <div class="kpi-label">SPP Belum Bayar</div>
-            <div class="kpi-value" id="kpi-unpaid">—</div>
-          </div>
-        </div>
-
-        <div id="dash-mentor-stats" style="display:none;margin-bottom:24px;">
-          <div class="kpi-grid">
-            <div class="kpi-card green">
-              <div class="kpi-icon"><i data-lucide="calendar-check"></i></div>
-              <div class="kpi-label">Sesi Saya Hari Ini</div>
-              <div class="kpi-value" id="kpi-my-today">—</div>
-            </div>
-            <div class="kpi-card blue">
-              <div class="kpi-icon"><i data-lucide="bar-chart-2"></i></div>
-              <div class="kpi-label">Total Sesi Bulan Ini</div>
-              <div class="kpi-value" id="kpi-my-month">—</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="dash-finance-section">
-          <div class="section-label">Rekapitulasi Keuangan</div>
-          <div class="finance-grid">
-            <div class="finance-card total"><div class="label">Total Pemasukan SPP</div><div class="amount" id="fin-spp">—</div></div>
-            <div class="finance-card op"><div class="label">Operasional (20%)</div><div class="amount" id="fin-operational">—</div></div>
-            <div class="finance-card sav"><div class="label">Tabungan (15%)</div><div class="amount" id="fin-savings">—</div></div>
-            <div class="finance-card rev"><div class="label">Pendapatan (65%)</div><div class="amount" id="fin-revenue">—</div></div>
-          </div>
-        </div>
-
-        <div class="dash-grid" style="margin-top:20px;">
-          <div class="card">
-            <div class="card-header"><h3><i data-lucide="star"></i> Top Murid Bintang</h3></div>
-            <div class="card-body" style="padding:0">
-              <table class="data-table">
-                <thead><tr><th>#</th><th>Nama</th><th>Bintang</th></tr></thead>
-                <tbody id="top-students-body"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h3><i data-lucide="bar-chart-2"></i> Performa Mentor Bulan Ini</h3></div>
-            <div class="card-body" style="padding:0">
-              <table class="data-table">
-                <thead><tr><th>Mentor</th><th>Sesi</th></tr></thead>
-                <tbody id="mentor-perf-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="dash-grid" style="margin-top:20px;">
-          <div class="card">
-            <div class="card-header"><h3><i data-lucide="activity"></i> Aktivitas Terbaru</h3></div>
-            <div class="card-body">
-              <div class="activity-feed" id="activity-feed"><div class="empty-feed">Memuat data...</div></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h3><i data-lucide="alert-triangle"></i> Pertemuan Hampir Habis</h3></div>
-            <div class="card-body">
-              <div id="low-sessions-list"><div class="empty-feed">Memuat data...</div></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-owner-finance" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="bar-chart-2"></i> Laporan Keuangan</h2>
-          <div class="read-only-badge"><i data-lucide="eye"></i> Hanya Lihat</div>
-        </div>
-        <div class="section-label">Ringkasan Keuangan Keseluruhan</div>
-        <div class="finance-grid" style="margin-bottom:24px;">
-          <div class="finance-card total"><div class="label">Total Pemasukan SPP</div><div class="amount" id="owner-fin-spp">—</div></div>
-          <div class="finance-card op"><div class="label">Dana Operasional (20%)</div><div class="amount" id="owner-fin-op">—</div></div>
-          <div class="finance-card sav"><div class="label">Dana Tabungan (15%)</div><div class="amount" id="owner-fin-sav">—</div></div>
-          <div class="finance-card rev"><div class="label">Pendapatan Bersih (65%)</div><div class="amount" id="owner-fin-rev">—</div></div>
-        </div>
-        <div class="kpi-grid" style="margin-bottom:24px;">
-          <div class="kpi-card amber"><div class="kpi-icon"><i data-lucide="credit-card"></i></div><div class="kpi-label">Pembayaran Hari Ini</div><div class="kpi-value" id="owner-pay-today">—</div></div>
-          <div class="kpi-card blue"><div class="kpi-icon"><i data-lucide="trending-up"></i></div><div class="kpi-label">Pembayaran Bulan Ini</div><div class="kpi-value" id="owner-pay-month">—</div></div>
-          <div class="kpi-card red"><div class="kpi-icon"><i data-lucide="x-circle"></i></div><div class="kpi-label">SPP Belum Lunas</div><div class="kpi-value" id="owner-spp-unpaid">—</div></div>
-          <div class="kpi-card green"><div class="kpi-icon"><i data-lucide="check-circle"></i></div><div class="kpi-label">SPP Sudah Lunas</div><div class="kpi-value" id="owner-spp-paid">—</div></div>
-        </div>
-        <div class="dash-grid">
-          <div class="table-wrap" style="margin-bottom:0">
-            <div class="table-toolbar"><div class="table-title"><i data-lucide="credit-card"></i> Riwayat Pembayaran SPP</div></div>
-            <div style="overflow-x:auto">
-              <table class="data-table">
-                <thead><tr><th>Tanggal</th><th>Nama</th><th>Periode</th><th>Jumlah</th><th>Metode</th></tr></thead>
-                <tbody id="owner-pay-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="table-wrap" style="margin-bottom:0">
-            <div class="table-toolbar"><div class="table-title"><i data-lucide="banknote"></i> Riwayat Penggajian</div></div>
-            <div style="overflow-x:auto">
-              <table class="data-table">
-                <thead><tr><th>Tgl Bayar</th><th>Bulan</th><th>Mentor</th><th>Jumlah</th><th>Metode</th></tr></thead>
-                <tbody id="owner-gaji-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-murid" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="users"></i> Data Murid</h2>
-          <button class="btn btn-primary" id="btn-tambah-murid" onclick="MuridPage.openAdd()" style="display:none">
-            <i data-lucide="plus"></i> Tambah Murid
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar">
-            <div class="table-title">
-              <i data-lucide="users"></i>
-              Daftar Murid
-              <span id="murid-count" class="text-muted" style="font-size:0.75rem;font-weight:400;"></span>
-            </div>
-            <div class="table-controls">
-              <input class="search-input" type="text"
-                     placeholder="Cari nama / program..."
-                     oninput="MuridPage.search(this.value)"
-                     style="width:180px;">
-              <div class="ctrl-divider ctrl-hide-mobile"></div>
-              <button class="ctrl-btn ctrl-hide-mobile" onclick="MuridPage.load(true)" title="Refresh data">
-                <i data-lucide="refresh-cw"></i> Refresh
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="undo-btn"
-                      onclick="MuridPage.undo()" title="Undo" disabled>
-                <i data-lucide="undo-2"></i>
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="redo-btn"
-                      onclick="MuridPage.redo()" title="Redo" disabled>
-                <i data-lucide="redo-2"></i>
-              </button>
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="murid-select-btn"
-                      onclick="Selection.toggle('murid')" title="Pilih item">
-                <i data-lucide="check-square"></i>
-              </button>
-              <div class="ctrl-more-btn" id="murid-more-wrap">
-                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('murid')" title="Lainnya">
-                  <i data-lucide="more-horizontal"></i>
-                </button>
-                <div class="ctrl-more-menu" id="murid-more-menu">
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.load(true)">
-                    <i data-lucide="refresh-cw"></i> Refresh
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.undo()">
-                    <i data-lucide="undo-2"></i> Undo
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.redo()">
-                    <i data-lucide="redo-2"></i> Redo
-                  </button>
-                  <div class="ctrl-more-divider"></div>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('murid');Selection.toggle('murid')">
-                    <i data-lucide="check-square"></i> Pilih Item
-                  </button>
-                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('murid');MuridPage.deleteSelected()">
-                    <i data-lucide="trash-2"></i> Hapus Terpilih
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-              <div class="selection-bar" id="murid-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="murid-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('murid')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="murid-sel-delete"
-              onclick="MuridPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('murid')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-            <table class="data-table">
-              <thead>
-              <tr>
-                <th style="width:32px;"></th>
-                <th onclick="MuridPage.sortBy('id')">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="MuridPage.sortBy('nama')">NAMA <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="MuridPage.sortBy('kelas')">KELAS <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="MuridPage.sortBy('program')">PROGRAM <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="MuridPage.sortBy('tgl_mulai')">MULAI <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="MuridPage.sortBy('status')">STATUS <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Aksi</th></tr></thead>
-              <tbody id="murid-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-<section id="page-mentor" class="page-section">
-  <div class="page-header">
-    <h2><i data-lucide="user-check"></i> Data Mentor</h2>
-    
-    
-<button type="button" 
-            class="btn btn-primary" 
-            id="btn-tambah-mentor" 
-            onclick="MentorPage.openAdd()" 
-            style="display:none">
-      <i data-lucide="plus"></i> Tambah Mentor
-    </button>
-  </div>
-
-  <div class="table-wrap">
-    <div class="table-toolbar">
-      <div class="table-title">
-        <i data-lucide="user-check"></i> Daftar Mentor
-      </div>
-      <div class="table-controls">
-        <input class="search-input" type="text"
-               placeholder="Cari nama / program..."
-               oninput="MentorPage.search(this.value)"
-               style="width:180px;">
-        <div class="ctrl-divider ctrl-hide-mobile"></div>
-        <button class="ctrl-btn ctrl-hide-mobile" onclick="MentorPage.load(true)" title="Refresh data">
-          <i data-lucide="refresh-cw"></i> Refresh
-        </button>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-undo-btn"
-                onclick="MentorPage.undo()" title="Undo" disabled>
-          <i data-lucide="undo-2"></i>
-        </button>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-redo-btn"
-                onclick="MentorPage.redo()" title="Redo" disabled>
-          <i data-lucide="redo-2"></i>
-        </button>
-        <div class="ctrl-divider"></div>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="mentor-select-btn"
-                onclick="Selection.toggle('mentor')" title="Pilih item">
-          <i data-lucide="check-square"></i>
-        </button>
-        <div class="ctrl-more-btn" id="mentor-more-wrap">
-          <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('mentor')" title="Lainnya">
-            <i data-lucide="more-horizontal"></i>
-          </button>
-          <div class="ctrl-more-menu" id="mentor-more-menu">
-            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.load(true)">
-              <i data-lucide="refresh-cw"></i> Refresh
-            </button>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.undo()">
-              <i data-lucide="undo-2"></i> Undo
-            </button>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');MentorPage.redo()">
-              <i data-lucide="redo-2"></i> Redo
-            </button>
-            <div class="ctrl-more-divider"></div>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');Selection.toggle('mentor')">
-              <i data-lucide="check-square"></i> Pilih Item
-            </button>
-            <button class="ctrl-more-item danger" onclick="MoreMenu.close('mentor');MentorPage.deleteSelected()">
-              <i data-lucide="trash-2"></i> Hapus Terpilih
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-        <div class="selection-bar" id="mentor-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="mentor-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('mentor')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="mentor-sel-delete"
-              onclick="MentorPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('mentor')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width:32px;"></th>
-            <th onclick="MentorPage.sortBy('id')" style="cursor:pointer;user-select:none;">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="MentorPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th>Kontak</th>
-            <th onclick="MentorPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="MentorPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="MentorPage.sortBy('fee_anak')" style="cursor:pointer;user-select:none;">Fee/Anak <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th onclick="MentorPage.sortBy('fee_harian')" style="cursor:pointer;user-select:none;">Fee/Sesi <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="mentor-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-      <section id="page-presensi" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="calendar-check"></i> Presensi</h2>
-          <button type="button" class="btn btn-primary" id="btn-tambah-presensi" onclick="PresensiPage.openAdd()" style="display:none">
-            <i data-lucide="plus"></i> Catat Presensi
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar">
-            <div class="table-title">
-              <i data-lucide="calendar-check"></i> Riwayat Presensi
-            </div>
-            <div class="table-controls">
-              <input class="search-input" type="text"
-                     placeholder="Cari murid / mentor..."
-                     oninput="PresensiPage.search(this.value)"
-                     style="width:180px;">
-              <input type="date" class="search-input" style="width:150px"
-                     onchange="PresensiPage.filterByDate(this.value)"
-                     title="Filter tanggal">
-              <div class="ctrl-divider ctrl-hide-mobile"></div>
-              <button class="ctrl-btn ctrl-hide-mobile" onclick="PresensiPage.load(true)" title="Refresh data">
-                <i data-lucide="refresh-cw"></i> Refresh
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-undo-btn"
-                      onclick="PresensiPage.undo()" title="Undo" disabled>
-                <i data-lucide="undo-2"></i>
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-redo-btn"
-                      onclick="PresensiPage.redo()" title="Redo" disabled>
-                <i data-lucide="redo-2"></i>
-              </button>
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="presensi-select-btn"
-                      onclick="Selection.toggle('presensi')" title="Pilih item">
-                <i data-lucide="check-square"></i>
-              </button>
-              <div class="ctrl-more-btn" id="presensi-more-wrap">
-                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('presensi')" title="Lainnya">
-                  <i data-lucide="more-horizontal"></i>
-                </button>
-                <div class="ctrl-more-menu" id="presensi-more-menu">
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.load(true)">
-                    <i data-lucide="refresh-cw"></i> Refresh
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.undo()">
-                    <i data-lucide="undo-2"></i> Undo
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.redo()">
-                    <i data-lucide="redo-2"></i> Redo
-                  </button>
-                  <div class="ctrl-more-divider"></div>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');Selection.toggle('presensi')">
-                    <i data-lucide="check-square"></i> Pilih Item
-                  </button>
-                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('presensi');PresensiPage.deleteSelected()">
-                    <i data-lucide="trash-2"></i> Hapus Terpilih
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-              <div class="selection-bar" id="presensi-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="presensi-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('presensi')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="presensi-sel-delete"
-              onclick="PresensiPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('presensi')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr>
-                <th style="width:32px;"></th>
-                <th onclick="PresensiPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PresensiPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PresensiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PresensiPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PresensiPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Catatan</th>
-                <th onclick="PresensiPage.sortBy('bintang')" style="cursor:pointer;user-select:none;">Bintang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Aksi</th>
-              </tr></thead>
-              <tbody id="presensi-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-pembayaran" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="credit-card"></i> Pembayaran</h2>
-          <button type="button" class="btn btn-primary" id="btn-tambah-pembayaran" onclick="UI.openModal('modal-pembayaran')" style="display:none">
-            <i data-lucide="plus"></i> Catat Pembayaran
-          </button>
-        </div>
-        <div id="pay-today-summary" style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:12px;"></div>
-        <div class="table-wrap">
-          <div class="table-toolbar">
-            <div class="table-title">
-              <i data-lucide="credit-card"></i> Riwayat Pembayaran
-            </div>
-            <div class="table-controls">
-              <input class="search-input" type="text"
-                     placeholder="Cari nama / jenis..."
-                     oninput="PembayaranPage.search(this.value)"
-                     style="width:180px;">
-              <div class="ctrl-divider ctrl-hide-mobile"></div>
-              <button class="ctrl-btn ctrl-hide-mobile" onclick="PembayaranPage.load(true)" title="Refresh data">
-                <i data-lucide="refresh-cw"></i> Refresh
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-undo-btn"
-                      onclick="PembayaranPage.undo()" title="Undo" disabled>
-                <i data-lucide="undo-2"></i>
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-redo-btn"
-                      onclick="PembayaranPage.redo()" title="Redo" disabled>
-                <i data-lucide="redo-2"></i>
-              </button>
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="pay-select-btn"
-                      onclick="Selection.toggle('pay')" title="Pilih item">
-                <i data-lucide="check-square"></i>
-              </button>
-              <div class="ctrl-more-btn" id="pay-more-wrap">
-                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('pay')" title="Lainnya">
-                  <i data-lucide="more-horizontal"></i>
-                </button>
-                <div class="ctrl-more-menu" id="pay-more-menu">
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.load(true)">
-                    <i data-lucide="refresh-cw"></i> Refresh
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.undo()">
-                    <i data-lucide="undo-2"></i> Undo
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');PembayaranPage.redo()">
-                    <i data-lucide="redo-2"></i> Redo
-                  </button>
-                  <div class="ctrl-more-divider"></div>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('pay');Selection.toggle('pay')">
-                    <i data-lucide="check-square"></i> Pilih Item
-                  </button>
-                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('pay');PembayaranPage.deleteSelected()">
-                    <i data-lucide="trash-2"></i> Hapus Terpilih
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-              <div class="selection-bar" id="pay-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="pay-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('pay')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="pay-sel-delete"
-              onclick="PembayaranPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('pay')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr>
-                <th style="width:32px;"></th>
-                <th onclick="PembayaranPage.sortBy('tanggal')" style="cursor:pointer;user-select:none;">Tanggal <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PembayaranPage.sortBy('nama')" style="cursor:pointer;user-select:none;">Nama <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PembayaranPage.sortBy('jenis')" style="cursor:pointer;user-select:none;">Jenis <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Periode</th>
-                <th onclick="PembayaranPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="PembayaranPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Keterangan</th>
-                <th>Aksi</th>
-              </tr></thead>
-              <tbody id="pay-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-<section id="page-spp" class="page-section">
-  <div class="page-header">
-    <h2><i data-lucide="package"></i> Paket SPP</h2>
-    <!-- PERBAIKAN: Gunakan ID btn-buat-spp dan fungsi SPPPage.openAdd -->
-    <button type="button" class="btn btn-primary" id="btn-buat-spp" onclick="SPPPage.openAdd()" style="display:none">
-      <i data-lucide="plus"></i> Buat Paket SPP
-    </button>
-  </div>
-  
-  <div class="table-wrap">
-    <div class="table-toolbar">
-      <div class="table-title">
-        <i data-lucide="package"></i> Daftar Paket SPP
-      </div>
-      <div class="table-controls">
-        <input class="search-input" type="text"
-               placeholder="Cari murid / program..."
-               oninput="SPPPage.search(this.value)"
-               style="width:180px;">
-        <div class="ctrl-divider ctrl-hide-mobile"></div>
-        <button class="ctrl-btn ctrl-hide-mobile" onclick="SPPPage.load(true)" title="Refresh data">
-          <i data-lucide="refresh-cw"></i> Refresh
-        </button>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-undo-btn"
-                onclick="SPPPage.undo()" title="Undo" disabled>
-          <i data-lucide="undo-2"></i>
-        </button>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-redo-btn"
-                onclick="SPPPage.redo()" title="Redo" disabled>
-          <i data-lucide="redo-2"></i>
-        </button>
-        <div class="ctrl-divider"></div>
-        <button class="ctrl-btn icon-only ctrl-hide-mobile" id="spp-select-btn"
-                onclick="Selection.toggle('spp')" title="Pilih item">
-          <i data-lucide="check-square"></i>
-        </button>
-        <div class="ctrl-more-btn" id="spp-more-wrap">
-          <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('spp')" title="Lainnya">
-            <i data-lucide="more-horizontal"></i>
-          </button>
-          <div class="ctrl-more-menu" id="spp-more-menu">
-            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.load(true)">
-              <i data-lucide="refresh-cw"></i> Refresh
-            </button>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.undo()">
-              <i data-lucide="undo-2"></i> Undo
-            </button>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');SPPPage.redo()">
-              <i data-lucide="redo-2"></i> Redo
-            </button>
-            <div class="ctrl-more-divider"></div>
-            <button class="ctrl-more-item" onclick="MoreMenu.close('spp');Selection.toggle('spp')">
-              <i data-lucide="check-square"></i> Pilih Item
-            </button>
-            <button class="ctrl-more-item danger" onclick="MoreMenu.close('spp');SPPPage.deleteSelected()">
-              <i data-lucide="trash-2"></i> Hapus Terpilih
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-        <div class="selection-bar" id="spp-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="spp-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('spp')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="spp-sel-delete"
-              onclick="SPPPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('spp')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-      <table class="data-table">
-        <thead><tr>
-          <th style="width:32px;"></th>
-          <th>ID</th>
-          <th onclick="SPPPage.sortBy('nama_murid')" style="cursor:pointer;user-select:none;">Murid <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('periode_mulai')" style="cursor:pointer;user-select:none;">Periode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('total_pertemuan')" style="cursor:pointer;user-select:none;">Total <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('sisa_pertemuan')" style="cursor:pointer;user-select:none;">Hadir/Sisa <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th>Progress</th>
-          <th onclick="SPPPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('harga')" style="cursor:pointer;user-select:none;">Harga <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('terbayar')" style="cursor:pointer;user-select:none;">Terbayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th onclick="SPPPage.sortBy('status_bayar')" style="cursor:pointer;user-select:none;">Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-          <th>Aksi</th>
-        </tr></thead>
-        <tbody id="spp-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section id="page-buku" class="page-section">
-  <div class="page-header">
-    <h2><i data-lucide="book-open"></i> Modul Pembelajaran</h2>
-    <button type="button" class="btn btn-primary" id="btn-tambah-buku" onclick="BukuPage.openAdd()">
-      <i data-lucide="plus"></i> Tambah Modul
-    </button>
-  </div>
-    <div class="table-wrap">
-      <div class="table-toolbar">
-        <div class="table-title">
-          <i data-lucide="book-open"></i> Daftar Modul
-          <span id="buku-count" class="text-muted" style="font-size:0.78rem;font-weight:400;"></span>
-        </div>
-        <div class="table-controls">
-          <input class="search-input" type="text"
-                 placeholder="Cari nama modul / program..."
-                 oninput="BukuPage.search(this.value)"
-                 style="width:200px;">
-          <div class="ctrl-divider ctrl-hide-mobile"></div>
-          <button class="ctrl-btn ctrl-hide-mobile" onclick="BukuPage.load(true)" title="Refresh data">
-            <i data-lucide="refresh-cw"></i> Refresh
-          </button>
-          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-undo-btn"
-                  onclick="BukuPage.undo()" title="Undo" disabled>
-            <i data-lucide="undo-2"></i>
-          </button>
-          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-redo-btn"
-                  onclick="BukuPage.redo()" title="Redo" disabled>
-            <i data-lucide="redo-2"></i>
-          </button>
-          <div class="ctrl-divider"></div>
-          <button class="ctrl-btn icon-only ctrl-hide-mobile" id="buku-select-btn"
-                  onclick="Selection.toggle('buku')" title="Pilih item">
-            <i data-lucide="check-square"></i>
-          </button>
-          <div class="ctrl-more-btn" id="buku-more-wrap">
-            <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('buku')" title="Lainnya">
-              <i data-lucide="more-horizontal"></i>
-            </button>
-            <div class="ctrl-more-menu" id="buku-more-menu">
-              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.load(true)">
-                <i data-lucide="refresh-cw"></i> Refresh
-              </button>
-              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.undo()">
-                <i data-lucide="undo-2"></i> Undo
-              </button>
-              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');BukuPage.redo()">
-                <i data-lucide="redo-2"></i> Redo
-              </button>
-              <div class="ctrl-more-divider"></div>
-              <button class="ctrl-more-item" onclick="MoreMenu.close('buku');Selection.toggle('buku')">
-                <i data-lucide="check-square"></i> Pilih Item
-              </button>
-              <button class="ctrl-more-item danger" onclick="MoreMenu.close('buku');BukuPage.deleteSelected()">
-                <i data-lucide="trash-2"></i> Hapus Terpilih
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-          <div class="selection-bar" id="buku-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="buku-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('buku')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="buku-sel-delete"
-              onclick="BukuPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('buku')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:32px;"></th>
-              <th onclick="BukuPage.sortBy('id')" style="cursor:pointer;user-select:none;">ID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('nama_modul')" style="cursor:pointer;user-select:none;">NAMA MODUL <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('jenjang')" style="cursor:pointer;user-select:none;">JENJANG/PROG <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('stok')" style="cursor:pointer;user-select:none;">STOK <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('harga_beli')" style="cursor:pointer;user-select:none;">Hrg PUSAT <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th onclick="BukuPage.sortBy('harga_jual')" style="cursor:pointer;user-select:none;">Hrg MURID <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-              <th>KEUNTUNGAN</th>
-              <th style="text-align:center">AKSI</th>
-            </tr>
-          </thead>
-          <tbody id="buku-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-</section>
-
-      <section id="page-gaji" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="banknote"></i> Penggajian Mentor</h2>
-          <button class="btn btn-primary" id="btn-bayar-gaji" onclick="UI.openModal('modal-gaji')" style="display:none">
-            <i data-lucide="plus"></i> Bayar Gaji
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar">
-            <div class="table-title">
-              <i data-lucide="banknote"></i> Riwayat Penggajian
-            </div>
-            <div class="table-controls">
-              <input class="search-input" type="text"
-                     placeholder="Cari mentor / bulan..."
-                     oninput="GajiPage.search(this.value)"
-                     style="width:180px;">
-              <div class="ctrl-divider ctrl-hide-mobile"></div>
-              <button class="ctrl-btn ctrl-hide-mobile" onclick="GajiPage.load(true)" title="Refresh data">
-                <i data-lucide="refresh-cw"></i> Refresh
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-undo-btn"
-                      onclick="GajiPage.undo()" title="Undo" disabled>
-                <i data-lucide="undo-2"></i>
-              </button>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-redo-btn"
-                      onclick="GajiPage.redo()" title="Redo" disabled>
-                <i data-lucide="redo-2"></i>
-              </button>
-              <div class="ctrl-divider"></div>
-              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="gaji-select-btn"
-                      onclick="Selection.toggle('gaji')" title="Pilih item">
-                <i data-lucide="check-square"></i>
-              </button>
-              <div class="ctrl-more-btn" id="gaji-more-wrap">
-                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('gaji')" title="Lainnya">
-                  <i data-lucide="more-horizontal"></i>
-                </button>
-                <div class="ctrl-more-menu" id="gaji-more-menu">
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.load(true)">
-                    <i data-lucide="refresh-cw"></i> Refresh
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.undo()">
-                    <i data-lucide="undo-2"></i> Undo
-                  </button>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');GajiPage.redo()">
-                    <i data-lucide="redo-2"></i> Redo
-                  </button>
-                  <div class="ctrl-more-divider"></div>
-                  <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');Selection.toggle('gaji')">
-                    <i data-lucide="check-square"></i> Pilih Item
-                  </button>
-                  <button class="ctrl-more-item danger" onclick="MoreMenu.close('gaji');GajiPage.deleteSelected()">
-                    <i data-lucide="trash-2"></i> Hapus Terpilih
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-              <div class="selection-bar" id="gaji-sel-bar">
-      <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary,#6366f1);flex-shrink:0;"></i>
-      <span class="sel-count" id="gaji-sel-count">0 dipilih</span>
-      <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('gaji')" title="Pilih semua">
-        <i data-lucide="list-checks"></i> Pilih Semua
-      </button>
-      <button class="sel-btn sel-btn-delete" id="gaji-sel-delete"
-              onclick="GajiPage.deleteSelected()" disabled title="Hapus yang dipilih">
-        <i data-lucide="trash-2"></i> Hapus
-      </button>
-      <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('gaji')" title="Batalkan seleksi">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-<div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr>
-                <th style="width:32px;"></th>
-                <th>ID Trx</th>
-                <th onclick="GajiPage.sortBy('tgl_bayar')" style="cursor:pointer;user-select:none;">Tgl Bayar <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="GajiPage.sortBy('bulan_gaji')" style="cursor:pointer;user-select:none;">Bulan Gaji <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="GajiPage.sortBy('nama_mentor')" style="cursor:pointer;user-select:none;">Mentor <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="GajiPage.sortBy('jumlah')" style="cursor:pointer;user-select:none;">Jumlah <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th onclick="GajiPage.sortBy('metode')" style="cursor:pointer;user-select:none;">Metode <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
-                <th>Aksi</th>
-              </tr></thead>
-              <tbody id="gaji-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-logs" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="scroll-text"></i> System Logs</h2>
-          <button class="btn btn-outline" onclick="LogsPage.load()"><i data-lucide="refresh-cw"></i> Refresh</button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="scroll-text"></i> Log Aktivitas Sistem</div></div>
-          <div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr><th>Waktu</th><th>Level</th><th>Event</th><th>Detail</th><th>User</th></tr></thead>
-              <tbody id="logs-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-mentor-students" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="users"></i> Murid Saya</h2>
-          <button class="btn btn-outline" onclick="MentorStudentsPage.load()"><i data-lucide="refresh-cw"></i> Refresh</button>
-        </div>
-        <div id="mentor-students-grid" class="student-card-grid">
-          <div class="empty-feed" style="padding:32px;text-align:center;">Memuat data murid...</div>
-        </div>
-      </section>
-
-      <section id="page-mentor-presensi" class="page-section">
-        <div class="page-header">
-          <h2><i data-lucide="calendar-check"></i> Catat Presensi</h2>
-          <button class="btn btn-primary" onclick="UI.openModal('modal-mentor-presensi')">
-            <i data-lucide="plus"></i> Input Presensi
-          </button>
-        </div>
-        <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="calendar-check"></i> Presensi Hari Ini (Saya)</div></div>
-          <div style="overflow-x:auto">
-            <table class="data-table">
-              <thead><tr><th>Murid</th><th>Program</th><th>Status</th><th>Bintang</th><th>Catatan</th><th>AKSI</th></tr></thead>
-              <tbody id="mentor-presensi-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-</div>
-
-<div id="modal-murid" class="modal">
-  <div class="modal-content">
-    <form id="form-murid" onsubmit="event.preventDefault();">
-      <div class="modal-header">
-        <h3 id="murid-modal-title">Tambah Murid Baru</h3>
-        <button type="button" class="modal-close" onclick="UI.closeModal('modal-murid')">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <input type="hidden" id="murid-id-field" name="id"> <div class="form-row">
-          <div class="form-group">
-            <label>Nama Lengkap *</label>
-            <input type="text" id="murid-nama" name="nama" placeholder="Nama murid" required> </div>
-          <div class="form-group">
-            <label>Jenis Kelamin</label>
-            <select id="murid-jk" name="jk">
-              <option value="L">Laki-laki</option>
-              <option value="P">Perempuan</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Kelas</label><input type="text" id="murid-kelas" name="kelas" placeholder="Contoh: 7A, X IPA"></div>
-          <div class="form-group"><label>Program *</label><input type="text" id="murid-program" name="program" placeholder="Matematika, Bahasa, dll" required></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="murid-tgl" name="tgl_mulai"></div>
-          <div class="form-group"><label>Status</label>
-            <select id="murid-status" name="status"><option value="">-- Pilih Status --</option>
-              <option value="AKTIF">Aktif</option>
-              <option value="NONAKTIF">Non-Aktif</option>
-            </select>
-          </div>
-        </div>
-        <div id="murid-schedule-section">
-          <hr class="divider">
-          <div class="section-label">Jadwal Belajar</div>
-          <div class="form-group">
-            <label>Jadwal Belajar (Pilih Hari & Jam)</label>
-            <div id="day-checkboxes" class="schedule-grid-container"></div>
-          </div>
-        </div>
-      </div>
-
-     <div class="modal-footer">
-  <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-murid')">Batal</button>
-
-  <button type="button" class="btn btn-primary" id="murid-save-btn" onclick="MuridPage.saveForm()">
-    <i data-lucide="save"></i> Simpan
-  </button>
-</div>
-
-    </form>
-  </div>
-</div>
-
-<div id="modal-mentor" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="mentor-modal-title">Tambah Mentor</h3><button class="modal-close" onclick="UI.closeModal('modal-mentor')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="mentor-id-field">
-      <div class="form-group"><label>Nama Mentor *</label><input type="text" id="mentor-nama" placeholder="Nama lengkap"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Jenis Kelamin</label><select id="mentor-jk"><option value="">-- Pilih Jenis Kelamin --</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
-        <div class="form-group"><label>Kontak/WA</label><input type="text" id="mentor-kontak" placeholder="0812..."></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Program</label><input type="text" id="mentor-program" placeholder="Matematika, dll"></div>
-        <div class="form-group"><label>Status</label><select id="mentor-status"><option value="AKTIF">Aktif</option><option value="NONAKTIF">Non-Aktif</option></select></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Fee per Murid (Rp)</label><input type="number" id="mentor-fee-anak" placeholder="20000"></div>
-        <div class="form-group"><label>Fee per Sesi (Rp)</label><input type="number" id="mentor-fee-harian" placeholder="50000"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-  <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-mentor')">Batal</button>
-  <button type="button" 
-          class="btn btn-primary" 
-          id="mentor-save-btn" 
-          onclick="MentorPage.saveForm()">
-    <i data-lucide="save"></i> Simpan
-  </button>
-  </div>
-  </div>
-</div>
-
-<div id="modal-presensi" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="modal-presensi-title">Catat Presensi</h3><button class="modal-close" onclick="UI.closeModal('modal-presensi')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="presensi-id-field">
-      <div class="form-row">
-        <div class="form-group"><label>Tanggal *</label><input type="date" id="presensi-tanggal"></div>
-        <div class="form-group"><label>Status</label><select id="presensi-status"><option value="HADIR">Hadir</option><option value="ABSEN">Absen</option><option value="IZIN">Izin</option></select></div>
-      </div>
-      <div class="form-group"><label>Murid *</label><select id="presensi-murid"><option value="">-- Pilih Murid --</option></select></div>
-      <div class="form-group"><label>Mentor</label><select id="presensi-mentor"><option value="">-- Pilih Mentor --</option></select></div>
-      <div class="form-row">
-        <div class="form-group"><label>Bintang (0–10)</label><input type="number" id="presensi-bintang" min="0" max="10" value="5"></div>
-        <div class="form-group"><label>Catatan</label><input type="text" id="presensi-catatan" placeholder="Opsional"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-presensi')">Batal</button>
-      <button type="button" class="btn btn-primary" id="presensi-save-btn" onclick="PresensiPage.saveForm()">
-      <i data-lucide="save"></i> Simpan
-      </button>
-    </div>
-  </div>
-</div>
-  
-<!-- MODAL INPUT PRESESI MENTOR -->
-<div id="modal-mentor-presensi" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modal-mentor-title">Input Presensi Murid Saya</h3>
-      <button class="modal-close" onclick="UI.closeModal('modal-mentor-presensi')">✕</button>
-    </div>
-    
-    <div class="modal-body">
-      <!-- ID Hidden Field (PENTING UNTUK EDIT) -->
-      <input type="hidden" id="mentor-presensi-id-field">
-
-      <div class="role-context-banner">
-        <i data-lucide="shield-check"></i> 
-        Hanya murid yang ditugaskan kepada Anda ditampilkan
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tanggal *</label>
-          <input type="date" id="mentor-presensi-tanggal">
-        </div>
-        <div class="form-group">
-          <label>Status Kehadiran</label>
-          <select id="mentor-presensi-status">
-            <option value="HADIR">Hadir</option>
-            <option value="ABSEN">Absen</option>
-            <option value="IZIN">Izin</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Murid *</label>
-        <select id="mentor-presensi-murid">
-          <option value="">-- Pilih Murid --</option>
-          <!-- Data akan diisi via JavaScript -->
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Bintang Hari Ini (0–10)</label>
-          <input type="number" id="mentor-presensi-bintang" min="0" max="10" value="7">
-        </div>
-        <div class="form-group">
-          <label>Catatan Sesi</label>
-          <input type="text" id="mentor-presensi-catatan" placeholder="Topik yang dipelajari...">
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="UI.closeModal('modal-mentor-presensi')">Batal</button>
-      <button id="mentor-presensi-save-btn" class="btn btn-primary" onclick="MentorPresensiPage.saveForm()">
-        <i data-lucide="save"></i> Simpan
-      </button>
-    </div>
-  </div>
-</div>
-
-
-
-<div id="modal-pembayaran" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modal-pembayaran-title">Catat Pembayaran</h3>
-      <button class="modal-close" onclick="UI.closeModal('modal-pembayaran')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="pay-id-field">
-      <input type="hidden" id="pay-spp-id-hidden">
-
-      <!-- Murid -->
-      <div class="form-group">
-        <label>Murid *</label>
-        <select id="pay-murid"><option value="">-- Pilih Murid --</option></select>
-      </div>
-
-      <!-- PILIH ITEM — gantikan dropdown Paket SPP lama -->
-      <div class="form-group">
-        <label>Item Pembayaran</label>
-        <div id="pay-item-selected" style="
-          display:flex; align-items:center; justify-content:space-between;
-          padding:10px 14px; border:1px dashed var(--border);
-          border-radius:10px; cursor:pointer; gap:10px;
-          background:var(--bg-surface); transition:.15s;
-        " onclick="PembayaranPage.openItemPicker()">
-          <span id="pay-item-label" style="color:var(--text-secondary); font-size:0.85rem;">
-            Klik untuk memilih item (SPP / Pendaftaran / Buku)
-          </span>
-          <i data-lucide="chevron-right" style="width:16px;height:16px;flex-shrink:0;color:var(--text-dim)"></i>
-        </div>
-        <small id="pay-sisa-info" style="color:var(--warning,#f59e0b);font-size:0.78rem;display:block;margin-top:4px;"></small>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tanggal</label>
-          <input type="date" id="pay-tanggal">
-        </div>
-        <div class="form-group">
-          <label>Jenis</label>
-          <select id="pay-jenis">
-            <option value="SPP">SPP</option>
-            <option value="PENDAFTARAN">Pendaftaran</option>
-            <option value="BUKU">Buku</option>
-            <option value="LAINNYA">Lainnya</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Jumlah (Rp) *</label>
-          <input type="number" id="pay-jumlah" placeholder="500000">
-        </div>
-        <div class="form-group">
-          <label>Metode</label>
-          <select id="pay-metode">
-            <option value="TUNAI">Tunai</option>
-            <option value="TRANSFER">Transfer</option>
-            <option value="QRIS">QRIS</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Keterangan</label>
-        <input type="text" id="pay-keterangan" placeholder="Otomatis terisi saat pilih item">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-pembayaran')">Batal</button>
-      <button type="button" class="btn btn-primary" id="pay-save-btn" onclick="PembayaranPage.saveForm()">
-        <i data-lucide="save"></i> Simpan
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MODAL ITEM PICKER (3 langkah) ===== -->
-<div id="modal-item-picker" class="modal">
-  <div class="modal-content" style="max-width:480px;">
-    <div class="modal-header">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button id="item-picker-back" class="btn btn-outline"
-                style="padding:4px 10px;font-size:0.8rem;display:none;gap:4px;"
-                onclick="PembayaranPage.itemPickerBack()">
-          <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Kembali
-        </button>
-        <h3 id="item-picker-title">Pilih Kategori</h3>
-      </div>
-      <button class="modal-close" onclick="UI.closeModal('modal-item-picker')">✕</button>
-    </div>
-    <div class="modal-body" id="item-picker-body" style="min-height:200px;">
-      <!-- diisi dinamis oleh JS -->
-    </div>
-  </div>
-</div>
-
-<div id="modal-spp" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="spp-modal-title">Buat Paket SPP</h3><button class="modal-close" onclick="UI.closeModal('modal-spp')">✕</button></div>
-    <div class="modal-body"><input type="hidden" id="spp-id-field">
-      <div class="form-group"><label>Murid *</label><select id="spp-murid"><option value="">-- Pilih Murid --</option></select></div>
-      <div class="form-row">
-        <div class="form-group"><label>Periode Mulai *</label><input type="date" id="spp-mulai"></div>
-        <div class="form-group"><label>Periode Akhir *</label><input type="date" id="spp-akhir"></div>
-      </div>
-        <div class="form-row">
-        <div class="form-group"><label>Harga Paket (Rp)</label><input type="number" id="spp-harga" placeholder="500000"></div>
-        <div class="form-group" style="display:flex; align-items:flex-end;">
-    <div id="spp-count-preview" style="padding:10px; background:var(--bg-secondary); border-radius:8px; width:100%; text-align:center; font-weight:bold; color:var(--primary);">
-      Total: 0 Sesi
-    </div>
-  </div>
-      </div>
-      <div class="info-note"><i data-lucide="info"></i> Sisa pertemuan dari paket sebelumnya akan otomatis ditambahkan (carry-over).</div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-spp')">Batal</button>
-      <button type="button" class="btn btn-primary" id="spp-save-btn" onclick="SPPPage.saveForm()">
-      <i data-lucide="save"></i> Buat Paket
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="modal-buku" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="buku-modal-title">Tambah Modul</h3>
-      <button class="modal-close" onclick="UI.closeModal('modal-buku')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="buku-id-field">
-      <div class="form-group">
-        <label>Nama Modul *</label>
-        <input type="text" id="buku-nama" placeholder="Contoh: Matematika SD 4">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Jenjang</label>
-          <input type="text" id="buku-jenjang" placeholder="SD / SMP / SMA">
-        </div>
-        <div class="form-group">
-          <label>Program</label>
-          <input type="text" id="buku-program" placeholder="Matematika / Inggris">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Jumlah Stok</label>
-          <input type="number" id="buku-stok" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-          <label>Harga Pusat (Modal)</label>
-          <input type="number" id="buku-harga-beli" placeholder="20000">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Harga Murid (Jual)</label>
-        <input type="number" id="buku-harga-jual" placeholder="25000">
-      </div>
-      <div class="form-group">
-        <label>Keterangan</label>
-        <textarea id="buku-ket" placeholder="Edisi revisi, Kurikulum Merdeka, dll"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-buku')">Batal</button>
-      <button type="button" class="btn btn-primary" id="buku-save-btn" onclick="BukuPage.saveForm()">
-        <i data-lucide="save"></i> Simpan Modul
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="modal-gaji" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3>Hitung &amp; Bayar Gaji Mentor</h3><button class="modal-close" onclick="UI.closeModal('modal-gaji')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="gaji-id-field">
-      <div class="form-group"><label>Mentor *</label><select id="gaji-mentor"><option value="">-- Pilih Mentor --</option></select></div>
-      <div class="form-row">
-        <div class="form-group"><label>Bulan Gaji * (MM-YYYY)</label><input type="text" id="gaji-bulan" placeholder="01-2025"></div>
-        <div class="form-group"><label>Tanggal Bayar</label><input type="date" id="gaji-tgl"></div>
-      </div>
-      <div class="form-group"><label>Metode</label><select id="gaji-metode"><option value="TRANSFER">Transfer</option><option value="TUNAI">Tunai</option></select></div>
-      <div class="info-note"><i data-lucide="calculator"></i> Gaji dihitung otomatis: (murid unik × fee/murid) + (total sesi × fee/sesi)</div>
-    </div>
-      <div class="modal-footer">
-  <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-gaji')">Batal</button>
-  <button type="button" 
-          class="btn btn-primary" 
-          id="gaji-save-btn" 
-          onclick="GajiPage.saveForm()">
-    <i data-lucide="calculator"></i> Hitung & Simpan
-  </button>
-</div>
-  </div>
-</div>
-<div id="modal-schedule" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="schedule-modal-title">Jadwal Murid</h3>
-      <button type="button" class="modal-close" onclick="UI.closeModal('modal-schedule')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div id="schedule-detail-list"></div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-schedule')">Tutup</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast-container"></div>
-
-<script src="js/api.js"></script>
-<script src="js/main.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/murid.js"></script>
-<script src="js/modules.js"></script>
-
-<script>
-function applyAdminButtons(role) {
-  const adminBtns = [
-    'btn-tambah-murid',
-    'btn-tambah-mentor',
-    'btn-tambah-presensi',
-    'btn-tambah-pembayaran',
-    'btn-buat-spp',
-    'btn-tambah-buku',
-    'btn-bayar-gaji'
-  ];
-  adminBtns.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = (role === 'ADMIN') ? 'inline-flex' : 'none';
-  });
+  /* Purple & Teal KPI icon tokens (dark default) */
+  --purple:     #a78bfa;
+  --purple-dim: #2e1f5e;
+  --teal:       #2dd4bf;
+  --teal-dim:   #0a3535;
 }
 
-const _origShowApp = App && App.state ? null : null;
-</script>
+/* ── Light Mode Variables ──────────────────────────────── */
+/* [BARU] Class .light-mode — Tema Soft Blue Aesthetic */
+.light-mode {
+  /* Latar: biru langit pucat → putih kebiruan */
+  --bg:           #e8f0fe;
+  --bg-surface:   #f0f6ff;
+  --bg-card:      #ffffff;
+  --bg-hover:     #d6e4fd;
+  --border:       #b8d0f5;
+  --border-light: #93b8f0;
 
-</body>
-</html>
+  /* Aksen biru vivid */
+  --primary:      #1d6ef5;
+  --primary-dim:  #ddeaff;
+  --accent:       #f59e0b;
+  --accent-dim:   #fef9e7;
+  --success:      #0ea472;
+  --success-dim:  #d0f5e8;
+  --danger:       #e53935;
+  --danger-dim:   #fde8e8;
+  --warning:      #f59e0b;
+  --warning-dim:  #fef9e7;
+  --muted:        #6b8cba;
+
+  /* Teks: biru tua gelap agar kontras di atas biru muda */
+  --text-primary:   #0d1f3c;
+  --text-secondary: #3a5a8a;
+  --text-dim:       #7fa0cc;
+
+  --shadow:     0 2px 10px rgba(29,110,245,0.10);
+  --shadow-lg:  0 6px 24px rgba(29,110,245,0.15);
+}
+
+/* [BARU] Light mode overrides untuk elemen hardcoded & sidebar/topbar */
+.light-mode .day-card         { background: #ddeaff; border-color: #93b8f0; color: #0d1f3c; }
+.light-mode .day-card.active  { background: #bdd4fb; border-color: #1d6ef5; }
+.light-mode .day-card label   { color: #1d3a6e; }
+.light-mode .time-select-card { background: #f0f6ff; color: #0d1f3c; border-color: #93b8f0; }
+.light-mode .modal            { background: rgba(10,30,70,0.4); }
+.light-mode select option     { background: #ffffff; color: #0d1f3c; }
+
+/* Purple & Teal KPI icon — kontras di light mode */
+.light-mode {
+  --purple:     #7c3aed;
+  --purple-dim: #ede9fe;
+  --teal:       #0d9488;
+  --teal-dim:   #ccfbf1;
+}
+
+/* Sidebar & topbar biru es */
+.light-mode #sidebar            { background: #dce8fd; border-right-color: #b8d0f5; }
+.light-mode #topbar             { background: #e4effe; border-bottom-color: #b8d0f5; }
+.light-mode .nav-item           { color: #3a5a8a; }
+.light-mode .nav-item:hover     { background: #c8dafc; color: #0d1f3c; }
+.light-mode .nav-item.active    { background: #bdd4fb; color: #1d6ef5; }
+.light-mode .sidebar-brand      { border-bottom-color: #b8d0f5; }
+.light-mode .sidebar-footer     { border-top-color: #b8d0f5; }
+.light-mode .nav-section-label  { color: #7fa0cc; }
+
+/* ── Theme Transition ──────────────────────────────────── */
+/* [BARU] Efek transisi halus saat ganti tema, tidak menyentuh animasi lainnya */
+body,
+#sidebar, #topbar, #main-area,
+.card, .kpi-card, .finance-card, .table-wrap,
+.modal-content, .toast,
+.nav-item, .btn, .form-control, input, select, textarea {
+  transition:
+    background-color 0.3s ease,
+    border-color     0.3s ease,
+    color            0.2s ease,
+    box-shadow       0.3s ease;
+}
+
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 8px; }
+
+/* ── Login Screen ───────────────────────────────────────── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 60% 60% at 70% 30%, rgba(79,142,247,0.08) 0%, transparent 70%);
+}
+
+.login-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.login-logo .logo-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+
+.login-logo h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.login-logo span { font-size: 0.75rem; color: var(--text-secondary); display: block; }
+
+.login-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+.login-card p  { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 28px; }
+
+/* ── Form Controls ──────────────────────────────────────── */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form-control, input, select, textarea {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-control:focus, input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+}
+
+textarea { resize: vertical; min-height: 80px; }
+
+select option { background: var(--bg-card); }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; min-height: 42px;
+  border: none; border-radius: var(--radius);
+  font-family: var(--font); font-size: 0.875rem; font-weight: 600; color: #ffffff !important;
+  cursor: pointer; transition: all 0.15s; text-decoration: none; line-height: 1;
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #6b9ef8; transform: translateY(-1px); }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: 0.9; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-full   { width: 100%; justify-content: center; display: flex; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-icon {
+  width: 32px; height: 32px; min-height: 32px; border: none;
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-icon i, .btn-icon svg { width: 14px; height: 14px; }
+.btn-icon.btn-info    { background: var(--primary-dim); color: var(--primary); }
+.btn-icon.btn-warning { background: var(--warning-dim); color: var(--warning); }
+.btn-icon.btn-danger  { background: var(--danger-dim);  color: var(--danger);  }
+.btn-icon:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+.btn i, .btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ── App Shell ──────────────────────────────────────────── */
+#app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  transition: transform 0.25s;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 20px 20px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
+}
+.brand-icon svg { width: 18px; height: 18px; }
+
+.brand-text h2 { font-size: 1rem; font-weight: 700; }
+.brand-text span { font-size: 0.7rem; color: var(--text-secondary); }
+
+.sidebar-nav { padding: 12px 8px; flex: 1; }
+.nav-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  padding: 12px 12px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.875rem; font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item.active { background: var(--primary-dim); color: var(--primary); }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Main Area ──────────────────────────────────────────── */
+#main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#topbar {
+  height: var(--topbar-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+#mobile-menu-btn {
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; display: none; padding: 4px;
+}
+#page-title { font-size: 1rem; font-weight: 600; }
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* ── Page Sections ──────────────────────────────────────── */
+.page-section { display: none; }
+
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-header h2 {
+  font-size: 1.25rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.page-header h2 svg { color: var(--primary); }
+
+/* ── KPI Cards ──────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.kpi-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi-card.blue::before   { background: var(--primary); }
+.kpi-card.green::before  { background: var(--success); }
+.kpi-card.amber::before  { background: var(--accent); }
+.kpi-card.red::before    { background: var(--danger); }
+.kpi-card.purple::before { background: #a78bfa; }
+.kpi-card.teal::before   { background: #2dd4bf; }
+
+.kpi-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.kpi-icon svg { width: 20px; height: 20px; }
+.kpi-card.blue   .kpi-icon { background: var(--primary-dim);  color: var(--primary); }
+.kpi-card.green  .kpi-icon { background: var(--success-dim);  color: var(--success); }
+.kpi-card.amber  .kpi-icon { background: var(--accent-dim);   color: var(--accent); }
+.kpi-card.red    .kpi-icon { background: var(--danger-dim);   color: var(--danger); }
+.kpi-card.purple .kpi-icon { background: var(--purple-dim, #2e1f5e); color: var(--purple, #a78bfa); }
+.kpi-card.teal   .kpi-icon { background: var(--teal-dim, #0a3535);   color: var(--teal, #2dd4bf); }
+
+.kpi-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+
+/* ── Dashboard Grid ─────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.dash-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.card-header h3 {
+  font-size: 0.875rem; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-primary);
+}
+.card-header h3 svg { width: 15px; height: 15px; color: var(--primary); }
+.card-body { padding: 16px 20px; }
+
+/* ── Finance Cards ──────────────────────────────────────── */
+.finance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.finance-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.finance-card .label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; }
+.finance-card .amount { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); }
+.finance-card.total .amount { color: var(--primary); }
+.finance-card.op    .amount { color: var(--warning); }
+.finance-card.sav   .amount { color: var(--success); }
+.finance-card.rev   .amount { color: var(--accent); }
+
+/* ── Tables ─────────────────────────────────────────────── */
+.table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+/* Wrapper inner untuk horizontal scroll tanpa merusak border-radius */
+.table-wrap > div[style*="overflow-x"],
+.table-wrap > .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth momentum scroll di iOS */
+}
+/* Pastikan tabel punya min-width di mobile agar kolom tidak gepeng */
+@media (max-width: 768px) {
+  .data-table {
+    min-width: 580px; /* cukup lebar untuk semua kolom utama */
+  }
+  .data-table td, .data-table th {
+    padding: 9px 10px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 480px) {
+  .data-table { min-width: 520px; }
+  .data-table td, .data-table th { padding: 8px 8px; }
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  min-height: 50px;
+  flex-wrap: nowrap;  /* cegah wrap agar layout satu baris */
+}
+@media (max-width: 640px) {
+  .table-toolbar { padding: 7px 10px; gap: 6px; }
+}
+.table-title {
+  font-size: 0.875rem; font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;  /* boleh menyusut agar controls tetap terlihat */
+  min-width: 0;
+}
+.table-title svg { width: 15px; height: 15px; color: var(--primary); }
+
+/* ── Table Controls ────────────────────────────────────────── */
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;        /* lebih rapat dari 6px */
+  flex: 1;
+  justify-content: flex-end;
+  flex-shrink: 0;  /* jangan menyusut — "..." harus selalu terlihat */
+}
+.ctrl-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 1px;   /* lebih rapat */
+  flex-shrink: 0;
+}
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ctrl-btn svg, .ctrl-btn i { width: 13px; height: 13px; flex-shrink: 0; }
+.ctrl-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+.ctrl-btn:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+/* icon-only: perluas hitbox untuk touch agar "..." mudah diklik di HP */
+.ctrl-btn.icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  /* Hitbox lebih besar di mobile untuk mudah di-tap */
+  .ctrl-btn.icon-only {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 10px;
+  }
+  .ctrl-btn.icon-only svg,
+  .ctrl-btn.icon-only i { width: 16px; height: 16px; }
+}
+.ctrl-btn.ctrl-danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: rgba(248,113,113,0.2);
+}
+.ctrl-btn.ctrl-danger:hover:not(:disabled) { background: var(--danger); color: #fff; border-color: var(--danger); }
+.ctrl-btn.ctrl-danger:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+.search-input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  width: 200px;
+  height: 30px;  /* sejajar ctrl-btn */
+}
+.search-input:focus { border-color: var(--primary); outline: none; }
+@media (max-width: 640px) {
+  /* Override inline style width dari HTML, beri ruang "..." */
+  .table-controls .search-input {
+    width: 110px !important;
+    min-width: 80px !important;
+    font-size: 0.78rem;
+    padding: 5px 8px;
+  }
+  /* Sembunyikan date filter dari toolbar, sudah ada di menu "..." */
+  .table-controls input[type="date"].search-input.ctrl-hide-mobile {
+    display: none !important;
+  }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.data-table thead tr {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.data-table thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  cursor: default;
+}
+/* Sort icon di header — paksa kecil sejajar teks */
+.data-table thead th .sort-icon,
+.data-table thead th svg {
+  width: 11px;
+  height: 11px;
+  vertical-align: middle;
+  margin-left: 3px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.data-table thead th[onclick] { cursor: pointer; }
+.data-table thead th[onclick]:hover { color: var(--text-primary); }
+.data-table thead th[onclick]:hover svg { opacity: 1; }
+/* Sort aktif — kolom yang sedang diurutkan */
+.data-table thead th.sort-asc svg,
+.data-table thead th.sort-desc svg {
+  opacity: 1;
+  color: var(--primary);
+}
+.data-table thead th.sort-asc  { color: var(--primary); }
+.data-table thead th.sort-desc { color: var(--primary); }
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--bg-hover); }
+.data-table td { padding: 10px 14px; vertical-align: middle; }
+.empty-row { text-align: center; color: var(--text-dim); padding: 32px !important; }
+
+/* ── Badges ─────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge-success { background: var(--success-dim); color: var(--success); }
+.badge-danger  { background: var(--danger-dim);  color: var(--danger); }
+.badge-warning { background: var(--warning-dim); color: var(--warning); }
+.badge-muted   { background: var(--bg-hover);    color: var(--muted); }
+
+.id-badge {
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--text-dim); background: var(--bg-surface);
+  padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+}
+
+.program-tag {
+  display: inline-block;
+  background: var(--primary-dim); color: var(--primary);
+  border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+  padding: 3px 8px;
+}
+
+/* ── Avatar/Name cells ──────────────────────────────────── */
+.name-cell { display: flex; align-items: center; gap: 10px; }
+.avatar-initial {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-dim); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+}
+.mentor-avatar { background: var(--purple-dim, #2e1f5e); color: var(--purple, #a78bfa); }
+.name-cell strong { display: block; font-weight: 600; }
+
+/* Gaya dasar untuk sub-teks JK */
+.name-cell small {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  margin-top: 1px;
+}
+
+/* Warna khusus jika data-jk="L" (Biru) */
+.name-cell small[data-jk="L"] {
+  color: #3b82f6 !important; /* Biru soft */
+  font-weight: 500;
+}
+
+/* Warna khusus jika data-jk="P" (Pink) */
+.name-cell small[data-jk="P"] {
+  color: #ec4899 !important; /* Pink soft */
+  font-weight: 500;
+}
+
+/* ── Action buttons group ───────────────────────────────── */
+.action-btns { display: flex; gap: 6px; }
+
+/* ── Progress bar ───────────────────────────────────────── */
+.progress-bar-wrap {
+  background: var(--bg-surface);
+  border-radius: 99px; height: 6px; min-width: 80px;
+}
+.progress-bar-fill {
+  background: linear-gradient(90deg, var(--primary), #7c3aed);
+  border-radius: 99px; height: 100%;
+  transition: width 0.4s;
+}
+
+/* ── Stars ──────────────────────────────────────────────── */
+.stars { color: var(--accent); font-size: 0.85rem; }
+.rank-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary-dim); color: var(--primary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+}
+.pill {
+  background: var(--success-dim); color: var(--success);
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 0.75rem; font-weight: 600;
+}
+
+/* ── Activity Feed ──────────────────────────────────────── */
+.activity-feed { display: flex; flex-direction: column; gap: 12px; }
+.activity-item { display: flex; align-items: center; gap: 12px; }
+.activity-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.activity-icon svg { width: 15px; height: 15px; }
+.icon-success { background: var(--success-dim); color: var(--success); }
+.icon-warning { background: var(--warning-dim); color: var(--warning); }
+.activity-content { flex: 1; min-width: 0; }
+.activity-name { font-weight: 600; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-meta { font-size: 0.72rem; color: var(--text-secondary); }
+.activity-date { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+.empty-feed { color: var(--text-dim); font-size: 0.82rem; padding: 16px 0; text-align: center; }
+
+/* ── Alert rows ─────────────────────────────────────────── */
+.alert-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--warning-dim);
+  border: 1px solid rgba(251,191,36,0.15);
+  margin-bottom: 8px;
+}
+.alert-row > div { display: flex; flex-direction: column; gap: 2px; }
+.alert-row strong { font-size: 0.82rem; color: var(--text-primary); }
+.alert-row small  { font-size: 0.72rem; color: var(--text-secondary); }
+.icon-warning-sm { width: 16px; height: 16px; color: var(--warning); flex-shrink: 0; }
+
+/* ── Schedule rows ──────────────────────────────────────── */
+.schedule-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.schedule-row:last-child { border-bottom: none; }
+.schedule-row svg { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
+
+/* ── Day checkboxes ─────────────────────────────────────── */
+.day-check-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.day-check {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem; color: var(--text-secondary);
+  transition: all 0.15s;
+  user-select: none;
+}
+.day-check:has(input:checked) { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
+.day-check input { display: none; }
+
+/* ── Modal ──────────────────────────────────────────────── */
+.modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+}
+.modal-header h3 { font-size: 1rem; font-weight: 600; }
+.modal-close {
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px;
+  border-radius: 6px; transition: background 0.15s;
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body { padding: 20px 24px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+.modal-content::-webkit-scrollbar { width: 4px; }
+
+/* ── Toast ──────────────────────────────────────────────── */
+#toast-container {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 9999;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.83rem; font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(20px); opacity: 0;
+  transition: all 0.25s;
+  pointer-events: all;
+  min-width: 260px; max-width: 360px;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+.toast-success { border-left: 3px solid var(--success); }
+.toast-success svg { color: var(--success); }
+.toast-error   { border-left: 3px solid var(--danger); }
+.toast-error   svg { color: var(--danger); }
+.toast-warning { border-left: 3px solid var(--warning); }
+.toast-warning svg { color: var(--warning); }
+.toast-info    { border-left: 3px solid var(--primary); }
+.toast-info    svg { color: var(--primary); }
+
+/* ── Theme Toggle Button ────────────────────────────────── */
+/* [BARU] Styling tombol toggle tema di topbar */
+#theme-toggle-btn {
+  width: 36px; height: 36px; min-height: 36px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+#theme-toggle-btn:hover {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+#theme-toggle-btn svg { width: 16px; height: 16px; }
+
+/* ── Misc ───────────────────────────────────────────────── */
+.text-success { color: var(--success) !important; }
+.text-muted   { color: var(--text-secondary); }
+.section-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-dim);
+  margin-bottom: 12px;
+}
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.count-badge {
+  background: var(--primary); color: #fff;
+  border-radius: 20px; font-size: 0.65rem; font-weight: 700;
+  padding: 1px 7px; margin-left: 6px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  
+  #sidebar.open { 
+    transform: translateX(0); 
+  }
+
+  #mobile-menu-btn { 
+    display: flex; 
+    position: relative;
+    z-index: 1100;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  #content { padding: 16px; }
+
+/* ============================================================
+   RBAC — Role badges & access control UI
+   ============================================================ */
+
+/* ── Role badges ─────────────────────────────────────────── */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.role-owner  { background: rgba(250,204,21,0.15); color: #fbbf24; border: 1px solid rgba(250,204,21,0.3); }
+.role-admin  { background: rgba(79,142,247,0.15);  color: var(--primary); border: 1px solid rgba(79,142,247,0.3); }
+.role-mentor { background: rgba(52,211,153,0.15);  color: var(--success); border: 1px solid rgba(52,211,153,0.3); }
+
+/* ── Read-only badge (Owner pages) ──────────────────────── */
+.read-only-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a78bfa;
+}
+.read-only-badge svg { width: 13px; height: 13px; }
+
+/* ── Role context banner in modals ──────────────────────── */
+.role-context-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+.role-context-banner svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ── Info note in modals ─────────────────────────────────── */
+.info-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+.info-note svg { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
+
+/* ── Login roles legend ─────────────────────────────────── */
+.login-roles {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.login-role-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* ── Sidebar User Info (Combined & Optimized) ── */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border); /* Tambahan agar lebih tegas */
+}
+
+.user-info .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Gabungan ID user-display dan span untuk teks info */
+.user-info span, 
+#user-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  min-width: 0; /* Penting: Agar teks ellipsis berfungsi */
+  flex: 1;
+}
+
+.user-info strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Nama panjang akan jadi 'Nama Panjan...' */
+}
+
+/* ── Student card grid (Mentor view) ────────────────────── */
+.student-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.student-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.student-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+
+.student-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.student-card-name { font-weight: 700; font-size: 0.9rem; }
+.student-card-meta { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
+.student-card-header .badge { margin-left: auto; }
+
+.spinner-sm {
+    width: 12px;
+    height: 12px;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+    animation: spin 0.6s linear infinite;  
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+
+.student-card-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.student-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.student-stat svg { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
+.student-stat .badge { font-size: 0.62rem; }
+
+/* Container utama untuk kartu */
+.schedule-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* Kotak otomatis menyesuaikan layar */
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Desain Kartu Hari */
+.day-card {
+  background: #1e1e2d; /* Warna gelap senada dengan dashboard */
+  border: 1px solid #323248;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+/* Efek saat kartu aktif/tercentang */
+.day-card.active {
+  border-color: #5d5fef;
+  background: rgba(93, 95, 239, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.day-card label {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #a2a2c2;
+}
+
+.day-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Dropdown Jam di dalam kartu */
+.time-select-card {
+  margin-top: 10px;
+  width: 100%;
+  padding: 5px;
+  background: #2b2b40;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  outline: none;
+}
+
+.day-card:active {
+  transform: scale(0.95);
+}
+
+.day-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Responsive System (Sorted by Screen Width) ── */
+
+/* 1. TABLET & MOBILE (900px kebawah) */
+@media (max-width: 900px) {
+  #sidebar {
+    position: fixed; 
+    top: 0; left: 0; bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+  }
+  
+  #sidebar.open { 
+    transform: translateX(0); 
+  }
+
+  #mobile-menu-btn { 
+    display: flex; 
+    position: relative;
+    z-index: 1100;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  #content { padding: 16px; }
+}
+
+/* 2. SMALL TABLET / LARGE PHONE (600px kebawah) */
+@media (max-width: 600px) {
+  .student-card-grid { grid-template-columns: 1fr; }
+  .login-roles { display: none; }
+  .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; } /* Tambahan biar dashboard ga penyet */
+}
+
+/* 3. SMARTPHONE (480px kebawah) */
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .finance-grid { grid-template-columns: 1fr; }
+  .modal-content { max-width: 100%; }
+  .data-table { font-size: 0.76rem; }
+  .data-table td, .data-table th { padding: 8px 10px; }
+  
+  .form-row, .form-row-3 { grid-template-columns: 1fr; } /* Biar form ga dempet di HP */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE PATCHES (dari perbaikan iterasi)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Pastikan semua table container support horizontal scroll */
+.table-wrap > div {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* "..." button (ctrl-more-btn) container — beri posisi relative agar
+   dropdown muncul di bawahnya, bukan terpotong parent */
+.ctrl-more-btn {
+  position: relative;
+  flex-shrink: 0;  /* TIDAK boleh mengecil — selalu tampil */
+}
+
+/* Dropdown menu dari "..." — tampil di atas konten lain */
+.ctrl-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1200;  /* di atas topbar */
+  min-width: 190px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  overflow: hidden;
+  display: none;
+  padding: 6px 0;
+}
+.ctrl-more-menu.open { display: block; }
+
+/* Item dalam dropdown */
+.ctrl-more-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  margin: 2px 6px;
+  width: calc(100% - 12px);
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.ctrl-more-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ctrl-more-item i, .ctrl-more-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+.ctrl-more-item.danger { color: var(--danger); }
+.ctrl-more-item.danger:hover { background: var(--danger-dim); }
+
+/* Label seksi dalam dropdown */
+.ctrl-more-label {
+  padding: 7px 14px 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* Divider dalam dropdown */
+.ctrl-more-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 10px;
+}
+
+/* Scrollable dropdown jika item banyak */
+.ctrl-more-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.ctrl-more-menu::-webkit-scrollbar { width: 4px; }
+.ctrl-more-menu::-webkit-scrollbar-track { background: transparent; }
+.ctrl-more-menu::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Tombol Kembali di modal item picker — visible di light mode */
+#item-picker-back {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-light) !important;
+  color: var(--text-secondary) !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px !important;
+  font-size: 0.82rem !important;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+#item-picker-back:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}

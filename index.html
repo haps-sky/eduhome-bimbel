@@ -8,130 +8,396 @@
  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script>window.EDUHOME_API_URL = 'https://script.google.com/macros/s/AKfycbyQ9N5mKaLDOO9mdzn611zDb38BtetDqqzRFOu2HPwQpVesMcrAh2BKQ99AtxqZVAVVxQ/exec';</script>
 <style>
-  /* ══════════════════════════════════════════════
-     EduHome Patch — 5 Fixes
-     ══════════════════════════════════════════════ */
-
-  /* ① Light Mode: avatar Mentor & Presensi lebih tajam */
-  .light-mode .mentor-avatar { background:#dde8ff; color:#1d4ed8; }
-  .light-mode .avatar-initial { background:#dde8ff; color:#1d4ed8; }
-
-  /* ② Mobile ⋯ dropdown — z-index tinggi, open sekali klik */
-  .ctrl-more-btn { display:none; position:relative; }
-  .ctrl-more-btn > .ctrl-btn { padding:0 8px; }
-  .ctrl-more-menu {
-    display:none; position:absolute; top:calc(100% + 6px); right:0;
-    background:var(--bg-card); border:1px solid var(--border);
-    border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.25);
-    min-width:176px; z-index:9999; overflow:hidden;
-    pointer-events:auto;
+  /* Tombol aksen untuk Pilih Item di toolbar Pembayaran */
+  .ctrl-btn.ctrl-accent {
+    border-color: #c7d2fe;
+    color: #6366f1;
+    background: #eef2ff;
   }
-  .ctrl-more-menu.open { display:block !important; }
-  .ctrl-more-item {
-    display:flex; align-items:center; gap:8px; padding:10px 14px;
-    font-size:0.82rem; color:var(--text-secondary);
-    cursor:pointer; border:none; background:transparent;
-    width:100%; text-align:left; transition:background .12s; white-space:nowrap;
+  .ctrl-btn.ctrl-accent:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
   }
-  .ctrl-more-item:hover { background:var(--bg-hover); color:var(--text-primary); }
-  .ctrl-more-item i { width:13px; height:13px; flex-shrink:0; }
-  .ctrl-more-item.danger { color:var(--danger); }
-  .ctrl-more-item.danger:hover { background:var(--danger-dim); }
-  .ctrl-more-divider { height:1px; background:var(--border); margin:3px 0; }
-
-  @media (max-width:640px) {
-    .ctrl-hide-mobile { display:none !important; }
-    .ctrl-more-btn    { display:block; }
-  }
-
-  /* ③ Horizontal scroll tabel di mobile — anti data terpotong */
-  @media (max-width:640px) {
-    .table-wrap { overflow:visible; }
-    .table-wrap > div { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    #murid-tbody    { min-width:620px; }
-    #mentor-tbody   { min-width:700px; }
-    #presensi-tbody { min-width:680px; }
-    #pay-tbody      { min-width:640px; }
-    #spp-tbody      { min-width:900px; }
-    #buku-tbody     { min-width:580px; }
-    #gaji-tbody     { min-width:520px; }
-  }
-
-  /* ④ Toolbar — rapatkan gap & perkecil ikon */
-  .table-controls { gap:3px !important; }
-  .ctrl-divider   { margin:0 1px !important; }
-  .ctrl-btn       { height:29px !important; padding:0 8px !important; font-size:0.73rem !important; gap:3px !important; }
-  .ctrl-btn.icon-only { width:28px !important; padding:0 !important; }
-  .ctrl-btn svg,
-  .ctrl-btn i     { width:12px !important; height:12px !important; }
-
-  /* ctrl-accent (Pilih Item pembayaran) */
-  .ctrl-btn.ctrl-accent { border-color:var(--primary-dim); color:var(--primary); background:var(--primary-dim); }
-  .ctrl-btn.ctrl-accent:hover { opacity:.85; }
-
-  /* ⑤ Seleksi multi-baris */
+  /* ── Mode Seleksi Checkbox ── */
   .selection-bar {
-    display:none; align-items:center; gap:6px; padding:7px 14px;
-    background:var(--bg-card); border:1px solid var(--border);
-    border-bottom:none; border-radius:10px 10px 0 0;
-    font-size:0.8rem; font-weight:500;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    font-size: 0.8rem;
+    font-weight: 500;
   }
-  .selection-bar.active { display:flex; }
-  .selection-bar .sel-count {
-    flex:1; font-variant-numeric:tabular-nums;
-    color:var(--text-primary); font-weight:600; font-size:0.82rem;
-  }
-  .sel-btn {
-    display:flex; align-items:center; gap:4px; padding:4px 10px;
-    border-radius:6px; border:1px solid var(--border);
-    font-size:0.78rem; font-weight:500; cursor:pointer;
-    transition:background .15s,color .15s;
-    background:var(--bg-surface); color:var(--text-secondary); line-height:1;
-  }
-  .sel-btn i { width:13px; height:13px; flex-shrink:0; }
-  .sel-btn-all:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--border-light); }
-  .sel-btn-delete { background:var(--danger-dim); border-color:var(--danger-dim); color:var(--danger); }
-  .sel-btn-delete:hover:not(:disabled) { background:var(--danger); color:#fff; border-color:var(--danger); }
-  .sel-btn-delete:disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
-  .sel-btn-cancel { background:transparent; border-color:transparent; color:var(--text-dim); padding:4px 6px; }
-  .sel-btn-cancel:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--border); }
-  .row-checkbox { display:none; width:14px; height:14px; cursor:pointer; accent-color:var(--primary); flex-shrink:0; }
-  .selection-mode .row-checkbox { display:inline-block; }
-  tr.row-selected td { background:var(--primary-dim) !important; }
-  .ctrl-btn.select-active { background:var(--primary-dim); border-color:var(--primary); color:var(--primary); }
+  .selection-bar.active { display: flex; }
 
-  /* Item Picker */
+  .selection-bar .sel-count {
+    flex: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+
+  .sel-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 0.78rem; font-weight: 500; cursor: pointer;
+    transition: background .15s, color .15s;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    line-height: 1;
+  }
+  .sel-btn i { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* Pilih Semua */
+  .sel-btn-all:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+  }
+
+  /* Hapus */
+  .sel-btn-delete {
+    background: var(--danger-dim);
+    border-color: var(--danger-dim);
+    color: var(--danger);
+  }
+  .sel-btn-delete:hover:not(:disabled) {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+  .sel-btn-delete:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Batal (X) */
+  .sel-btn-cancel {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+    padding: 4px 6px;
+  }
+  .sel-btn-cancel:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+
+  /* Checkbox di baris tabel */
+  .row-checkbox {
+    display: none;
+    width: 14px; height: 14px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+  }
+  .selection-mode .row-checkbox { display: inline-block; }
+
+  /* Baris terpilih — pakai primary-dim agar ikut tema */
+  tr.row-selected td { background: var(--primary-dim) !important; }
+
+  /* Tombol ☑ aktif */
+  .ctrl-btn.select-active {
+    background: var(--primary-dim);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* ── Mobile Toolbar Dropdown ── */
+  .ctrl-more-btn {
+    display: none;
+    position: relative;
+  }
+  .ctrl-more-btn > .ctrl-btn { padding: 0 10px; }
+
+  .ctrl-more-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    min-width: 180px;
+    z-index: 999;
+    overflow: hidden;
+  }
+  .ctrl-more-menu.open { display: block; }
+
+  .ctrl-more-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    font-size: 0.83rem; color: var(--text-secondary);
+    cursor: pointer; border: none; background: transparent;
+    width: 100%; text-align: left;
+    transition: background .12s;
+  }
+  .ctrl-more-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .ctrl-more-item i { width: 14px; height: 14px; flex-shrink: 0; }
+  .ctrl-more-item.danger { color: var(--danger); }
+  .ctrl-more-item.danger:hover { background: var(--danger-dim); }
+  .ctrl-more-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  @media (max-width: 640px) {
+    /* Sembunyikan tombol-tombol toolbar di mobile, tampilkan ⋯ */
+    .ctrl-hide-mobile { display: none !important; }
+    .ctrl-more-btn    { display: block; }
+  }
+
+  /* ── Item Picker Styles ── */
   .picker-item {
-    display:flex; align-items:center; gap:14px; padding:14px 16px;
-    border:1px solid var(--border); border-radius:12px; cursor:pointer;
-    transition:background .15s,border-color .15s; background:var(--bg-card);
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    background: var(--bg-card);
   }
-  .picker-item:hover { background:var(--bg-hover); border-color:var(--border-light); }
-  .picker-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .picker-item-title { font-weight:600; font-size:0.92rem; color:var(--text-primary); }
-  .picker-item-sub   { font-size:0.78rem; color:var(--text-secondary); margin-top:2px; }
+  .picker-item:hover { background: var(--bg-hover); border-color: var(--border-light); }
+
+  .picker-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .picker-item-title { font-weight: 600; font-size: 0.92rem; color: var(--text-primary); }
+  .picker-item-sub   { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+
   .picker-row {
-    padding:12px 14px; border:1px solid var(--border); border-radius:10px;
-    cursor:pointer; transition:border-color .15s,background .15s; background:var(--bg-card);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--bg-card);
   }
-  .picker-row:hover { border-color:var(--primary); background:var(--bg-hover); }
+  .picker-row:hover { border-color: var(--primary); background: var(--bg-hover); }
+
   .picker-btn-confirm {
-    margin-top:16px; width:100%; padding:12px; background:var(--success);
-    color:#fff; border:none; border-radius:10px; font-weight:600;
-    font-size:0.9rem; cursor:pointer; transition:opacity .15s;
+    margin-top: 16px; width: 100%; padding: 12px;
+    background: var(--success); color: #fff;
+    border: none; border-radius: 10px;
+    font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    transition: opacity .15s;
   }
-  .picker-btn-confirm:hover { opacity:.88; }
-  .picker-empty   { text-align:center; padding:32px; color:var(--text-secondary); }
-  .picker-error   { text-align:center; padding:24px; color:var(--danger); }
-  .picker-loading { text-align:center; padding:24px; color:var(--text-secondary); }
-  .picker-progress-track { height:4px; background:var(--border); border-radius:99px; margin-top:8px; }
-  .picker-progress-fill  { height:100%; border-radius:99px; background:var(--primary); }
+  .picker-btn-confirm:hover { opacity: .88; }
+
+  .picker-empty {
+    text-align: center; padding: 32px;
+    color: var(--text-secondary);
+  }
+  .picker-error {
+    text-align: center; padding: 24px;
+    color: var(--danger);
+  }
+  .picker-loading {
+    text-align: center; padding: 24px;
+    color: var(--text-secondary);
+  }
+
+  .picker-progress-track {
+    height: 4px; background: var(--border); border-radius: 99px; margin-top: 8px;
+  }
+  .picker-progress-fill {
+    height: 100%; border-radius: 99px; background: var(--primary);
+  }
+
+  /* Baris di modal Pilih Item */
   .item-picker-row {
-    display:flex; align-items:center; padding:10px 12px;
-    border:1px solid var(--border); border-radius:8px;
-    cursor:pointer; transition:background .15s; gap:8px;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+    gap: 8px;
   }
-  .item-picker-row:hover { background:var(--bg-hover); border-color:var(--primary); }
+  .item-picker-row:hover {
+    background: var(--bg-secondary, #f8fafc);
+    border-color: var(--primary, #6366f1);
+  }
+
+  /* ══════════════════════════════════════════════
+     FIX 1 — KPI Icon: set default light mode,
+     override di dark mode. Covers semua varian.
+     ══════════════════════════════════════════════ */
+  .kpi-card.purple .kpi-icon { background: #ede9fe; color: #7c3aed; }
+  .kpi-card.teal   .kpi-icon { background: #ccfbf1; color: #0d9488; }
+  .kpi-card.blue   .kpi-icon { background: #dbeafe; color: #2563eb; }
+  .kpi-card.green  .kpi-icon { background: #dcfce7; color: #16a34a; }
+  .kpi-card.amber  .kpi-icon { background: #fef9c3; color: #d97706; }
+  .kpi-card.red    .kpi-icon { background: #fee2e2; color: #dc2626; }
+
+  body.dark-mode .kpi-card.purple .kpi-icon,
+  [data-theme="dark"] .kpi-card.purple .kpi-icon,
+  html.dark .kpi-card.purple .kpi-icon
+  { background: rgba(139,92,246,.22) !important; color: #a78bfa !important; }
+
+  body.dark-mode .kpi-card.teal .kpi-icon,
+  [data-theme="dark"] .kpi-card.teal .kpi-icon,
+  html.dark .kpi-card.teal .kpi-icon
+  { background: rgba(20,184,166,.22) !important; color: #2dd4bf !important; }
+
+  body.dark-mode .kpi-card.blue .kpi-icon,
+  [data-theme="dark"] .kpi-card.blue .kpi-icon,
+  html.dark .kpi-card.blue .kpi-icon
+  { background: rgba(59,130,246,.22) !important; color: #60a5fa !important; }
+
+  body.dark-mode .kpi-card.green .kpi-icon,
+  [data-theme="dark"] .kpi-card.green .kpi-icon,
+  html.dark .kpi-card.green .kpi-icon
+  { background: rgba(34,197,94,.22) !important; color: #4ade80 !important; }
+
+  body.dark-mode .kpi-card.amber .kpi-icon,
+  [data-theme="dark"] .kpi-card.amber .kpi-icon,
+  html.dark .kpi-card.amber .kpi-icon
+  { background: rgba(245,158,11,.22) !important; color: #fbbf24 !important; }
+
+  body.dark-mode .kpi-card.red .kpi-icon,
+  [data-theme="dark"] .kpi-card.red .kpi-icon,
+  html.dark .kpi-card.red .kpi-icon
+  { background: rgba(239,68,68,.22) !important; color: #f87171 !important; }
+
+  /* ══════════════════════════════════════════════
+     FIX 2 — Tombol "Kembali" di modal item picker
+     Agar terlihat di light mode (bukan putih polos)
+     ══════════════════════════════════════════════ */
+  #item-picker-back {
+    background: var(--bg-surface, #f1f5f9) !important;
+    border-color: var(--border, #cbd5e1) !important;
+    color: var(--text-secondary, #475569) !important;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 8px;
+    padding: 5px 12px !important;
+    font-size: 0.82rem !important;
+    transition: background .15s, color .15s;
+  }
+  #item-picker-back:hover {
+    background: var(--bg-hover, #e2e8f0) !important;
+    color: var(--text-primary, #1e293b) !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     FIX 3 — Table toolbar: "..." selalu terlihat,
+     table-title tidak overflow, controls rapi
+     ══════════════════════════════════════════════ */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    flex-wrap: nowrap;
+    min-height: 52px;
+  }
+  .table-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    flex-shrink: 1;      /* boleh menyusut */
+    min-width: 0;        /* bisa truncate */
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .table-title span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;      /* TIDAK boleh menyusut — agar "..." selalu terlihat */
+    margin-left: auto;
+  }
+  /* Di mobile: override inline width, beri ruang untuk "..." */
+  @media (max-width: 640px) {
+    .table-controls .search-input {
+      width: 110px !important;
+      min-width: 80px !important;
+      max-width: 110px !important;
+    }
+    input[type="date"].search-input {
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      position: absolute;
+    }
+    .table-title {
+      max-width: 80px;
+      font-size: 0.8rem;
+    }
+    .table-title > svg { display: none; }
+  }
+
+  /* ══════════════════════════════════════════════
+     FIX 3b — Dropdown "..." bisa di-scroll jika
+     item banyak, dan tampil profesional
+     ══════════════════════════════════════════════ */
+  .ctrl-more-menu {
+    max-height: 70vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Scrollbar tipis */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .ctrl-more-menu::-webkit-scrollbar {
+    width: 4px;
+  }
+  .ctrl-more-menu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .ctrl-more-menu::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  /* Header label di dalam dropdown */
+  .ctrl-more-label {
+    padding: 8px 14px 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-dim, #94a3b8);
+    user-select: none;
+  }
+  /* Item hover lebih halus */
+  .ctrl-more-item {
+    border-radius: 6px;
+    margin: 2px 6px;
+    width: calc(100% - 12px) !important;
+    padding: 9px 10px !important;
+  }
+  .ctrl-more-menu {
+    padding: 6px 0;
+    border-radius: 12px !important;
+  }
+  .ctrl-more-divider {
+    margin: 4px 10px;
+  }
 </style>
 </head>
 <body>
@@ -389,6 +655,7 @@
                   <i data-lucide="more-horizontal"></i>
                 </button>
                 <div class="ctrl-more-menu" id="murid-more-menu">
+                  <div class="ctrl-more-label">Tampilan</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('murid');MuridPage.load(true)">
                     <i data-lucide="refresh-cw"></i> Refresh
                   </button>
@@ -399,6 +666,7 @@
                     <i data-lucide="redo-2"></i> Redo
                   </button>
                   <div class="ctrl-more-divider"></div>
+                  <div class="ctrl-more-label">Seleksi</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('murid');Selection.toggle('murid')">
                     <i data-lucide="check-square"></i> Pilih Item
                   </button>
@@ -497,6 +765,7 @@
               <i data-lucide="redo-2"></i> Redo
             </button>
             <div class="ctrl-more-divider"></div>
+            <div class="ctrl-more-label">Seleksi</div>
             <button class="ctrl-more-item" onclick="MoreMenu.close('mentor');Selection.toggle('mentor')">
               <i data-lucide="check-square"></i> Pilih Item
             </button>
@@ -558,7 +827,7 @@
                      placeholder="Cari murid / mentor..."
                      oninput="PresensiPage.search(this.value)"
                      style="width:180px;">
-              <input type="date" class="search-input" style="width:150px"
+              <input type="date" class="search-input ctrl-hide-mobile" style="width:150px"
                      onchange="PresensiPage.filterByDate(this.value)"
                      title="Filter tanggal">
               <div class="ctrl-divider ctrl-hide-mobile"></div>
@@ -583,6 +852,7 @@
                   <i data-lucide="more-horizontal"></i>
                 </button>
                 <div class="ctrl-more-menu" id="presensi-more-menu">
+                  <div class="ctrl-more-label">Tampilan</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.load(true)">
                     <i data-lucide="refresh-cw"></i> Refresh
                   </button>
@@ -592,7 +862,15 @@
                   <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');PresensiPage.redo()">
                     <i data-lucide="redo-2"></i> Redo
                   </button>
+                  <div class="ctrl-more-divider" style="display:none" id="presensi-date-divider-mobile"></div>
+                  <div class="ctrl-more-label" id="presensi-date-label-mobile" style="display:none">Filter Tanggal</div>
+                  <div id="presensi-date-mobile-wrap" style="display:none;padding:6px 10px;">
+                    <input type="date" class="search-input" style="width:100%;font-size:0.82rem;"
+                           onchange="PresensiPage.filterByDate(this.value);MoreMenu.close('presensi')"
+                           title="Filter tanggal">
+                  </div>
                   <div class="ctrl-more-divider"></div>
+                  <div class="ctrl-more-label">Seleksi</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('presensi');Selection.toggle('presensi')">
                     <i data-lucide="check-square"></i> Pilih Item
                   </button>
@@ -686,6 +964,7 @@
                     <i data-lucide="redo-2"></i> Redo
                   </button>
                   <div class="ctrl-more-divider"></div>
+                  <div class="ctrl-more-label">Seleksi</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('pay');Selection.toggle('pay')">
                     <i data-lucide="check-square"></i> Pilih Item
                   </button>
@@ -780,6 +1059,7 @@
               <i data-lucide="redo-2"></i> Redo
             </button>
             <div class="ctrl-more-divider"></div>
+            <div class="ctrl-more-label">Seleksi</div>
             <button class="ctrl-more-item" onclick="MoreMenu.close('spp');Selection.toggle('spp')">
               <i data-lucide="check-square"></i> Pilih Item
             </button>
@@ -877,6 +1157,7 @@
                 <i data-lucide="redo-2"></i> Redo
               </button>
               <div class="ctrl-more-divider"></div>
+              <div class="ctrl-more-label">Seleksi</div>
               <button class="ctrl-more-item" onclick="MoreMenu.close('buku');Selection.toggle('buku')">
                 <i data-lucide="check-square"></i> Pilih Item
               </button>
@@ -972,6 +1253,7 @@
                     <i data-lucide="redo-2"></i> Redo
                   </button>
                   <div class="ctrl-more-divider"></div>
+                  <div class="ctrl-more-label">Seleksi</div>
                   <button class="ctrl-more-item" onclick="MoreMenu.close('gaji');Selection.toggle('gaji')">
                     <i data-lucide="check-square"></i> Pilih Item
                   </button>
@@ -1476,6 +1758,50 @@ function applyAdminButtons(role) {
 }
 
 const _origShowApp = App && App.state ? null : null;
+</script>
+
+<script>
+/* ── Mobile: tampilkan filter tanggal di dalam dropdown presensi ── */
+(function() {
+  const MOBILE_BP = 640;
+
+  function applyPresensiDateVisibility() {
+    const isMobile = window.innerWidth <= MOBILE_BP;
+    const els = [
+      document.getElementById('presensi-date-divider-mobile'),
+      document.getElementById('presensi-date-label-mobile'),
+      document.getElementById('presensi-date-mobile-wrap'),
+    ];
+    els.forEach(el => { if (el) el.style.display = isMobile ? '' : 'none'; });
+  }
+
+  window.addEventListener('resize', applyPresensiDateVisibility);
+  // Jalankan saat DOM siap
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyPresensiDateVisibility);
+  } else {
+    applyPresensiDateVisibility();
+  }
+})();
+
+/* ── Tambah label "Tampilan" otomatis ke semua menu yang belum punya ── */
+document.addEventListener('DOMContentLoaded', function() {
+  // Semua menu yang butuh label Tampilan di awal
+  const menuIds = ['mentor-more-menu', 'pay-more-menu', 'spp-more-menu', 'buku-more-menu', 'gaji-more-menu'];
+  menuIds.forEach(function(id) {
+    const menu = document.getElementById(id);
+    if (!menu) return;
+    const firstItem = menu.querySelector('.ctrl-more-item');
+    if (!firstItem) return;
+    // Cek belum ada label
+    const prev = firstItem.previousElementSibling;
+    if (prev && prev.classList.contains('ctrl-more-label')) return;
+    const label = document.createElement('div');
+    label.className = 'ctrl-more-label';
+    label.textContent = 'Tampilan';
+    menu.insertBefore(label, firstItem);
+  });
+});
 </script>
 
 </body>
