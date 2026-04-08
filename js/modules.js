@@ -8,46 +8,90 @@
 // ============================================================
 
 // ============================================================
-// MoreMenu — dropdown ⋯ untuk mobile toolbar
+// MoreMenu — global dropdown untuk mobile toolbar
+// Dirender di <body> level agar tidak terpotong overflow:hidden
 // ============================================================
 const MoreMenu = (() => {
-  let _active = null;
+  let _activeKey = null;
 
-  function toggle(key) {
-    const menu = document.getElementById(key + '-more-menu');
-    if (!menu) return;
-    const isOpen = menu.classList.contains('open');
-    // Tutup semua dulu
-    _closeAll();
-    if (!isOpen) {
-      menu.classList.add('open');
-      _active = key;
-      lucide.createIcons({ nodes: [menu] });
-    }
+  // Config menu per modul
+  const MENUS = {
+    murid:    { refresh: 'MuridPage.load(true)',      undo: 'MuridPage.undo()',      redo: 'MuridPage.redo()',      select: "Selection.toggle('murid')",    del: 'MuridPage.deleteSelected()' },
+    mentor:   { refresh: 'MentorPage.load(true)',     undo: 'MentorPage.undo()',     redo: 'MentorPage.redo()',     select: "Selection.toggle('mentor')",   del: 'MentorPage.deleteSelected()' },
+    presensi: { refresh: 'PresensiPage.load(true)',   undo: 'PresensiPage.undo()',   redo: 'PresensiPage.redo()',   select: "Selection.toggle('presensi')", del: 'PresensiPage.deleteSelected()' },
+    pay:      { refresh: 'PembayaranPage.load(true)', undo: 'PembayaranPage.undo()', redo: 'PembayaranPage.redo()', select: "Selection.toggle('pay')",      del: 'PembayaranPage.deleteSelected()' },
+    spp:      { refresh: 'SPPPage.load(true)',        undo: 'SPPPage.undo()',        redo: 'SPPPage.redo()',        select: "Selection.toggle('spp')",      del: 'SPPPage.deleteSelected()' },
+    buku:     { refresh: 'BukuPage.load(true)',       undo: 'BukuPage.undo()',       redo: 'BukuPage.redo()',       select: "Selection.toggle('buku')",     del: 'BukuPage.deleteSelected()' },
+    gaji:     { refresh: 'GajiPage.load(true)',       undo: 'GajiPage.undo()',       redo: 'GajiPage.redo()',       select: "Selection.toggle('gaji')",     del: 'GajiPage.deleteSelected()' },
+  };
+
+  function toggle(key, btnEl) {
+    // Jika menu sudah terbuka untuk key ini, tutup
+    if (_activeKey === key) { _close(); return; }
+
+    _activeKey = key;
+    const cfg  = MENUS[key];
+    const menu = document.getElementById('global-more-menu');
+    if (!menu || !cfg) return;
+
+    // Isi konten menu
+    menu.innerHTML = `
+      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.refresh}')">
+        <i data-lucide="refresh-cw"></i> Refresh
+      </button>
+      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.undo}')">
+        <i data-lucide="undo-2"></i> Undo
+      </button>
+      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.redo}')">
+        <i data-lucide="redo-2"></i> Redo
+      </button>
+      <div class="ctrl-more-divider"></div>
+      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.select}')">
+        <i data-lucide="check-square"></i> Pilih Item
+      </button>
+      <button class="ctrl-more-item danger" onclick="MoreMenu._run('${key}','${cfg.del}')">
+        <i data-lucide="trash-2"></i> Hapus Terpilih
+      </button>`;
+    lucide.createIcons({ nodes: [menu] });
+
+    // Posisikan tepat di bawah tombol ⋯ menggunakan fixed positioning
+    const rect = btnEl.getBoundingClientRect();
+    const menuW = 176;
+    let left = rect.right - menuW;
+    if (left < 8) left = 8;
+
+    menu.style.display  = 'block';
+    menu.style.top      = (rect.bottom + 6) + 'px';
+    menu.style.left     = left + 'px';
+    menu.style.minWidth = menuW + 'px';
   }
 
-  function close(key) {
-    const id = (key || _active);
-    if (!id) return;
-    const menu = document.getElementById(id + '-more-menu');
-    if (menu) menu.classList.remove('open');
-    if (_active === id) _active = null;
+  function _run(key, fn) {
+    _close();
+    // Jalankan fungsi yang dikirim sebagai string
+    try { eval(fn); } catch(e) { console.error('MoreMenu run error:', e); }
   }
 
-  function _closeAll() {
-    document.querySelectorAll('.ctrl-more-menu.open')
-      .forEach(m => m.classList.remove('open'));
-    _active = null;
+  function _close() {
+    const menu = document.getElementById('global-more-menu');
+    if (menu) menu.style.display = 'none';
+    _activeKey = null;
   }
 
-  // Tutup saat klik di luar — pakai capture agar lebih responsif
+  function close(key) { _close(); }
+
+  // Tutup saat klik di luar
   document.addEventListener('click', e => {
-    // Jika klik di dalam tombol ⋯ atau menu, biarkan toggle() yang handle
-    if (e.target.closest('.ctrl-more-btn')) return;
-    _closeAll();
-  }, true);
+    if (!e.target.closest('#global-more-menu') &&
+        !e.target.closest('.ctrl-more-btn')) {
+      _close();
+    }
+  });
 
-  return { toggle, close };
+  // Tutup saat scroll
+  window.addEventListener('scroll', _close, true);
+
+  return { toggle, close, _run };
 })();
 
 // ============================================================
