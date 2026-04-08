@@ -41,6 +41,12 @@
 
   --font:        'DM Sans', sans-serif;
   --font-mono:   'DM Mono', monospace;
+
+  /* Purple & Teal KPI icon tokens (dark default) */
+  --purple:     #a78bfa;
+  --purple-dim: #2e1f5e;
+  --teal:       #2dd4bf;
+  --teal-dim:   #0a3535;
 }
 
 /* ── Light Mode Variables ──────────────────────────────── */
@@ -83,6 +89,14 @@
 .light-mode .time-select-card { background: #f0f6ff; color: #0d1f3c; border-color: #93b8f0; }
 .light-mode .modal            { background: rgba(10,30,70,0.4); }
 .light-mode select option     { background: #ffffff; color: #0d1f3c; }
+
+/* Purple & Teal KPI icon — kontras di light mode */
+.light-mode {
+  --purple:     #7c3aed;
+  --purple-dim: #ede9fe;
+  --teal:       #0d9488;
+  --teal-dim:   #ccfbf1;
+}
 
 /* Sidebar & topbar biru es */
 .light-mode #sidebar            { background: #dce8fd; border-right-color: #b8d0f5; }
@@ -397,8 +411,8 @@ select option { background: var(--bg-card); }
 .kpi-card.green  .kpi-icon { background: var(--success-dim);  color: var(--success); }
 .kpi-card.amber  .kpi-icon { background: var(--accent-dim);   color: var(--accent); }
 .kpi-card.red    .kpi-icon { background: var(--danger-dim);   color: var(--danger); }
-.kpi-card.purple .kpi-icon { background: #2e1f5e;             color: #a78bfa; }
-.kpi-card.teal   .kpi-icon { background: #0a3535;             color: #2dd4bf; }
+.kpi-card.purple .kpi-icon { background: var(--purple-dim, #2e1f5e); color: var(--purple, #a78bfa); }
+.kpi-card.teal   .kpi-icon { background: var(--teal-dim, #0a3535);   color: var(--teal, #2dd4bf); }
 
 .kpi-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
 .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
@@ -465,20 +479,47 @@ select option { background: var(--bg-card); }
   overflow: hidden;
   margin-bottom: 20px;
 }
+/* Wrapper inner untuk horizontal scroll tanpa merusak border-radius */
+.table-wrap > div[style*="overflow-x"],
+.table-wrap > .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth momentum scroll di iOS */
+}
+/* Pastikan tabel punya min-width di mobile agar kolom tidak gepeng */
+@media (max-width: 768px) {
+  .data-table {
+    min-width: 580px; /* cukup lebar untuk semua kolom utama */
+  }
+  .data-table td, .data-table th {
+    padding: 9px 10px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 480px) {
+  .data-table { min-width: 520px; }
+  .data-table td, .data-table th { padding: 8px 8px; }
+}
 .table-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--border);
-  gap: 10px;
-  min-height: 52px;
+  gap: 8px;
+  min-height: 50px;
+  flex-wrap: nowrap;  /* cegah wrap agar layout satu baris */
+}
+@media (max-width: 640px) {
+  .table-toolbar { padding: 7px 10px; gap: 6px; }
 }
 .table-title {
   font-size: 0.875rem; font-weight: 600;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 6px;
   white-space: nowrap;
-  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;  /* boleh menyusut agar controls tetap terlihat */
+  min-width: 0;
 }
 .table-title svg { width: 15px; height: 15px; color: var(--primary); }
 
@@ -486,50 +527,69 @@ select option { background: var(--bg-card); }
 .table-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;        /* lebih rapat dari 6px */
   flex: 1;
   justify-content: flex-end;
+  flex-shrink: 0;  /* jangan menyusut — "..." harus selalu terlihat */
 }
 .ctrl-divider {
   width: 1px;
-  height: 20px;
+  height: 18px;
   background: var(--border);
-  margin: 0 2px;
+  margin: 0 1px;   /* lebih rapat */
   flex-shrink: 0;
 }
 .ctrl-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 32px;
-  padding: 0 10px;
+  gap: 4px;
+  height: 30px;
+  padding: 0 8px;
   border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--bg-surface);
   color: var(--text-secondary);
   font-family: var(--font);
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.ctrl-btn svg, .ctrl-btn i { width: 14px; height: 14px; flex-shrink: 0; }
+.ctrl-btn svg, .ctrl-btn i { width: 13px; height: 13px; flex-shrink: 0; }
 .ctrl-btn:hover:not(:disabled) {
   background: var(--bg-hover);
   color: var(--text-primary);
   border-color: var(--border-light);
 }
 .ctrl-btn:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
-.ctrl-btn.icon-only { width: 32px; padding: 0; }
+/* icon-only: perluas hitbox untuk touch agar "..." mudah diklik di HP */
+.ctrl-btn.icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  /* Hitbox lebih besar di mobile untuk mudah di-tap */
+  .ctrl-btn.icon-only {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 10px;
+  }
+  .ctrl-btn.icon-only svg,
+  .ctrl-btn.icon-only i { width: 16px; height: 16px; }
+}
 .ctrl-btn.ctrl-danger {
   background: var(--danger-dim);
   color: var(--danger);
-  border-color: transparent;
+  border-color: rgba(248,113,113,0.2);
 }
-.ctrl-btn.ctrl-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
+.ctrl-btn.ctrl-danger:hover:not(:disabled) { background: var(--danger); color: #fff; border-color: var(--danger); }
+.ctrl-btn.ctrl-danger:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
 
 .search-input {
   background: var(--bg-surface);
@@ -537,10 +597,24 @@ select option { background: var(--bg-card); }
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 0.82rem;
-  padding: 7px 12px;
+  padding: 6px 10px;
   width: 200px;
+  height: 30px;  /* sejajar ctrl-btn */
 }
 .search-input:focus { border-color: var(--primary); outline: none; }
+@media (max-width: 640px) {
+  /* Override inline style width dari HTML, beri ruang "..." */
+  .table-controls .search-input {
+    width: 110px !important;
+    min-width: 80px !important;
+    font-size: 0.78rem;
+    padding: 5px 8px;
+  }
+  /* Sembunyikan date filter dari toolbar, sudah ada di menu "..." */
+  .table-controls input[type="date"].search-input.ctrl-hide-mobile {
+    display: none !important;
+  }
+}
 
 .data-table {
   width: 100%;
@@ -626,7 +700,7 @@ select option { background: var(--bg-card); }
   display: flex; align-items: center; justify-content: center;
   font-size: 0.8rem; font-weight: 700;
 }
-.mentor-avatar { background: #2e1f5e; color: #a78bfa; }
+.mentor-avatar { background: var(--purple-dim, #2e1f5e); color: var(--purple, #a78bfa); }
 .name-cell strong { display: block; font-weight: 600; }
 
 /* Gaya dasar untuk sub-teks JK */
@@ -1157,4 +1231,114 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   .data-table td, .data-table th { padding: 8px 10px; }
   
   .form-row, .form-row-3 { grid-template-columns: 1fr; } /* Biar form ga dempet di HP */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE PATCHES (dari perbaikan iterasi)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Pastikan semua table container support horizontal scroll */
+.table-wrap > div {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* "..." button (ctrl-more-btn) container — beri posisi relative agar
+   dropdown muncul di bawahnya, bukan terpotong parent */
+.ctrl-more-btn {
+  position: relative;
+  flex-shrink: 0;  /* TIDAK boleh mengecil — selalu tampil */
+}
+
+/* Dropdown menu dari "..." — tampil di atas konten lain */
+.ctrl-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1200;  /* di atas topbar */
+  min-width: 190px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  overflow: hidden;
+  display: none;
+  padding: 6px 0;
+}
+.ctrl-more-menu.open { display: block; }
+
+/* Item dalam dropdown */
+.ctrl-more-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  margin: 2px 6px;
+  width: calc(100% - 12px);
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.ctrl-more-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ctrl-more-item i, .ctrl-more-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+.ctrl-more-item.danger { color: var(--danger); }
+.ctrl-more-item.danger:hover { background: var(--danger-dim); }
+
+/* Label seksi dalam dropdown */
+.ctrl-more-label {
+  padding: 7px 14px 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* Divider dalam dropdown */
+.ctrl-more-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 10px;
+}
+
+/* Scrollable dropdown jika item banyak */
+.ctrl-more-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.ctrl-more-menu::-webkit-scrollbar { width: 4px; }
+.ctrl-more-menu::-webkit-scrollbar-track { background: transparent; }
+.ctrl-more-menu::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Tombol Kembali di modal item picker — visible di light mode */
+#item-picker-back {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-light) !important;
+  color: var(--text-secondary) !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px !important;
+  font-size: 0.82rem !important;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+#item-picker-back:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
 }
