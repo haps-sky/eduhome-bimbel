@@ -9,55 +9,60 @@
 
 // ============================================================
 // MoreMenu — global dropdown untuk mobile toolbar
-// Dirender di <body> level agar tidak terpotong overflow:hidden
 // ============================================================
 const MoreMenu = (() => {
   let _activeKey = null;
 
-  // Config menu per modul
   const MENUS = {
-    murid:    { refresh: 'MuridPage.load(true)',      undo: 'MuridPage.undo()',      redo: 'MuridPage.redo()',      select: "Selection.toggle('murid')",    del: 'MuridPage.deleteSelected()' },
-    mentor:   { refresh: 'MentorPage.load(true)',     undo: 'MentorPage.undo()',     redo: 'MentorPage.redo()',     select: "Selection.toggle('mentor')",   del: 'MentorPage.deleteSelected()' },
-    presensi: { refresh: 'PresensiPage.load(true)',   undo: 'PresensiPage.undo()',   redo: 'PresensiPage.redo()',   select: "Selection.toggle('presensi')", del: 'PresensiPage.deleteSelected()' },
-    pay:      { refresh: 'PembayaranPage.load(true)', undo: 'PembayaranPage.undo()', redo: 'PembayaranPage.redo()', select: "Selection.toggle('pay')",      del: 'PembayaranPage.deleteSelected()' },
-    spp:      { refresh: 'SPPPage.load(true)',        undo: 'SPPPage.undo()',        redo: 'SPPPage.redo()',        select: "Selection.toggle('spp')",      del: 'SPPPage.deleteSelected()' },
-    buku:     { refresh: 'BukuPage.load(true)',       undo: 'BukuPage.undo()',       redo: 'BukuPage.redo()',       select: "Selection.toggle('buku')",     del: 'BukuPage.deleteSelected()' },
-    gaji:     { refresh: 'GajiPage.load(true)',       undo: 'GajiPage.undo()',       redo: 'GajiPage.redo()',       select: "Selection.toggle('gaji')",     del: 'GajiPage.deleteSelected()' },
+    murid:    { refresh: () => MuridPage.load(true),       undo: () => MuridPage.undo(),       redo: () => MuridPage.redo(),       del: () => MuridPage.deleteSelected() },
+    mentor:   { refresh: () => MentorPage.load(true),      undo: () => MentorPage.undo(),      redo: () => MentorPage.redo(),      del: () => MentorPage.deleteSelected() },
+    presensi: { refresh: () => PresensiPage.load(true),    undo: () => PresensiPage.undo(),    redo: () => PresensiPage.redo(),    del: () => PresensiPage.deleteSelected() },
+    pay:      { refresh: () => PembayaranPage.load(true),  undo: () => PembayaranPage.undo(),  redo: () => PembayaranPage.redo(),  del: () => PembayaranPage.deleteSelected() },
+    spp:      { refresh: () => SPPPage.load(true),         undo: () => SPPPage.undo(),         redo: () => SPPPage.redo(),         del: () => SPPPage.deleteSelected() },
+    buku:     { refresh: () => BukuPage.load(true),        undo: () => BukuPage.undo(),        redo: () => BukuPage.redo(),        del: () => BukuPage.deleteSelected() },
+    gaji:     { refresh: () => GajiPage.load(true),        undo: () => GajiPage.undo(),        redo: () => GajiPage.redo(),        del: () => GajiPage.deleteSelected() },
   };
 
   function toggle(key, btnEl) {
-    // Jika menu sudah terbuka untuk key ini, tutup
     if (_activeKey === key) { _close(); return; }
-
+    _close();
     _activeKey = key;
+
     const cfg  = MENUS[key];
     const menu = document.getElementById('global-more-menu');
     if (!menu || !cfg) return;
 
-    // Isi konten menu
+    // Isi menu — Hapus Terpilih sebagai satu-satunya aksi hapus
     menu.innerHTML = `
-      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.refresh}')">
+      <button class="ctrl-more-item" data-action="refresh">
         <i data-lucide="refresh-cw"></i> Refresh
       </button>
-      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.undo}')">
+      <button class="ctrl-more-item" data-action="undo">
         <i data-lucide="undo-2"></i> Undo
       </button>
-      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.redo}')">
+      <button class="ctrl-more-item" data-action="redo">
         <i data-lucide="redo-2"></i> Redo
       </button>
       <div class="ctrl-more-divider"></div>
-      <button class="ctrl-more-item" onclick="MoreMenu._run('${key}','${cfg.select}')">
-        <i data-lucide="check-square"></i> Pilih Item
-      </button>
-      <button class="ctrl-more-item danger" onclick="MoreMenu._run('${key}','${cfg.del}')">
+      <button class="ctrl-more-item danger" data-action="del">
         <i data-lucide="trash-2"></i> Hapus Terpilih
       </button>`;
+
     lucide.createIcons({ nodes: [menu] });
 
-    // Posisikan tepat di bawah tombol ⋯ menggunakan fixed positioning
-    const rect = btnEl.getBoundingClientRect();
-    const menuW = 176;
-    let left = rect.right - menuW;
+    // Bind actions
+    menu.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        _close();
+        if (cfg[action]) cfg[action]();
+      });
+    });
+
+    // Posisi di bawah tombol ⋯
+    const rect   = btnEl.getBoundingClientRect();
+    const menuW  = 176;
+    let   left   = rect.right - menuW;
     if (left < 8) left = 8;
 
     menu.style.display  = 'block';
@@ -66,19 +71,13 @@ const MoreMenu = (() => {
     menu.style.minWidth = menuW + 'px';
   }
 
-  function _run(key, fn) {
-    _close();
-    // Jalankan fungsi yang dikirim sebagai string
-    try { eval(fn); } catch(e) { console.error('MoreMenu run error:', e); }
-  }
-
   function _close() {
     const menu = document.getElementById('global-more-menu');
     if (menu) menu.style.display = 'none';
     _activeKey = null;
   }
 
-  function close(key) { _close(); }
+  function close() { _close(); }
 
   // Tutup saat klik di luar
   document.addEventListener('click', e => {
@@ -91,7 +90,7 @@ const MoreMenu = (() => {
   // Tutup saat scroll
   window.addEventListener('scroll', _close, true);
 
-  return { toggle, close, _run };
+  return { toggle, close };
 })();
 
 // ============================================================
