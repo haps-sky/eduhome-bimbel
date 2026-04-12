@@ -657,6 +657,81 @@
         </div>
       </section>
 
+      <!-- ===== PENGELUARAN PAGE ===== -->
+      <section id="page-pengeluaran" class="page-section">
+        <div class="page-header">
+          <h2><i data-lucide="trending-down"></i> Pengeluaran</h2>
+          <button type="button" class="btn btn-primary" id="btn-tambah-pengeluaran"
+                  onclick="OperasionalPage.openAdd()" style="display:none">
+            <i data-lucide="plus"></i> Catat Pengeluaran
+          </button>
+        </div>
+        <div id="ops-today-summary" style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:12px;"></div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="table-title">
+              <i data-lucide="trending-down"></i> Riwayat Pengeluaran
+            </div>
+            <div class="table-controls">
+              <input class="search-input" type="text"
+                     placeholder="Cari kategori / deskripsi..."
+                     oninput="OperasionalPage.search(this.value)"
+                     style="width:200px;">
+              <div class="ctrl-divider ctrl-hide-mobile"></div>
+              <button class="ctrl-btn ctrl-hide-mobile" onclick="OperasionalPage.load(true)" title="Refresh">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="ops-undo-btn"
+                      onclick="OperasionalPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="ops-redo-btn"
+                      onclick="OperasionalPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only ctrl-hide-mobile" id="ops-select-btn"
+                      onclick="Selection.toggle('ops')" title="Pilih item">
+                <i data-lucide="check-square"></i>
+              </button>
+              <div class="ctrl-more-btn">
+                <button class="ctrl-btn icon-only" onclick="MoreMenu.toggle('ops', this)" title="Lainnya">
+                  <i data-lucide="more-horizontal"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="selection-bar" id="ops-sel-bar">
+            <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary);flex-shrink:0;"></i>
+            <span class="sel-count" id="ops-sel-count">0 dipilih</span>
+            <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('ops')" title="Pilih semua">
+              <i data-lucide="list-checks"></i> Pilih Semua
+            </button>
+            <button class="sel-btn sel-btn-delete" id="ops-sel-delete"
+                    onclick="OperasionalPage.deleteSelected()" disabled>
+              <i data-lucide="trash-2"></i> Hapus
+            </button>
+            <button class="sel-btn sel-btn-cancel" onclick="Selection.toggle('ops')">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead><tr>
+                <th style="width:32px;"></th>
+                <th>Tanggal</th>
+                <th>Kategori</th>
+                <th>Deskripsi</th>
+                <th>Jumlah</th>
+                <th>Metode</th>
+                <th>Aksi</th>
+              </tr></thead>
+              <tbody id="ops-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- ===== END PENGELUARAN PAGE ===== -->
+
 <section id="page-spp" class="page-section">
   <div class="page-header">
     <h2><i data-lucide="package"></i> Paket SPP</h2>
@@ -1186,6 +1261,64 @@
     </div>
   </div>
 </div>
+
+<!-- ===== MODAL OPERASIONAL / PENGELUARAN ===== -->
+<div id="modal-operasional" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-ops-title">Catat Pengeluaran</h3>
+      <button class="modal-close" onclick="UI.closeModal('modal-operasional')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ops-id-field">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="ops-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Kategori *</label>
+          <select id="ops-kategori">
+            <option value="ATK">ATK (Alat Tulis Kantor)</option>
+            <option value="INVENTARIS">Inventaris</option>
+            <option value="LISTRIK">Listrik / Utilitas</option>
+            <option value="BUKU">Buku (Beli dari Pusat)</option>
+            <option value="LAINNYA">Lainnya</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Deskripsi</label>
+        <input type="text" id="ops-deskripsi" placeholder="Contoh: Beli kertas A4, bayar listrik bulan ini">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jumlah (Rp) *</label>
+          <input type="number" id="ops-jumlah" placeholder="0" min="1">
+        </div>
+        <div class="form-group">
+          <label>Metode</label>
+          <select id="ops-metode">
+            <option value="TUNAI">Tunai</option>
+            <option value="TRANSFER">Transfer</option>
+            <option value="QRIS">QRIS</option>
+          </select>
+        </div>
+      </div>
+      <div class="info-note">
+        <i data-lucide="info"></i>
+        Pengeluaran ini otomatis dikategorikan sebagai <strong>arus keluar</strong>.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-operasional')">Batal</button>
+      <button type="button" class="btn btn-primary" onclick="OperasionalPage.saveForm()">
+        <i data-lucide="save"></i> Simpan
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ===== END MODAL OPERASIONAL ===== -->
 
 <!-- ===== MODAL ITEM PICKER (3 langkah) ===== -->
 <div id="modal-item-picker" class="modal">

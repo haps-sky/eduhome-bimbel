@@ -18,6 +18,7 @@ const MoreMenu = (() => {
     mentor:   { refresh: () => MentorPage.load(true),      undo: () => MentorPage.undo(),      redo: () => MentorPage.redo(),      del: () => MentorPage.deleteSelected() },
     presensi: { refresh: () => PresensiPage.load(true),    undo: () => PresensiPage.undo(),    redo: () => PresensiPage.redo(),    del: () => PresensiPage.deleteSelected() },
     pay:      { refresh: () => PembayaranPage.load(true),  undo: () => PembayaranPage.undo(),  redo: () => PembayaranPage.redo(),  del: () => PembayaranPage.deleteSelected() },
+    ops:      { refresh: () => OperasionalPage.load(true), undo: () => OperasionalPage.undo(), redo: () => OperasionalPage.redo(), del: () => OperasionalPage.deleteSelected() },
     spp:      { refresh: () => SPPPage.load(true),         undo: () => SPPPage.undo(),         redo: () => SPPPage.redo(),         del: () => SPPPage.deleteSelected() },
     buku:     { refresh: () => BukuPage.load(true),        undo: () => BukuPage.undo(),        redo: () => BukuPage.redo(),        del: () => BukuPage.deleteSelected() },
     gaji:     { refresh: () => GajiPage.load(true),        undo: () => GajiPage.undo(),        redo: () => GajiPage.redo(),        del: () => GajiPage.deleteSelected() },
@@ -44,9 +45,8 @@ const MoreMenu = (() => {
         <i data-lucide="redo-2"></i> Redo
       </button>
       <div class="ctrl-more-divider"></div>
-      <button class="ctrl-more-item ${Selection.isActive(key) ? 'danger' : ''}" data-action="del">
-        <i data-lucide="${Selection.isActive(key) ? 'trash-2' : 'check-square'}"></i>
-        ${Selection.isActive(key) ? 'Hapus Terpilih' : 'Pilih & Hapus'}
+      <button class="ctrl-more-item danger" data-action="del">
+        <i data-lucide="trash-2"></i> Hapus Terpilih
       </button>`;
 
     lucide.createIcons({ nodes: [menu] });
@@ -107,6 +107,7 @@ const Selection = (() => {
     mentor:   { page: () => MentorPage,      deleteOne: (id) => API.mentor.delete(id),      getId: r => r.id    },
     presensi: { page: () => PresensiPage,    deleteOne: (id) => API.presensi.delete(id),    getId: r => r.id    },
     pay:      { page: () => PembayaranPage,  deleteOne: (id) => API.pembayaran.delete(id),  getId: r => r.id    },
+    ops:      { page: () => OperasionalPage, deleteOne: (id) => API.pembayaran.delete(id),  getId: r => r.id    },
     spp:      { page: () => SPPPage,         deleteOne: (id) => API.spp.delete(id),         getId: r => r.id    },
     buku:     { page: () => BukuPage,        deleteOne: (id) => API.buku.delete(id),        getId: r => r.id    },
     gaji:     { page: () => GajiPage,        deleteOne: (id) => API.gaji.delete(id),        getId: r => r.id_trx},
@@ -180,20 +181,9 @@ const Selection = (() => {
 
   // Hapus semua yang dipilih
   async function deleteSelected(key) {
-    const s   = _getState(key);
-    const cfg = CONFIG[key];
-
-    // Jika mode seleksi belum aktif, aktifkan dulu agar user bisa pilih item
-    if (!s.active) {
-      toggle(key);
-      UI.toast('Pilih item yang ingin dihapus, lalu tekan Hapus', 'info');
-      return;
-    }
-
-    if (s.selected.size === 0) {
-      UI.toast('Belum ada item yang dipilih', 'info');
-      return;
-    }
+    const s    = _getState(key);
+    const cfg  = CONFIG[key];
+    if (!s.active || s.selected.size === 0) return;
 
     const n = s.selected.size;
     if (!confirm(`Hapus ${n} item yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
@@ -211,7 +201,7 @@ const Selection = (() => {
     }
 
     if (berhasil > 0) UI.toast(`${berhasil} item berhasil dihapus${gagal > 0 ? `, ${gagal} gagal` : ''}`, gagal > 0 ? 'warning' : 'success');
-    else UI.toast('Gagal menghapus item', 'error');
+    else UI.toast('Gagal menghapus item','error');
 
     // Matikan mode seleksi & refresh
     toggle(key); // off
@@ -1269,6 +1259,14 @@ const PembayaranPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
 
+  // ── Backward compatibility: infer arah dari jenis jika tidak ada ──
+  const _MASUK_JENIS = ['SPP', 'PENDAFTARAN'];
+  function inferArah(tr) {
+    if (tr.arah) return tr.arah;
+    // BUKU bisa masuk atau keluar — default masuk untuk data lama di PembayaranPage
+    return _MASUK_JENIS.includes(tr.jenis) || tr.jenis === 'BUKU' ? 'masuk' : 'keluar';
+  }
+
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('pay-tbody');
     if (!tbody) return;
@@ -1277,7 +1275,7 @@ const PembayaranPage = (() => {
       renderTable(allData.slice(-50).reverse());
       updateSummary();
     } else {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pembayaran...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pembayaran...</td></tr>';
     }
 
     try {
@@ -1285,7 +1283,10 @@ const PembayaranPage = (() => {
         API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
       ]);
       if (payRes.status === 'OK') {
-        allData = payRes.data || [];
+        // Filter hanya arah = 'masuk', infer untuk data lama
+        allData = (payRes.data || [])
+          .map(d => ({ ...d, arah: inferArah(d) }))
+          .filter(d => d.arah === 'masuk');
         sppData = sppRes.data || [];
         filteredData = [...allData];
         isFetched = true;
@@ -1296,7 +1297,7 @@ const PembayaranPage = (() => {
       }
     } catch(e) {
       console.error('Error Load Pembayaran:',e);
-      if (!allData.length) tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Gagal memuat data.</td></tr>';
+      if (!allData.length) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
 
@@ -1305,7 +1306,7 @@ const PembayaranPage = (() => {
       (p.nama||'').toLowerCase().includes(term.toLowerCase()) ||
       (p.jenis||'').toLowerCase().includes(term.toLowerCase()) ||
       (p.id||'').toLowerCase().includes(term.toLowerCase())
-    );
+    ).filter(p => p.arah === 'masuk');
     renderTable(filtered);
   }
 
@@ -1334,12 +1335,16 @@ const PembayaranPage = (() => {
   }
 
   function renderTable(data) {
-    const rows = data.map(p => `
+    const rows = data.map(p => {
+      const jenisLabel = p.jenis === 'BUKU'
+        ? `Buku (${p.arah === 'masuk' ? 'Masuk' : 'Keluar'})`
+        : p.jenis;
+      return `
       <tr>
         <td style="width:32px;">${Selection.checkbox('pay', p.id)}</td>
         <td>${UI.formatDate(p.tanggal)}</td>
         <td><strong>${p.nama}</strong></td>
-        <td><span class="program-tag">${p.jenis}</span></td>
+        <td><span class="program-tag">${jenisLabel}</span></td>
         <td>${p.periode || '-'}</td>
         <td>${UI.formatCurrency(p.jumlah)}</td>
         <td>${p.metode}</td>
@@ -1355,7 +1360,8 @@ const PembayaranPage = (() => {
             </button>
           </div>
         </td>
-      </tr>`);
+      </tr>`;
+    });
     UI.renderTable('pay-tbody', rows, 'Belum ada riwayat pembayaran');
     if (window.lucide) lucide.createIcons();
   }
@@ -1392,9 +1398,13 @@ const PembayaranPage = (() => {
 
   function updateSummary() {
     const today = new Date().toISOString().split('T')[0];
-    const todayTotal = allData.filter(p => p.tanggal === today && p.jenis === 'SPP').reduce((s,p) => s+p.jumlah, 0);
+    // Hanya hitung arah = masuk
+    const masukData  = allData.filter(p => p.arah === 'masuk');
+    const todayTotal = masukData.filter(p => p.tanggal === today)
+                                .reduce((s,p) => s + (Number(p.jumlah)||0), 0);
+    const totalMasuk = masukData.reduce((s,p) => s + (Number(p.jumlah)||0), 0);
     const el = document.getElementById('pay-today-summary');
-    if (el) el.textContent = 'Pembayaran hari ini: ' + UI.formatCurrency(todayTotal);
+    if (el) el.textContent = `Pemasukan hari ini: ${UI.formatCurrency(todayTotal)} | Total: ${UI.formatCurrency(totalMasuk)}`;
   }
 
   function clearForm() {
@@ -1438,7 +1448,8 @@ const PembayaranPage = (() => {
       tanggal: tanggal || new Date().toISOString().split('T')[0],
       id_murid: muridSel.value, nama: muridOpt.dataset.nama,
       jenis, jumlah, metode, keterangan,
-      spp_id: sppId
+      spp_id: sppId,
+      arah: 'masuk'   // PembayaranPage selalu masuk
     };
 
     try {
@@ -1861,6 +1872,251 @@ const PembayaranPage = (() => {
   function deleteSelected() { return Selection.deleteSelected('pay'); }
   function _getCurrentData() { return allData; }
   return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku, deleteSelected, renderTable, _getCurrentData };
+})();
+
+
+// ============================================================
+// OperasionalPage — Pengeluaran (arah = keluar)
+// ============================================================
+const OperasionalPage = (() => {
+  let allData      = [];
+  let filteredData = [];
+  let isFetched    = false;
+  let lastDeletedData = null;
+  let lastAction      = null;
+  let lastAddedId     = null;
+
+  // Infer arah untuk data lama yang tidak punya field arah
+  function inferArah(tr) {
+    if (tr.arah) return tr.arah;
+    const MASUK = ['SPP','PENDAFTARAN'];
+    return MASUK.includes(tr.jenis) ? 'masuk' : 'keluar';
+  }
+
+  async function load(forceRefresh = false) {
+    const tbody = document.getElementById('ops-tbody');
+    if (!tbody) return;
+
+    if (!forceRefresh && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
+      updateSummary();
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
+    }
+
+    try {
+      const res = await API.pembayaran.getAll();
+      if (res.status === 'OK') {
+        // Hanya arah = keluar
+        allData = (res.data || [])
+          .map(d => ({ ...d, arah: inferArah(d) }))
+          .filter(d => d.arah === 'keluar');
+        filteredData = [...allData];
+        isFetched = true;
+        renderTable(allData.slice(-50).reverse());
+        updateSummary();
+      }
+    } catch(e) {
+      console.error('Error Load Operasional:', e);
+      if (!allData.length) tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+    }
+  }
+
+  function search(term) {
+    const filtered = allData.filter(p =>
+      (p.keterangan||'').toLowerCase().includes(term.toLowerCase()) ||
+      (p.jenis||'').toLowerCase().includes(term.toLowerCase()) ||
+      (p.id||'').toLowerCase().includes(term.toLowerCase())
+    );
+    renderTable(filtered);
+  }
+
+  function renderTable(data) {
+    const rows = data.map(p => {
+      const jenisLabel = p.jenis === 'BUKU' ? 'Buku (Keluar)' : (p.jenis || '-');
+      return `
+      <tr>
+        <td style="width:32px;">${Selection.checkbox('ops', p.id)}</td>
+        <td>${UI.formatDate(p.tanggal)}</td>
+        <td><span class="program-tag" style="background:var(--danger-dim);color:var(--danger);">${jenisLabel}</span></td>
+        <td>${p.keterangan || '-'}</td>
+        <td style="font-weight:600;color:var(--danger);">${UI.formatCurrency(p.jumlah)}</td>
+        <td>${p.metode || '-'}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon btn-warning" onclick="OperasionalPage.openEdit('${p.id}')" title="Edit">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="btn-icon btn-danger" data-delete-id="${p.id}"
+                    onclick="OperasionalPage.deleteItem('${p.id}','${p.keterangan||p.jenis}')" title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    });
+    UI.renderTable('ops-tbody', rows, 'Belum ada data pengeluaran');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function updateSummary() {
+    const today = new Date().toISOString().split('T')[0];
+    const keluarData  = allData.filter(p => p.arah === 'keluar');
+    const todayTotal  = keluarData.filter(p => p.tanggal === today)
+                                  .reduce((s,p) => s + (Number(p.jumlah)||0), 0);
+    const totalKeluar = keluarData.reduce((s,p) => s + (Number(p.jumlah)||0), 0);
+    const el = document.getElementById('ops-today-summary');
+    if (el) el.textContent = `Pengeluaran hari ini: ${UI.formatCurrency(todayTotal)} | Total: ${UI.formatCurrency(totalKeluar)}`;
+  }
+
+  function openAdd() {
+    clearForm();
+    document.getElementById('modal-ops-title').textContent = 'Catat Pengeluaran';
+    document.getElementById('ops-id-field').value = '';
+    UI.openModal('modal-operasional');
+  }
+
+  function openEdit(id) {
+    const p = allData.find(x => x.id === id);
+    if (!p) return;
+    clearForm();
+    document.getElementById('modal-ops-title').textContent = 'Edit Pengeluaran';
+    document.getElementById('ops-id-field').value       = p.id;
+    document.getElementById('ops-tanggal').value        = p.tanggal;
+    document.getElementById('ops-kategori').value       = p.jenis || 'ATK';
+    document.getElementById('ops-deskripsi').value      = p.keterangan || '';
+    document.getElementById('ops-jumlah').value         = p.jumlah;
+    document.getElementById('ops-metode').value         = p.metode || 'TUNAI';
+    UI.openModal('modal-operasional');
+  }
+
+  function clearForm() {
+    const tgl = new Date().toISOString().split('T')[0];
+    document.getElementById('ops-id-field').value  = '';
+    document.getElementById('ops-tanggal').value   = tgl;
+    document.getElementById('ops-kategori').value  = 'ATK';
+    document.getElementById('ops-deskripsi').value = '';
+    document.getElementById('ops-jumlah').value    = '';
+    document.getElementById('ops-metode').value    = 'TUNAI';
+  }
+
+  async function saveForm() {
+    const btn = document.querySelector('#modal-operasional .btn-primary');
+    const id         = document.getElementById('ops-id-field').value;
+    const tanggal    = document.getElementById('ops-tanggal').value;
+    const kategori   = document.getElementById('ops-kategori').value;  // jenis
+    const deskripsi  = document.getElementById('ops-deskripsi').value.trim();
+    const jumlah     = parseFloat(document.getElementById('ops-jumlah').value) || 0;
+    const metode     = document.getElementById('ops-metode').value;
+
+    // Validasi
+    if (!kategori)        { UI.toast('Pilih kategori pengeluaran','error'); return; }
+    if (!jumlah || jumlah <= 0) { UI.toast('Jumlah harus lebih dari 0','error'); return; }
+
+    const payload = {
+      tanggal:     tanggal || new Date().toISOString().split('T')[0],
+      id_murid:    '',
+      nama:        'Operasional',
+      jenis:       kategori,
+      keterangan:  deskripsi,
+      jumlah,
+      metode,
+      arah:        'keluar'    // OperasionalPage selalu keluar
+    };
+
+    try {
+      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan...'; }
+      const res = id
+        ? await API.pembayaran.update({ id, ...payload })
+        : await API.pembayaran.add(payload);
+
+      if (res.status === 'OK') {
+        UI.toast(id ? 'Pengeluaran diperbarui' : 'Pengeluaran berhasil dicatat!','success');
+        if (!id) lastAddedId = res.data?.id || null;
+        lastAction = id ? null : 'ADD';
+        UI.closeModal('modal-operasional');
+        allData = []; isFetched = false;
+        setTimeout(() => load(true), 500);
+      } else {
+        UI.toast(res.message || 'Gagal menyimpan','error');
+      }
+    } catch(e) {
+      UI.toast('Gagal terhubung ke server','error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save"></i> Simpan'; lucide.createIcons({ nodes:[btn] }); }
+    }
+  }
+
+  async function deleteItem(id, label) {
+    const p = allData.find(x => x.id === id);
+    if (!confirm(`Hapus pengeluaran "${label}"?`)) return;
+
+    lastDeletedData = p ? JSON.parse(JSON.stringify(p)) : null;
+    lastAction = 'DELETE';
+
+    const btn = document.querySelector(`button[data-delete-id="${id}"]`);
+    const ori = btn ? btn.innerHTML : '';
+    try {
+      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div>'; btn.style.width = '40px'; }
+      const res = await API.pembayaran.delete(id);
+      if (res.status === 'OK') {
+        UI.toast(`"${label}" dihapus. Klik Undo untuk membatalkan.`,'warning');
+        allData = allData.filter(x => x.id !== id);
+        renderTable(allData.slice(-50).reverse());
+        updateSummary();
+        const undoBtn = document.getElementById('ops-undo-btn');
+        if (undoBtn) undoBtn.disabled = false;
+      } else {
+        UI.toast(res.message || 'Gagal menghapus','error');
+        if (btn) { btn.disabled = false; btn.innerHTML = ori; btn.style.width = ''; }
+      }
+    } catch(e) {
+      UI.toast('Gagal terhubung ke server','error');
+      if (btn) { btn.disabled = false; btn.innerHTML = ori; btn.style.width = ''; }
+    }
+  }
+
+  async function undo() {
+    if (!lastAction || !lastDeletedData) return;
+    const undoBtn = document.getElementById('ops-undo-btn');
+    const redoBtn = document.getElementById('ops-redo-btn');
+    try {
+      if (undoBtn) undoBtn.disabled = true;
+      if (lastAction === 'DELETE') {
+        const res = await API.pembayaran.add(lastDeletedData);
+        if (res.status === 'OK') {
+          UI.toast('Undo: Pengeluaran dikembalikan!','success');
+          lastAction = 'UNDO_DELETE';
+          if (redoBtn) redoBtn.disabled = false;
+          allData = []; isFetched = false; load(true);
+        }
+      } else if (lastAction === 'ADD' && lastAddedId) {
+        const res = await API.pembayaran.delete(lastAddedId);
+        if (res.status === 'OK') { UI.toast('Undo: Penambahan dibatalkan!','warning'); lastAction = null; allData = []; isFetched = false; load(true); }
+      }
+    } catch(e) { UI.toast('Gagal Undo','error'); if (undoBtn) undoBtn.disabled = false; }
+  }
+
+  async function redo() {
+    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    const redoBtn = document.getElementById('ops-redo-btn');
+    try {
+      if (redoBtn) redoBtn.disabled = true;
+      const res = await API.pembayaran.add(lastDeletedData);
+      if (res.status === 'OK') {
+        UI.toast('Redo: Pengeluaran dipulihkan!','success');
+        lastAction = 'DELETE';
+        const undoBtn = document.getElementById('ops-undo-btn');
+        if (undoBtn) undoBtn.disabled = false;
+        allData = []; isFetched = false; load(true);
+      }
+    } catch(e) { UI.toast('Gagal Redo','error'); if (redoBtn) redoBtn.disabled = false; }
+  }
+
+  function deleteSelected() { return Selection.deleteSelected('ops'); }
+  function _getCurrentData() { return allData; }
+
+  return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData };
 })();
 
 

@@ -1,7 +1,7 @@
 const RBAC = {
   pages: {
     OWNER:  ['dashboard', 'owner-finance', 'murid', 'presensi', 'spp', 'gaji', 'logs'],
-    ADMIN:  ['dashboard', 'murid', 'mentor', 'presensi', 'pembayaran', 'spp', 'buku', 'gaji'],
+    ADMIN:  ['dashboard', 'murid', 'mentor', 'presensi', 'pembayaran', 'pengeluaran', 'spp', 'buku', 'gaji'],
     MENTOR: ['dashboard', 'mentor-students', 'mentor-presensi']
   },
 
@@ -13,6 +13,7 @@ const RBAC = {
     'mentor':           'Data Mentor',
     'presensi':         'Presensi',
     'pembayaran':       'Pembayaran',
+    'pengeluaran':      'Pengeluaran',
     'spp':              'Paket SPP',
     'buku':             'Modul Belajar',
     'gaji':             'Penggajian',
@@ -38,7 +39,7 @@ const RBAC = {
     ADMIN: [
       { label: 'Utama',      pages: ['dashboard'] },
       { label: 'Manajemen',  pages: ['murid', 'mentor', 'spp', 'buku'] },
-      { label: 'Transaksi',  pages: ['presensi', 'pembayaran', 'gaji'] }
+      { label: 'Transaksi',  pages: ['presensi', 'pembayaran', 'pengeluaran', 'gaji'] }
     ],
     MENTOR: [
       { label: 'Utama',      pages: ['dashboard'] },
@@ -54,6 +55,7 @@ const RBAC = {
     'mentor':          'user-check',
     'presensi':        'calendar-check',
     'pembayaran':      'credit-card',
+    'pengeluaran':     'trending-down',
     'spp':             'package',
     'buku':            'book-open',
     'gaji':            'banknote',
@@ -165,6 +167,7 @@ function buildSidebar(role) {
       case 'mentor':           MentorPage.load();         break;
       case 'presensi':         PresensiPage.load();       break;
       case 'pembayaran':       PembayaranPage.load();     break;
+      case 'pengeluaran':      OperasionalPage.load();    break;
       case 'spp':              SPPPage.load();            break;
       case 'buku':             BukuPage.load();           break;
       case 'gaji':             GajiPage.load();           break;
@@ -317,6 +320,7 @@ function showApp(user) {
     const adminBtns = [
       'btn-tambah-murid', 'btn-tambah-mentor',
       'btn-tambah-presensi', 'btn-tambah-pembayaran',
+      'btn-tambah-pengeluaran',
       'btn-buat-spp', 'btn-tambah-buku', 'btn-bayar-gaji'
     ];
     adminBtns.forEach(id => {
