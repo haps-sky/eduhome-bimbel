@@ -44,8 +44,9 @@ const MoreMenu = (() => {
         <i data-lucide="redo-2"></i> Redo
       </button>
       <div class="ctrl-more-divider"></div>
-      <button class="ctrl-more-item danger" data-action="del">
-        <i data-lucide="trash-2"></i> Hapus Terpilih
+      <button class="ctrl-more-item ${Selection.isActive(key) ? 'danger' : ''}" data-action="del">
+        <i data-lucide="${Selection.isActive(key) ? 'trash-2' : 'check-square'}"></i>
+        ${Selection.isActive(key) ? 'Hapus Terpilih' : 'Pilih & Hapus'}
       </button>`;
 
     lucide.createIcons({ nodes: [menu] });
@@ -179,9 +180,20 @@ const Selection = (() => {
 
   // Hapus semua yang dipilih
   async function deleteSelected(key) {
-    const s    = _getState(key);
-    const cfg  = CONFIG[key];
-    if (!s.active || s.selected.size === 0) return;
+    const s   = _getState(key);
+    const cfg = CONFIG[key];
+
+    // Jika mode seleksi belum aktif, aktifkan dulu agar user bisa pilih item
+    if (!s.active) {
+      toggle(key);
+      UI.toast('Pilih item yang ingin dihapus, lalu tekan Hapus', 'info');
+      return;
+    }
+
+    if (s.selected.size === 0) {
+      UI.toast('Belum ada item yang dipilih', 'info');
+      return;
+    }
 
     const n = s.selected.size;
     if (!confirm(`Hapus ${n} item yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
@@ -199,7 +211,7 @@ const Selection = (() => {
     }
 
     if (berhasil > 0) UI.toast(`${berhasil} item berhasil dihapus${gagal > 0 ? `, ${gagal} gagal` : ''}`, gagal > 0 ? 'warning' : 'success');
-    else UI.toast('Gagal menghapus item','error');
+    else UI.toast('Gagal menghapus item', 'error');
 
     // Matikan mode seleksi & refresh
     toggle(key); // off
