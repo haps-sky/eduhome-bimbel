@@ -1560,9 +1560,8 @@ const PembayaranPage = (() => {
   }
 
   function itemPickerBack() {
-    // Navigasi mundur antar step
     if (_pickerState.step === 'buku-mode')     _pickerState.step = 'kategori';
-    else if (_pickerState.step === 'buku-list') _pickerState.step = 'buku-mode';
+    else if (_pickerState.step === 'buku-list') _pickerState.step = 'kategori'; // skip buku-mode
     else if (_pickerState.step === 'spp-list')  _pickerState.step = 'kategori';
     else if (_pickerState.step === 'daftar')    _pickerState.step = 'kategori';
     else _pickerState.step = 'kategori';
@@ -1593,7 +1592,7 @@ const PembayaranPage = (() => {
     const kategori = [
       { key:'spp',    icon:'calendar-check', label:'SPP',          sub:'Tagihan paket belajar belum lunas', color:'var(--primary)',  bg:'var(--primary-dim)' },
       { key:'daftar', icon:'user-plus',      label:'Pendaftaran',  sub:'Biaya pendaftaran murid baru',      color:'var(--success)',  bg:'var(--success-dim)' },
-      { key:'buku',   icon:'book-open',      label:'Buku / Modul', sub:'Pembelian modul pembelajaran',      color:'var(--warning)',  bg:'var(--warning-dim)' },
+      { key:'buku',   icon:'shopping-bag',  label:'Buku (Jual)',  sub:'Jual modul ke murid — stok berkurang',  color:'var(--warning)',  bg:'var(--warning-dim)' },
     ];
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
@@ -1738,33 +1737,12 @@ const PembayaranPage = (() => {
     UI.closeModal('modal-item-picker');
   }
 
-  // STEP 2c — Buku: pilih mode Beli / Jual
+  // STEP 2c — Buku: langsung ke list jual (Beli sudah dipindah ke Pengeluaran)
   function _renderBukuMode(body, title) {
-    title.textContent = 'Transaksi Buku';
-    body.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-        <div class="picker-item" onclick="PembayaranPage._pilihBukuMode('jual')">
-          <div class="picker-icon" style="background:var(--warning-dim);">
-            <i data-lucide="shopping-bag" style="color:var(--warning);width:20px;height:20px;"></i>
-          </div>
-          <div>
-            <div class="picker-item-title">Jual ke Murid</div>
-            <div class="picker-item-sub">Harga jual — stok berkurang</div>
-          </div>
-          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-dim)"></i>
-        </div>
-        <div class="picker-item" onclick="PembayaranPage._pilihBukuMode('beli')">
-          <div class="picker-icon" style="background:var(--primary-dim);">
-            <i data-lucide="package" style="color:var(--primary);width:20px;height:20px;"></i>
-          </div>
-          <div>
-            <div class="picker-item-title">Beli dari Pusat</div>
-            <div class="picker-item-sub">Harga beli — stok bertambah</div>
-          </div>
-          <i data-lucide="chevron-right" style="margin-left:auto;width:16px;height:16px;color:var(--text-dim)"></i>
-        </div>
-      </div>`;
-    lucide.createIcons({ nodes:[body] });
+    // Tidak perlu pilih mode lagi — pembayaran buku selalu = jual ke murid
+    _pickerState.bukuMode = 'jual';
+    _pickerState.step = 'buku-list';
+    _showPickerStep();
   }
 
   async function _pilihBukuMode(mode) {
@@ -1974,6 +1952,8 @@ const OperasionalPage = (() => {
     document.getElementById('modal-ops-title').textContent = 'Catat Pengeluaran';
     document.getElementById('ops-id-field').value = '';
     UI.openModal('modal-operasional');
+    // Pasang listener auto-picker saat kategori BUKU dipilih
+    _bindKategoriListener();
   }
 
   function openEdit(id) {
@@ -1988,6 +1968,98 @@ const OperasionalPage = (() => {
     document.getElementById('ops-jumlah').value         = p.jumlah;
     document.getElementById('ops-metode').value         = p.metode || 'TUNAI';
     UI.openModal('modal-operasional');
+    _bindKategoriListener();
+  }
+
+  // Listener: saat kategori BUKU dipilih, buka picker modul
+  function _bindKategoriListener() {
+    const sel = document.getElementById('ops-kategori');
+    if (!sel || sel._opsBound) return;
+    sel._opsBound = true;
+    sel.addEventListener('change', () => {
+      if (sel.value === 'BUKU') _openBukuPicker();
+    });
+  }
+
+  // Picker modul buku untuk Pengeluaran (mode beli)
+  let _cachedBukuOps = null;
+  async function _openBukuPicker() {
+    // Buat/tampilkan overlay picker sederhana
+    let overlay = document.getElementById('ops-buku-picker');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'ops-buku-picker';
+      overlay.style.cssText = `
+        position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);
+        display:flex;align-items:center;justify-content:center;padding:16px;`;
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border:1px solid var(--border);
+                    border-radius:16px;width:100%;max-width:460px;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      padding:16px 20px;border-bottom:1px solid var(--border);">
+            <h3 style="margin:0;font-size:1rem;color:var(--text-primary);">
+              <i data-lucide="package" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;color:var(--primary)"></i>
+              Pilih Modul (Beli dari Pusat)
+            </h3>
+            <button onclick="document.getElementById('ops-buku-picker').style.display='none'"
+                    style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:1.2rem;">✕</button>
+          </div>
+          <div id="ops-buku-list" style="padding:16px;max-height:380px;overflow-y:auto;">
+            <div class="picker-loading"><div class="spinner spinner-sm" style="margin:0 auto 8px"></div>Memuat modul...</div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      lucide.createIcons({ nodes:[overlay] });
+    }
+    overlay.style.display = 'flex';
+
+    const listEl = document.getElementById('ops-buku-list');
+    try {
+      if (!_cachedBukuOps) {
+        const res = await API.buku.getAll();
+        _cachedBukuOps = res.data || [];
+      }
+      const list = _cachedBukuOps;
+      if (!list.length) {
+        listEl.innerHTML = '<div class="picker-empty">Belum ada modul terdaftar</div>';
+        return;
+      }
+      listEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${list.map((b, i) => `
+            <div class="picker-row" onclick="OperasionalPage._pilihBukuOps(${i})">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <div>
+                  <div style="font-weight:600;color:var(--text-primary);">${b.nama_modul}</div>
+                  <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
+                    ${b.jenjang||'-'} · ${b.program||'-'} · Stok: <strong>${b.stok}</strong>
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div style="font-weight:700;color:var(--primary);">${UI.formatCurrency(b.harga_beli)}</div>
+                  <div style="font-size:0.72rem;color:var(--text-secondary);">harga beli</div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    } catch(e) {
+      listEl.innerHTML = '<div class="picker-error">Gagal memuat data modul</div>';
+    }
+  }
+
+  function _pilihBukuOps(idx) {
+    if (!_cachedBukuOps) return;
+    const b = _cachedBukuOps[idx];
+    if (!b) return;
+    // Auto-fill form pengeluaran
+    const deskEl   = document.getElementById('ops-deskripsi');
+    const jumlahEl = document.getElementById('ops-jumlah');
+    if (deskEl)   deskEl.value   = b.nama_modul;
+    if (jumlahEl) jumlahEl.value = Number(b.harga_beli) || 0;
+    // Tutup picker
+    const overlay = document.getElementById('ops-buku-picker');
+    if (overlay) overlay.style.display = 'none';
+    UI.toast(`"${b.nama_modul}" dipilih — harga beli ${UI.formatCurrency(b.harga_beli)}`, 'success');
   }
 
   function clearForm() {
@@ -2116,7 +2188,7 @@ const OperasionalPage = (() => {
   function deleteSelected() { return Selection.deleteSelected('ops'); }
   function _getCurrentData() { return allData; }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData };
+  return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData, _pilihBukuOps };
 })();
 
 
