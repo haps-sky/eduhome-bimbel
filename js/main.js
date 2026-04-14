@@ -346,10 +346,13 @@ function showApp(user) {
       if (el) el.style.display = (role === 'MENTOR') ? 'none' : 'block';
     });
 
-    // ── Owner read-only: no action buttons ───────────────
+    // ── Owner read-only: sembunyikan SEMUA tombol aksi ──────────
     if (role === 'OWNER') {
-      ['btn-tambah-murid','btn-tambah-mentor','btn-tambah-presensi',
-       'btn-buat-spp','btn-bayar-gaji'].forEach(id => {
+      [
+        'btn-tambah-murid', 'btn-tambah-mentor', 'btn-tambah-presensi',
+        'btn-tambah-pembayaran', 'btn-tambah-pengeluaran',
+        'btn-buat-spp', 'btn-tambah-buku', 'btn-bayar-gaji'
+      ].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });

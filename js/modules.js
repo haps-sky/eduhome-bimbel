@@ -1453,12 +1453,19 @@ const PembayaranPage = (() => {
     if (!muridSel.value || jumlah <= 0) { UI.toast('Pilih murid dan masukkan jumlah yang valid','error'); return; }
 
     const muridOpt = muridSel.options[muridSel.selectedIndex];
+    // Ambil qty buku jika transaksi buku
+    const bukuQty  = (jenis === 'BUKU' && _pickerState.bukuQty)  ? _pickerState.bukuQty  : 1;
+    const bukuNama = (jenis === 'BUKU' && _pickerState.bukuNama) ? _pickerState.bukuNama : keterangan;
+
     const payload = {
-      tanggal: tanggal || new Date().toISOString().split('T')[0],
-      id_murid: muridSel.value, nama: muridOpt.dataset.nama,
-      jenis, jumlah, metode, keterangan,
-      spp_id: sppId,
-      arah: 'masuk'   // PembayaranPage selalu masuk
+      tanggal:    tanggal || new Date().toISOString().split('T')[0],
+      id_murid:   muridSel.value,
+      nama:       muridOpt.dataset.nama,
+      jenis, jumlah, metode,
+      keterangan: jenis === 'BUKU' ? bukuNama : keterangan,
+      spp_id:     sppId,
+      arah:       'masuk',   // PembayaranPage selalu masuk
+      jumlah_buku: bukuQty    // untuk kurangi stok di backend
     };
 
     try {
@@ -1471,6 +1478,9 @@ const PembayaranPage = (() => {
       if (res.status === 'OK') {
         UI.toast(id ? 'Data pembayaran diperbarui' : 'Pembayaran berhasil dicatat!','success');
         UI.closeModal('modal-pembayaran');
+        // Reset state picker buku
+        _pickerState.bukuQty = null; _pickerState.bukuNama = null;
+        _pickerState.cachedBuku = null; // force refresh stok
         allData = []; isFetched = false; load();
       } else {
         UI.toast(res.message || 'Gagal menyimpan pembayaran','error');
@@ -1569,7 +1579,8 @@ const PembayaranPage = (() => {
   }
 
   function itemPickerBack() {
-    if (_pickerState.step === 'buku-list') _pickerState.step = 'kategori';
+    if (_pickerState.step === 'buku-qty')  _pickerState.step = 'buku-list';
+    else if (_pickerState.step === 'buku-list') _pickerState.step = 'kategori';
     else if (_pickerState.step === 'spp-list') _pickerState.step = 'kategori';
     else if (_pickerState.step === 'daftar')   _pickerState.step = 'kategori';
     else _pickerState.step = 'kategori';
@@ -1586,11 +1597,12 @@ const PembayaranPage = (() => {
     if (backBtn) backBtn.style.display = isRoot ? 'none' : 'inline-flex';
 
     switch (_pickerState.step) {
-      case 'kategori': return _renderKategori(body, title);
-      case 'spp-list': return _renderSPPList(body, title);
-      case 'daftar':   return _renderDaftar(body, title);
-      case 'buku-mode':return _renderBukuMode(body, title);
-      case 'buku-list':return _renderBukuList(body, title);
+      case 'kategori':  return _renderKategori(body, title);
+      case 'spp-list':  return _renderSPPList(body, title);
+      case 'daftar':    return _renderDaftar(body, title);
+      case 'buku-mode': return _renderBukuMode(body, title);
+      case 'buku-list': return _renderBukuList(body, title);
+      case 'buku-qty':  return _renderBukuQty(body, title);
     }
   }
 
@@ -1809,18 +1821,76 @@ const PembayaranPage = (() => {
   }
 
   function _pilihBuku(idx) {
-    const b    = _pickerState.cachedBuku.filter(b =>
+    const b = _pickerState.cachedBuku.filter(b =>
       _pickerState.bukuMode === 'jual' ? Number(b.stok) > 0 : true
     )[idx];
     if (!b) return;
-    const mode  = _pickerState.bukuMode;
-    const harga = mode === 'jual' ? Number(b.harga_jual) : Number(b.harga_beli);
+    _pickerState.selectedBuku = b;
+    _pickerState.step = 'buku-qty';
+    _showPickerStep();
+  }
+
+  // STEP 4 — Input jumlah buku (khusus JUAL)
+  function _renderBukuQty(body, title) {
+    const b     = _pickerState.selectedBuku;
+    if (!b) return;
+    const harga = Number(b.harga_jual);
+    title.textContent = 'Jumlah Buku';
+    body.innerHTML = `
+      <div style="padding:4px 0;">
+        <div style="background:var(--bg-hover);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+          <div style="font-weight:600;color:var(--text-primary);">${b.nama_modul}</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">
+            ${b.jenjang||'-'} · ${b.program||'-'} · Stok tersedia: <strong style="color:var(--success)">${b.stok}</strong>
+          </div>
+          <div style="font-weight:700;color:var(--warning);margin-top:4px;">${UI.formatCurrency(harga)} / buku</div>
+        </div>
+        <div class="form-group">
+          <label>Jumlah Buku *</label>
+          <input type="number" id="buku-qty-input" min="1" max="${b.stok}" value="1"
+                 style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+                        font-size:1rem;background:var(--bg-surface);color:var(--text-primary);"
+                 oninput="PembayaranPage._updateBukuQtyTotal()">
+        </div>
+        <div style="background:var(--warning-dim);border:1px solid var(--warning);border-radius:10px;
+                    padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <span style="font-size:0.85rem;color:var(--text-secondary);">Total</span>
+          <span id="buku-qty-total" style="font-weight:700;font-size:1.05rem;color:var(--warning);">${UI.formatCurrency(harga)}</span>
+        </div>
+        <button class="picker-btn-confirm" style="background:var(--warning);margin-top:14px;"
+                onclick="PembayaranPage._konfirmasiBuku()">
+          <i data-lucide="check"></i> Konfirmasi
+        </button>
+      </div>`;
+    lucide.createIcons({ nodes:[body] });
+    setTimeout(() => document.getElementById('buku-qty-input')?.focus(), 100);
+  }
+
+  function _updateBukuQtyTotal() {
+    const b   = _pickerState.selectedBuku;
+    if (!b) return;
+    const qty = parseInt(document.getElementById('buku-qty-input')?.value) || 1;
+    const total = qty * Number(b.harga_jual);
+    const el = document.getElementById('buku-qty-total');
+    if (el) el.textContent = UI.formatCurrency(total);
+  }
+
+  function _konfirmasiBuku() {
+    const b   = _pickerState.selectedBuku;
+    if (!b) return;
+    const qty = parseInt(document.getElementById('buku-qty-input')?.value) || 1;
+    if (qty <= 0) { UI.toast('Jumlah harus lebih dari 0','error'); return; }
+    if (qty > Number(b.stok)) { UI.toast(`Stok hanya ${b.stok}`, 'error'); return; }
+    const total = qty * Number(b.harga_jual);
     _autoFill({
       jenis:      'BUKU',
-      jumlah:     harga,
-      keterangan: b.nama_modul,
-      label:      `${mode === 'jual' ? 'Jual' : 'Beli'} Buku · ${b.nama_modul} · ${UI.formatCurrency(harga)}`
+      jumlah:     total,
+      keterangan: `${b.nama_modul} (${qty} buku)`,
+      label:      `Jual ${qty} Buku · ${b.nama_modul} · ${UI.formatCurrency(total)}`
     });
+    // Simpan qty untuk dikirim ke backend
+    _pickerState.bukuQty = qty;
+    _pickerState.bukuNama = b.nama_modul;
     UI.closeModal('modal-item-picker');
   }
 
@@ -1856,7 +1926,7 @@ const PembayaranPage = (() => {
 
   function deleteSelected() { return Selection.deleteSelected('pay'); }
   function _getCurrentData() { return allData; }
-  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku, deleteSelected, renderTable, _getCurrentData };
+  return { load, search, saveForm, openAdd, openEdit, deletePembayaran, updateSummary, undo, redo, deleteAll, openItemPicker, itemPickerBack, _pilihKategori, _pilihSPP, _pilihDaftar, _pilihBukuMode, _pilihBuku, deleteSelected, renderTable, _getCurrentData, _updateBukuQtyTotal, _konfirmasiBuku };
 })();
 
 
@@ -1879,12 +1949,15 @@ const OperasionalPage = (() => {
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('ops-tbody');
     if (!tbody) return;
-    if (!forceRefresh && allData.length > 0) {
+
+    // Strategi instan: tampilkan data cache dulu, fetch di background
+    if (!forceRefresh && isFetched && allData.length >= 0) {
       renderTable(allData.slice(-50).reverse());
       updateSummary();
-    } else {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
+      return; // Tidak fetch ulang kecuali dipaksa
     }
+
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
     try {
       const res = await API.pembayaran.getAll();
       if (res.status === 'OK') {
@@ -1892,11 +1965,13 @@ const OperasionalPage = (() => {
           .map(d => ({ ...d, arah: inferArah(d) }))
           .filter(d => d.arah === 'keluar');
         isFetched = true;
+        // Reset cache buku agar harga selalu fresh
+        _cachedBukuOps = null;
         renderTable(allData.slice(-50).reverse());
         updateSummary();
       }
     } catch(e) {
-      if (!allData.length) tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
+      if (!isFetched) tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
 
@@ -2233,13 +2308,25 @@ const GajiPage = (() => {
       mentors.map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
   }
 
+  function _formatBulanGaji(raw) {
+    if (!raw) return '-';
+    // Support format: "2026-02-01T..." atau "02-2026" atau "2026-02"
+    try {
+      const d = new Date(raw);
+      if (!isNaN(d)) {
+        return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      }
+    } catch(e) {}
+    return raw; // fallback tampilkan apa adanya
+  }
+
   function renderTable(data) {
     const rows = data.map(g => `
       <tr>
         <td style="width:32px;">${Selection.checkbox('gaji', g.id_trx)}</td>
         <td><span class="id-badge">${g.id_trx}</span></td>
         <td>${UI.formatDate(g.tgl_bayar)}</td>
-        <td>${g.bulan_gaji}</td>
+        <td>${_formatBulanGaji(g.bulan_gaji)}</td>
         <td><strong>${g.nama_mentor}</strong></td>
         <td><strong class="text-success">${UI.formatCurrency(g.jumlah)}</strong></td>
         <td>${g.metode}</td>
