@@ -174,7 +174,8 @@ const API = (() => {
 
   // ── LOGS ──────────────────────────────────────────────────
   const logs = {
-    getAll: () => get('getLogs')
+    getAll:   () => get('getLogs'),
+    clearAll: () => post({ action: 'clearLogs' })
   };
 
   // ── PUBLIC API ────────────────────────────────────────────

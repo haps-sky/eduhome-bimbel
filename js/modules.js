@@ -1093,10 +1093,17 @@ const BukuPage = (() => {
     lucide.createIcons();
   }
 
-  function openAdd() {
-    ['buku-id-field','buku-nama','buku-jenjang','buku-program','buku-stok','buku-harga-beli','buku-harga-jual','buku-ket'].forEach(id => {
+  function _resetBukuForm() {
+    ['buku-id-field','buku-nama','buku-jenjang','buku-program','buku-ket'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    ['buku-stok','buku-harga-beli','buku-harga-jual'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '0';
+    });
+  }
+
+  function openAdd() {
+    _resetBukuForm();
     const titleEl = document.getElementById('buku-modal-title');
     if (titleEl) titleEl.textContent = 'Tambah Modul';
     UI.openModal('modal-buku');
@@ -1105,9 +1112,9 @@ const BukuPage = (() => {
   function openEdit(id) {
     const b = allData.find(x => x.id === id);
     if (!b) return;
+    _resetBukuForm();
     document.getElementById('buku-modal-title').textContent = 'Edit Modul';
     document.getElementById('buku-id-field').value    = b.id;
-    // FIX MASALAH 3: gunakan nama_modul konsisten
     document.getElementById('buku-nama').value        = b.nama_modul || '';
     document.getElementById('buku-jenjang').value     = b.jenjang    || '';
     document.getElementById('buku-program').value     = b.program    || '';
@@ -1132,6 +1139,12 @@ const BukuPage = (() => {
     const keterangan = document.getElementById('buku-ket').value.trim();
 
     if (!nama_modul) { UI.toast('Nama modul wajib diisi','error'); return; }
+    if (stok < 0)       { UI.toast('Stok tidak boleh negatif','error'); return; }
+    if (harga_beli < 0) { UI.toast('Harga modal tidak valid','error'); return; }
+    if (harga_jual < 0) { UI.toast('Harga jual tidak valid','error'); return; }
+    if (harga_jual > 0 && harga_beli > 0 && harga_jual < harga_beli) {
+      if (!confirm(`Harga jual (${UI.formatCurrency(harga_jual)}) lebih rendah dari harga modal (${UI.formatCurrency(harga_beli)}). Lanjutkan?`)) return;
+    }
 
     // FIX MASALAH 1: payload sinkron dengan handleAddBuku di Apps Script
     const payload = { nama_modul, jenjang, program, stok, harga_beli, harga_jual, keterangan };
@@ -1259,12 +1272,10 @@ const PembayaranPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
 
-  // ── Backward compatibility: infer arah dari jenis jika tidak ada ──
-  const _MASUK_JENIS = ['SPP', 'PENDAFTARAN'];
+  // Backward compat: infer arah dari jenis untuk data lama
   function inferArah(tr) {
     if (tr.arah) return tr.arah;
-    // BUKU bisa masuk atau keluar — default masuk untuk data lama di PembayaranPage
-    return _MASUK_JENIS.includes(tr.jenis) || tr.jenis === 'BUKU' ? 'masuk' : 'keluar';
+    return ['SPP','PENDAFTARAN','BUKU'].includes(tr.jenis) ? 'masuk' : 'keluar';
   }
 
   async function load(forceRefresh = false) {
@@ -1283,7 +1294,7 @@ const PembayaranPage = (() => {
         API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
       ]);
       if (payRes.status === 'OK') {
-        // Filter hanya arah = 'masuk', infer untuk data lama
+        // Filter hanya arah masuk
         allData = (payRes.data || [])
           .map(d => ({ ...d, arah: inferArah(d) }))
           .filter(d => d.arah === 'masuk');
@@ -1338,7 +1349,7 @@ const PembayaranPage = (() => {
     const rows = data.map(p => {
       const jenisLabel = p.jenis === 'BUKU'
         ? `Buku (${p.arah === 'masuk' ? 'Masuk' : 'Keluar'})`
-        : p.jenis;
+        : (p.jenis || '-');
       return `
       <tr>
         <td style="width:32px;">${Selection.checkbox('pay', p.id)}</td>
@@ -1398,11 +1409,9 @@ const PembayaranPage = (() => {
 
   function updateSummary() {
     const today = new Date().toISOString().split('T')[0];
-    // Hanya hitung arah = masuk
-    const masukData  = allData.filter(p => p.arah === 'masuk');
-    const todayTotal = masukData.filter(p => p.tanggal === today)
-                                .reduce((s,p) => s + (Number(p.jumlah)||0), 0);
-    const totalMasuk = masukData.reduce((s,p) => s + (Number(p.jumlah)||0), 0);
+    const masuk = allData.filter(p => p.arah === 'masuk');
+    const todayTotal = masuk.filter(p => p.tanggal === today).reduce((s,p) => s+(Number(p.jumlah)||0), 0);
+    const totalMasuk = masuk.reduce((s,p) => s+(Number(p.jumlah)||0), 0);
     const el = document.getElementById('pay-today-summary');
     if (el) el.textContent = `Pemasukan hari ini: ${UI.formatCurrency(todayTotal)} | Total: ${UI.formatCurrency(totalMasuk)}`;
   }
@@ -1560,10 +1569,9 @@ const PembayaranPage = (() => {
   }
 
   function itemPickerBack() {
-    if (_pickerState.step === 'buku-mode')     _pickerState.step = 'kategori';
-    else if (_pickerState.step === 'buku-list') _pickerState.step = 'kategori'; // skip buku-mode
-    else if (_pickerState.step === 'spp-list')  _pickerState.step = 'kategori';
-    else if (_pickerState.step === 'daftar')    _pickerState.step = 'kategori';
+    if (_pickerState.step === 'buku-list') _pickerState.step = 'kategori';
+    else if (_pickerState.step === 'spp-list') _pickerState.step = 'kategori';
+    else if (_pickerState.step === 'daftar')   _pickerState.step = 'kategori';
     else _pickerState.step = 'kategori';
     _showPickerStep();
   }
@@ -1592,7 +1600,7 @@ const PembayaranPage = (() => {
     const kategori = [
       { key:'spp',    icon:'calendar-check', label:'SPP',          sub:'Tagihan paket belajar belum lunas', color:'var(--primary)',  bg:'var(--primary-dim)' },
       { key:'daftar', icon:'user-plus',      label:'Pendaftaran',  sub:'Biaya pendaftaran murid baru',      color:'var(--success)',  bg:'var(--success-dim)' },
-      { key:'buku',   icon:'shopping-bag',  label:'Buku (Jual)',  sub:'Jual modul ke murid — stok berkurang',  color:'var(--warning)',  bg:'var(--warning-dim)' },
+      { key:'buku',   icon:'shopping-bag',   label:'Buku (Jual)',  sub:'Jual modul ke murid — stok berkurang', color:'var(--warning)', bg:'var(--warning-dim)' },
     ];
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
@@ -1737,9 +1745,8 @@ const PembayaranPage = (() => {
     UI.closeModal('modal-item-picker');
   }
 
-  // STEP 2c — Buku: langsung ke list jual (Beli sudah dipindah ke Pengeluaran)
+  // STEP 2c — Buku: langsung ke list jual (Beli pindah ke Pengeluaran)
   function _renderBukuMode(body, title) {
-    // Tidak perlu pilih mode lagi — pembayaran buku selalu = jual ke murid
     _pickerState.bukuMode = 'jual';
     _pickerState.step = 'buku-list';
     _showPickerStep();
@@ -1858,55 +1865,48 @@ const PembayaranPage = (() => {
 // ============================================================
 const OperasionalPage = (() => {
   let allData      = [];
-  let filteredData = [];
   let isFetched    = false;
   let lastDeletedData = null;
   let lastAction      = null;
   let lastAddedId     = null;
+  let _cachedBukuOps  = null;
 
-  // Infer arah untuk data lama yang tidak punya field arah
   function inferArah(tr) {
     if (tr.arah) return tr.arah;
-    const MASUK = ['SPP','PENDAFTARAN'];
-    return MASUK.includes(tr.jenis) ? 'masuk' : 'keluar';
+    return ['SPP','PENDAFTARAN'].includes(tr.jenis) ? 'masuk' : 'keluar';
   }
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('ops-tbody');
     if (!tbody) return;
-
     if (!forceRefresh && allData.length > 0) {
       renderTable(allData.slice(-50).reverse());
       updateSummary();
     } else {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
     }
-
     try {
       const res = await API.pembayaran.getAll();
       if (res.status === 'OK') {
-        // Hanya arah = keluar
         allData = (res.data || [])
           .map(d => ({ ...d, arah: inferArah(d) }))
           .filter(d => d.arah === 'keluar');
-        filteredData = [...allData];
         isFetched = true;
         renderTable(allData.slice(-50).reverse());
         updateSummary();
       }
     } catch(e) {
-      console.error('Error Load Operasional:', e);
       if (!allData.length) tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
 
   function search(term) {
-    const filtered = allData.filter(p =>
-      (p.keterangan||'').toLowerCase().includes(term.toLowerCase()) ||
-      (p.jenis||'').toLowerCase().includes(term.toLowerCase()) ||
-      (p.id||'').toLowerCase().includes(term.toLowerCase())
-    );
-    renderTable(filtered);
+    const t = term.toLowerCase();
+    renderTable(allData.filter(p =>
+      (p.keterangan||'').toLowerCase().includes(t) ||
+      (p.jenis||'').toLowerCase().includes(t) ||
+      (p.id||'').toLowerCase().includes(t)
+    ));
   }
 
   function renderTable(data) {
@@ -1926,7 +1926,7 @@ const OperasionalPage = (() => {
               <i data-lucide="pencil"></i>
             </button>
             <button class="btn-icon btn-danger" data-delete-id="${p.id}"
-                    onclick="OperasionalPage.deleteItem('${p.id}','${p.keterangan||p.jenis}')" title="Hapus">
+                    onclick="OperasionalPage.deleteItem('${p.id}','${(p.keterangan||p.jenis||'').replace(/'/g,"\\'")}')">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
@@ -1939,68 +1939,189 @@ const OperasionalPage = (() => {
 
   function updateSummary() {
     const today = new Date().toISOString().split('T')[0];
-    const keluarData  = allData.filter(p => p.arah === 'keluar');
-    const todayTotal  = keluarData.filter(p => p.tanggal === today)
-                                  .reduce((s,p) => s + (Number(p.jumlah)||0), 0);
-    const totalKeluar = keluarData.reduce((s,p) => s + (Number(p.jumlah)||0), 0);
+    const todayTotal  = allData.filter(p => p.tanggal === today).reduce((s,p) => s+(Number(p.jumlah)||0), 0);
+    const totalKeluar = allData.reduce((s,p) => s+(Number(p.jumlah)||0), 0);
     const el = document.getElementById('ops-today-summary');
     if (el) el.textContent = `Pengeluaran hari ini: ${UI.formatCurrency(todayTotal)} | Total: ${UI.formatCurrency(totalKeluar)}`;
   }
 
+  function _resetOpsForm() {
+    ['ops-id-field','ops-deskripsi'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    ['ops-jumlah-pcs','ops-harga-satuan'].forEach(id => { const el=document.getElementById(id); if(el) el.value='1'; });
+    const tgl = document.getElementById('ops-tanggal');
+    if (tgl) tgl.value = new Date().toISOString().split('T')[0];
+    const kat = document.getElementById('ops-kategori');
+    if (kat) kat.value = 'ATK';
+    const met = document.getElementById('ops-metode');
+    if (met) met.value = 'TUNAI';
+    _updateTotal();
+  }
+
+  function _updateTotal() {
+    const pcs     = Number(document.getElementById('ops-jumlah-pcs')?.value) || 0;
+    const satuan  = Number(document.getElementById('ops-harga-satuan')?.value) || 0;
+    const total   = pcs * satuan;
+    const totalEl = document.getElementById('ops-total-display');
+    if (totalEl) totalEl.textContent = UI.formatCurrency(total);
+    const hidEl = document.getElementById('ops-jumlah-hidden');
+    if (hidEl) hidEl.value = total;
+  }
+
   function openAdd() {
-    clearForm();
-    document.getElementById('modal-ops-title').textContent = 'Catat Pengeluaran';
-    document.getElementById('ops-id-field').value = '';
+    _resetOpsForm();
+    const title = document.getElementById('modal-ops-title');
+    if (title) title.textContent = 'Catat Pengeluaran';
     UI.openModal('modal-operasional');
-    // Pasang listener auto-picker saat kategori BUKU dipilih
-    _bindKategoriListener();
+    // Bind auto-hitung total
+    ['ops-jumlah-pcs','ops-harga-satuan'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.oninput = _updateTotal;
+    });
+    // Bind picker buku
+    const katEl = document.getElementById('ops-kategori');
+    if (katEl && !katEl._opsBound) {
+      katEl._opsBound = true;
+      katEl.addEventListener('change', () => { if (katEl.value === 'BUKU') _openBukuPicker(); });
+    }
   }
 
   function openEdit(id) {
     const p = allData.find(x => x.id === id);
     if (!p) return;
-    clearForm();
+    _resetOpsForm();
     document.getElementById('modal-ops-title').textContent = 'Edit Pengeluaran';
-    document.getElementById('ops-id-field').value       = p.id;
-    document.getElementById('ops-tanggal').value        = p.tanggal;
-    document.getElementById('ops-kategori').value       = p.jenis || 'ATK';
-    document.getElementById('ops-deskripsi').value      = p.keterangan || '';
-    document.getElementById('ops-jumlah').value         = p.jumlah;
-    document.getElementById('ops-metode').value         = p.metode || 'TUNAI';
+    document.getElementById('ops-id-field').value  = p.id;
+    document.getElementById('ops-tanggal').value   = p.tanggal;
+    document.getElementById('ops-kategori').value  = p.jenis || 'ATK';
+    document.getElementById('ops-deskripsi').value = p.keterangan || '';
+    document.getElementById('ops-harga-satuan').value = p.jumlah || 0;
+    document.getElementById('ops-jumlah-pcs').value   = 1;
+    _updateTotal();
     UI.openModal('modal-operasional');
-    _bindKategoriListener();
-  }
-
-  // Listener: saat kategori BUKU dipilih, buka picker modul
-  function _bindKategoriListener() {
-    const sel = document.getElementById('ops-kategori');
-    if (!sel || sel._opsBound) return;
-    sel._opsBound = true;
-    sel.addEventListener('change', () => {
-      if (sel.value === 'BUKU') _openBukuPicker();
+    ['ops-jumlah-pcs','ops-harga-satuan'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.oninput = _updateTotal;
     });
   }
 
-  // Picker modul buku untuk Pengeluaran (mode beli)
-  let _cachedBukuOps = null;
+  async function saveForm() {
+    const btn = document.querySelector('#modal-operasional .btn-primary');
+    const id       = document.getElementById('ops-id-field').value;
+    const tanggal  = document.getElementById('ops-tanggal').value;
+    const kategori = document.getElementById('ops-kategori').value;
+    const deskripsi= document.getElementById('ops-deskripsi').value.trim();
+    const pcs      = Number(document.getElementById('ops-jumlah-pcs')?.value) || 0;
+    const satuan   = Number(document.getElementById('ops-harga-satuan')?.value) || 0;
+    const total    = pcs * satuan;
+    const metode   = document.getElementById('ops-metode').value;
+
+    if (!kategori)        { UI.toast('Pilih kategori pengeluaran','error'); return; }
+    if (!pcs || pcs <= 0) { UI.toast('Jumlah (pcs) harus lebih dari 0','error'); return; }
+    if (!satuan || satuan <= 0) { UI.toast('Harga satuan harus lebih dari 0','error'); return; }
+    if (total <= 0)       { UI.toast('Total harus lebih dari 0','error'); return; }
+
+    const payload = {
+      tanggal:    tanggal || new Date().toISOString().split('T')[0],
+      id_murid:   '',
+      nama:       'Operasional',
+      jenis:      kategori,
+      keterangan: deskripsi || kategori,
+      jumlah:     total,
+      metode,
+      arah:       'keluar'
+    };
+
+    try {
+      if (btn) { btn.disabled=true; btn.innerHTML='<div class="spinner spinner-sm"></div> Menyimpan...'; }
+      const res = id
+        ? await API.pembayaran.update({ id, ...payload })
+        : await API.pembayaran.add(payload);
+      if (res.status === 'OK') {
+        UI.toast(id ? 'Pengeluaran diperbarui' : `Pengeluaran ${UI.formatCurrency(total)} berhasil dicatat!`, 'success');
+        if (!id) { lastAddedId = res.data?.id || null; lastAction = 'ADD'; }
+        UI.closeModal('modal-operasional');
+        _resetOpsForm();
+        allData = []; isFetched = false;
+        setTimeout(() => load(true), 500);
+      } else {
+        UI.toast(res.message || 'Gagal menyimpan','error');
+      }
+    } catch(e) { UI.toast('Gagal terhubung ke server','error'); }
+    finally {
+      if (btn) { btn.disabled=false; btn.innerHTML='<i data-lucide="save"></i> Simpan'; lucide.createIcons({nodes:[btn]}); }
+    }
+  }
+
+  async function deleteItem(id, label) {
+    const p = allData.find(x => x.id === id);
+    if (!confirm(`Hapus pengeluaran "${label}"?`)) return;
+    lastDeletedData = p ? JSON.parse(JSON.stringify(p)) : null;
+    lastAction = 'DELETE';
+    const btn = document.querySelector(`button[data-delete-id="${id}"]`);
+    const ori = btn ? btn.innerHTML : '';
+    try {
+      if (btn) { btn.disabled=true; btn.innerHTML='<div class="spinner spinner-sm"></div>'; btn.style.width='40px'; }
+      const res = await API.pembayaran.delete(id);
+      if (res.status === 'OK') {
+        UI.toast(`"${label}" dihapus. Klik Undo untuk membatalkan.`,'warning');
+        allData = allData.filter(x => x.id !== id);
+        renderTable(allData.slice(-50).reverse());
+        updateSummary();
+        const u = document.getElementById('ops-undo-btn'); if (u) u.disabled = false;
+      } else {
+        UI.toast(res.message || 'Gagal menghapus','error');
+        if (btn) { btn.disabled=false; btn.innerHTML=ori; btn.style.width=''; }
+      }
+    } catch(e) {
+      UI.toast('Gagal terhubung ke server','error');
+      if (btn) { btn.disabled=false; btn.innerHTML=ori; btn.style.width=''; }
+    }
+  }
+
+  async function undo() {
+    if (!lastAction || !lastDeletedData) return;
+    const u = document.getElementById('ops-undo-btn');
+    const r = document.getElementById('ops-redo-btn');
+    try {
+      if (u) u.disabled = true;
+      if (lastAction === 'DELETE') {
+        const res = await API.pembayaran.add(lastDeletedData);
+        if (res.status === 'OK') {
+          UI.toast('Undo: Pengeluaran dikembalikan!','success');
+          lastAction = 'UNDO_DELETE';
+          if (r) r.disabled = false;
+          allData = []; isFetched = false; load(true);
+        }
+      }
+    } catch(e) { UI.toast('Gagal Undo','error'); if (u) u.disabled = false; }
+  }
+
+  async function redo() {
+    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    const r = document.getElementById('ops-redo-btn');
+    try {
+      if (r) r.disabled = true;
+      const res = await API.pembayaran.add(lastDeletedData);
+      if (res.status === 'OK') {
+        UI.toast('Redo: Pengeluaran dipulihkan!','success');
+        lastAction = 'DELETE';
+        const u = document.getElementById('ops-undo-btn'); if (u) u.disabled = false;
+        allData = []; isFetched = false; load(true);
+      }
+    } catch(e) { UI.toast('Gagal Redo','error'); if (r) r.disabled = false; }
+  }
+
+  // Picker modul buku untuk Pengeluaran (mode beli dari pusat)
   async function _openBukuPicker() {
-    // Buat/tampilkan overlay picker sederhana
     let overlay = document.getElementById('ops-buku-picker');
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'ops-buku-picker';
-      overlay.style.cssText = `
-        position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);
-        display:flex;align-items:center;justify-content:center;padding:16px;`;
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;';
       overlay.innerHTML = `
-        <div style="background:var(--bg-card);border:1px solid var(--border);
-                    border-radius:16px;width:100%;max-width:460px;overflow:hidden;">
-          <div style="display:flex;align-items:center;justify-content:space-between;
-                      padding:16px 20px;border-bottom:1px solid var(--border);">
-            <h3 style="margin:0;font-size:1rem;color:var(--text-primary);">
-              <i data-lucide="package" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;color:var(--primary)"></i>
-              Pilih Modul (Beli dari Pusat)
-            </h3>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:460px;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+            <h3 style="margin:0;font-size:1rem;color:var(--text-primary);">Pilih Modul (Beli dari Pusat)</h3>
             <button onclick="document.getElementById('ops-buku-picker').style.display='none'"
                     style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:1.2rem;">✕</button>
           </div>
@@ -2009,186 +2130,53 @@ const OperasionalPage = (() => {
           </div>
         </div>`;
       document.body.appendChild(overlay);
-      lucide.createIcons({ nodes:[overlay] });
     }
     overlay.style.display = 'flex';
-
     const listEl = document.getElementById('ops-buku-list');
     try {
       if (!_cachedBukuOps) {
         const res = await API.buku.getAll();
         _cachedBukuOps = res.data || [];
       }
-      const list = _cachedBukuOps;
-      if (!list.length) {
-        listEl.innerHTML = '<div class="picker-empty">Belum ada modul terdaftar</div>';
-        return;
-      }
-      listEl.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          ${list.map((b, i) => `
-            <div class="picker-row" onclick="OperasionalPage._pilihBukuOps(${i})">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                <div>
-                  <div style="font-weight:600;color:var(--text-primary);">${b.nama_modul}</div>
-                  <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
-                    ${b.jenjang||'-'} · ${b.program||'-'} · Stok: <strong>${b.stok}</strong>
-                  </div>
-                </div>
-                <div style="text-align:right;flex-shrink:0;">
-                  <div style="font-weight:700;color:var(--primary);">${UI.formatCurrency(b.harga_beli)}</div>
-                  <div style="font-size:0.72rem;color:var(--text-secondary);">harga beli</div>
-                </div>
+      if (!_cachedBukuOps.length) { listEl.innerHTML = '<div class="picker-empty">Belum ada modul terdaftar</div>'; return; }
+      listEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">
+        ${_cachedBukuOps.map((b,i) => `
+          <div class="picker-row" onclick="OperasionalPage._pilihBukuOps(${i})">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <div>
+                <div style="font-weight:600;color:var(--text-primary);">${b.nama_modul}</div>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">${b.jenjang||'-'} · ${b.program||'-'} · Stok: <strong>${b.stok}</strong></div>
               </div>
-            </div>`).join('')}
-        </div>`;
-    } catch(e) {
-      listEl.innerHTML = '<div class="picker-error">Gagal memuat data modul</div>';
-    }
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-weight:700;color:var(--primary);">${UI.formatCurrency(b.harga_beli)}</div>
+                <div style="font-size:0.72rem;color:var(--text-secondary);">harga beli</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    } catch(e) { listEl.innerHTML = '<div class="picker-error">Gagal memuat data modul</div>'; }
   }
 
   function _pilihBukuOps(idx) {
     if (!_cachedBukuOps) return;
     const b = _cachedBukuOps[idx];
     if (!b) return;
-    // Auto-fill form pengeluaran
-    const deskEl   = document.getElementById('ops-deskripsi');
-    const jumlahEl = document.getElementById('ops-jumlah');
-    if (deskEl)   deskEl.value   = b.nama_modul;
-    if (jumlahEl) jumlahEl.value = Number(b.harga_beli) || 0;
-    // Tutup picker
+    const desk = document.getElementById('ops-deskripsi');
+    const sat  = document.getElementById('ops-harga-satuan');
+    if (desk) desk.value = b.nama_modul;
+    if (sat)  sat.value  = Number(b.harga_beli) || 0;
+    _updateTotal();
     const overlay = document.getElementById('ops-buku-picker');
     if (overlay) overlay.style.display = 'none';
-    UI.toast(`"${b.nama_modul}" dipilih — harga beli ${UI.formatCurrency(b.harga_beli)}`, 'success');
-  }
-
-  function clearForm() {
-    const tgl = new Date().toISOString().split('T')[0];
-    document.getElementById('ops-id-field').value  = '';
-    document.getElementById('ops-tanggal').value   = tgl;
-    document.getElementById('ops-kategori').value  = 'ATK';
-    document.getElementById('ops-deskripsi').value = '';
-    document.getElementById('ops-jumlah').value    = '';
-    document.getElementById('ops-metode').value    = 'TUNAI';
-  }
-
-  async function saveForm() {
-    const btn = document.querySelector('#modal-operasional .btn-primary');
-    const id         = document.getElementById('ops-id-field').value;
-    const tanggal    = document.getElementById('ops-tanggal').value;
-    const kategori   = document.getElementById('ops-kategori').value;  // jenis
-    const deskripsi  = document.getElementById('ops-deskripsi').value.trim();
-    const jumlah     = parseFloat(document.getElementById('ops-jumlah').value) || 0;
-    const metode     = document.getElementById('ops-metode').value;
-
-    // Validasi
-    if (!kategori)        { UI.toast('Pilih kategori pengeluaran','error'); return; }
-    if (!jumlah || jumlah <= 0) { UI.toast('Jumlah harus lebih dari 0','error'); return; }
-
-    const payload = {
-      tanggal:     tanggal || new Date().toISOString().split('T')[0],
-      id_murid:    '',
-      nama:        'Operasional',
-      jenis:       kategori,
-      keterangan:  deskripsi,
-      jumlah,
-      metode,
-      arah:        'keluar'    // OperasionalPage selalu keluar
-    };
-
-    try {
-      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan...'; }
-      const res = id
-        ? await API.pembayaran.update({ id, ...payload })
-        : await API.pembayaran.add(payload);
-
-      if (res.status === 'OK') {
-        UI.toast(id ? 'Pengeluaran diperbarui' : 'Pengeluaran berhasil dicatat!','success');
-        if (!id) lastAddedId = res.data?.id || null;
-        lastAction = id ? null : 'ADD';
-        UI.closeModal('modal-operasional');
-        allData = []; isFetched = false;
-        setTimeout(() => load(true), 500);
-      } else {
-        UI.toast(res.message || 'Gagal menyimpan','error');
-      }
-    } catch(e) {
-      UI.toast('Gagal terhubung ke server','error');
-    } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save"></i> Simpan'; lucide.createIcons({ nodes:[btn] }); }
-    }
-  }
-
-  async function deleteItem(id, label) {
-    const p = allData.find(x => x.id === id);
-    if (!confirm(`Hapus pengeluaran "${label}"?`)) return;
-
-    lastDeletedData = p ? JSON.parse(JSON.stringify(p)) : null;
-    lastAction = 'DELETE';
-
-    const btn = document.querySelector(`button[data-delete-id="${id}"]`);
-    const ori = btn ? btn.innerHTML : '';
-    try {
-      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div>'; btn.style.width = '40px'; }
-      const res = await API.pembayaran.delete(id);
-      if (res.status === 'OK') {
-        UI.toast(`"${label}" dihapus. Klik Undo untuk membatalkan.`,'warning');
-        allData = allData.filter(x => x.id !== id);
-        renderTable(allData.slice(-50).reverse());
-        updateSummary();
-        const undoBtn = document.getElementById('ops-undo-btn');
-        if (undoBtn) undoBtn.disabled = false;
-      } else {
-        UI.toast(res.message || 'Gagal menghapus','error');
-        if (btn) { btn.disabled = false; btn.innerHTML = ori; btn.style.width = ''; }
-      }
-    } catch(e) {
-      UI.toast('Gagal terhubung ke server','error');
-      if (btn) { btn.disabled = false; btn.innerHTML = ori; btn.style.width = ''; }
-    }
-  }
-
-  async function undo() {
-    if (!lastAction || !lastDeletedData) return;
-    const undoBtn = document.getElementById('ops-undo-btn');
-    const redoBtn = document.getElementById('ops-redo-btn');
-    try {
-      if (undoBtn) undoBtn.disabled = true;
-      if (lastAction === 'DELETE') {
-        const res = await API.pembayaran.add(lastDeletedData);
-        if (res.status === 'OK') {
-          UI.toast('Undo: Pengeluaran dikembalikan!','success');
-          lastAction = 'UNDO_DELETE';
-          if (redoBtn) redoBtn.disabled = false;
-          allData = []; isFetched = false; load(true);
-        }
-      } else if (lastAction === 'ADD' && lastAddedId) {
-        const res = await API.pembayaran.delete(lastAddedId);
-        if (res.status === 'OK') { UI.toast('Undo: Penambahan dibatalkan!','warning'); lastAction = null; allData = []; isFetched = false; load(true); }
-      }
-    } catch(e) { UI.toast('Gagal Undo','error'); if (undoBtn) undoBtn.disabled = false; }
-  }
-
-  async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
-    const redoBtn = document.getElementById('ops-redo-btn');
-    try {
-      if (redoBtn) redoBtn.disabled = true;
-      const res = await API.pembayaran.add(lastDeletedData);
-      if (res.status === 'OK') {
-        UI.toast('Redo: Pengeluaran dipulihkan!','success');
-        lastAction = 'DELETE';
-        const undoBtn = document.getElementById('ops-undo-btn');
-        if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
-      }
-    } catch(e) { UI.toast('Gagal Redo','error'); if (redoBtn) redoBtn.disabled = false; }
+    UI.toast(`"${b.nama_modul}" dipilih — harga beli ${UI.formatCurrency(b.harga_beli)}`,'success');
   }
 
   function deleteSelected() { return Selection.deleteSelected('ops'); }
   function _getCurrentData() { return allData; }
 
-  return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData, _pilihBukuOps };
+  // Expose ke window untuk oninput di HTML
+  window._opsUpdateTotal = _updateTotal;
+  return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData, _pilihBukuOps, _updateTotalPublic: _updateTotal };
 })();
 
 
@@ -2646,24 +2634,127 @@ const GajiPage = (() => {
 
 
 // ============================================================
-// LogsPage (tidak berubah)
 // ============================================================
-
+// LogsPage — Enhanced: toolbar, undo/redo, hapus, tampilan rapi
+// ============================================================
 const LogsPage = (() => {
-  async function load() {
-    const res = await API.logs.getAll();
-    const logs = res.data || [];
-    const rows = logs.map(l => `
-      <tr>
-        <td><small>${l.timestamp || '-'}</small></td>
-        <td><span class="badge ${l.level === 'ERROR' ? 'badge-danger' : 'badge-success'}">${l.level}</span></td>
-        <td><strong>${l.event}</strong></td>
-        <td>${l.detail}</td>
-        <td>${l.user || '-'}</td>
-      </tr>`);
-    UI.renderTable('logs-tbody', rows, 'Tidak ada log sistem');
+  let allData = [];
+  let lastDeletedData = null;
+  let lastAction = null;
+
+  const EVENT_LABELS = {
+    'ADD_MURID':'Tambah Murid','UPDATE_MURID':'Edit Murid','DELETE_MURID':'Hapus Murid',
+    'DELETE_ALL_MURID':'Hapus Semua Murid','ADD_MENTOR':'Tambah Mentor',
+    'UPDATE_MENTOR':'Edit Mentor','DELETE_MENTOR':'Hapus Mentor',
+    'DELETE_ALL_MENTOR':'Hapus Semua Mentor','ADD_PRESENSI':'Catat Presensi',
+    'UPDATE_PRESENSI':'Edit Presensi','DELETE_PRESENSI':'Hapus Presensi',
+    'DELETE_ALL_PRESENSI':'Hapus Semua Presensi','ADD_PEMBAYARAN':'Catat Pembayaran',
+    'UPDATE_PEMBAYARAN':'Edit Pembayaran','DELETE_PEMBAYARAN':'Hapus Pembayaran',
+    'DELETE_ALL_PEMBAYARAN':'Hapus Semua Pembayaran','ADD_BUKU':'Tambah Modul Buku',
+    'UPDATE_BUKU':'Edit Modul Buku','DELETE_BUKU':'Hapus Modul Buku',
+    'DELETE_ALL_BUKU':'Hapus Semua Modul','KURANGI_STOK_BUKU':'Stok Buku Berkurang',
+    'KEMBALIKAN_STOK_BUKU':'Stok Buku Dikembalikan','CREATE_SPP':'Buat Paket SPP',
+    'UPDATE_SPP':'Edit Paket SPP','DELETE_SPP':'Hapus Paket SPP',
+    'DELETE_ALL_SPP':'Hapus Semua SPP','RECORD_GAJI':'Catat Gaji Mentor',
+    'UPDATE_GAJI':'Edit Gaji','DELETE_GAJI':'Hapus Gaji','DELETE_ALL_GAJI':'Hapus Semua Gaji',
+    'UNAUTHORIZED':'⚠ Akses Ditolak',
+  };
+
+  async function load(forceRefresh = false) {
+    const tbody = document.getElementById('logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-row"><div class="spinner spinner-sm" style="margin:0 auto 6px"></div> Memuat log...</td></tr>`;
+    try {
+      const res = await API.logs.getAll();
+      allData = res.data || [];
+      renderTable(allData);
+      _updateBtns();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Gagal memuat log</td></tr>`;
+    }
   }
-  return { load };
+
+  function renderTable(data) {
+    const rows = data.map(l => {
+      const ts = l.timestamp ? new Date(l.timestamp) : null;
+      const tgl = ts ? ts.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+      const jam = ts ? ts.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+      const label = EVENT_LABELS[l.event] || l.event || '-';
+      const lvlCls = l.level==='ERROR'?'badge-danger':l.level==='WARN'?'badge-warning':'badge-success';
+      const icon = l.level==='ERROR'?'x-circle':l.level==='WARN'?'alert-triangle':'check-circle';
+      return `<tr>
+        <td><div style="font-weight:600;font-size:0.82rem;">${tgl}</div><div style="font-size:0.75rem;color:var(--text-dim);">${jam}</div></td>
+        <td><span class="badge ${lvlCls}" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="${icon}" style="width:11px;height:11px;"></i>${l.level}</span></td>
+        <td><strong>${label}</strong></td>
+        <td style="font-size:0.82rem;color:var(--text-secondary);max-width:280px;word-break:break-word;">${l.detail||'-'}</td>
+        <td><span style="background:var(--bg-hover);padding:2px 8px;border-radius:99px;font-size:0.8rem;">${l.user||'system'}</span></td>
+      </tr>`;
+    });
+    UI.renderTable('logs-tbody', rows, 'Tidak ada log sistem');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function search(term) {
+    if (!term.trim()) { renderTable(allData); return; }
+    const t = term.toLowerCase();
+    renderTable(allData.filter(l =>
+      (l.event||'').toLowerCase().includes(t) ||
+      (l.detail||'').toLowerCase().includes(t) ||
+      (l.user||'').toLowerCase().includes(t) ||
+      (EVENT_LABELS[l.event]||'').toLowerCase().includes(t)
+    ));
+  }
+
+  async function clearLogs() {
+    if (API.currentRole() !== 'OWNER') { UI.toast('Hanya Owner yang dapat menghapus log','error'); return; }
+    if (!allData.length) { UI.toast('Log sudah kosong','info'); return; }
+    if (!confirm(`Hapus semua ${allData.length} log sistem? Tindakan ini tidak dapat dibatalkan.`)) return;
+    const konfirmasi = prompt("Ketik 'HAPUS LOG' untuk melanjutkan:");
+    if (konfirmasi !== 'HAPUS LOG') { if (konfirmasi !== null) UI.toast('Konfirmasi salah, penghapusan dibatalkan','warning'); return; }
+    lastDeletedData = [...allData];
+    lastAction = 'DELETE_ALL';
+    UI.toast('Menghapus semua log...','info');
+    try {
+      const res = await API.logs.clearAll();
+      if (res.status === 'OK') {
+        allData = [];
+        renderTable([]);
+        UI.toast('Semua log berhasil dihapus. Data masih bisa dilihat via Undo (sesi ini).','warning');
+        _updateBtns();
+      } else {
+        UI.toast(res.message || 'Gagal menghapus log','error');
+        lastAction = null; lastDeletedData = null;
+        _updateBtns();
+      }
+    } catch(e) { UI.toast('Gagal terhubung ke server','error'); lastAction = null; _updateBtns(); }
+  }
+
+  function undo() {
+    if (lastAction !== 'DELETE_ALL' || !lastDeletedData?.length) return;
+    // Log sudah dihapus dari server — tampilkan in-memory saja
+    allData = lastDeletedData;
+    renderTable(allData);
+    lastAction = 'UNDO';
+    _updateBtns();
+    UI.toast('Menampilkan log sebelum dihapus (tampilan sementara sesi ini)','info');
+  }
+
+  function redo() {
+    if (lastAction !== 'UNDO') return;
+    allData = [];
+    renderTable([]);
+    lastAction = 'DELETE_ALL';
+    _updateBtns();
+  }
+
+  function _updateBtns() {
+    const u = document.getElementById('logs-undo-btn');
+    const r = document.getElementById('logs-redo-btn');
+    if (u) u.disabled = lastAction !== 'DELETE_ALL';
+    if (r) r.disabled = lastAction !== 'UNDO';
+  }
+
+  return { load, search, clearLogs, undo, redo };
 })();
 
 

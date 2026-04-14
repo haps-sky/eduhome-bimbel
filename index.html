@@ -132,6 +132,63 @@
     cursor:pointer; transition:background .15s; gap:8px;
   }
   .item-picker-row:hover { background:var(--bg-hover); border-color:var(--primary); }
+
+  /* ── Pengeluaran total box ── */
+  .ops-total-box {
+    background:var(--danger-dim); border:1px solid var(--danger);
+    border-radius:10px; padding:12px 16px;
+    display:flex; align-items:center; justify-content:space-between; margin-top:4px;
+  }
+  .ops-total-label { font-size:0.82rem; color:var(--text-secondary); }
+  .ops-total-value { font-size:1.1rem; font-weight:700; color:var(--danger); }
+
+  /* ── Mobile more menu ── */
+  .ctrl-more-btn { display:none; position:relative; }
+  .ctrl-more-btn > .ctrl-btn { padding:0 8px; }
+  #global-more-menu {
+    display:none; position:fixed; z-index:99999;
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.28);
+    min-width:176px; overflow:hidden; pointer-events:auto;
+  }
+  .ctrl-more-item {
+    display:flex; align-items:center; gap:8px; padding:10px 14px;
+    font-size:0.82rem; color:var(--text-secondary);
+    cursor:pointer; border:none; background:transparent;
+    width:100%; text-align:left; transition:background .12s; white-space:nowrap;
+  }
+  .ctrl-more-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+  .ctrl-more-item i { width:13px; height:13px; flex-shrink:0; }
+  .ctrl-more-item.danger { color:var(--danger); }
+  .ctrl-more-item.danger:hover { background:var(--danger-dim); }
+  .ctrl-more-divider { height:1px; background:var(--border); margin:3px 0; }
+
+  @media (max-width:640px) {
+    .ctrl-hide-mobile { display:none !important; }
+    .ctrl-more-btn    { display:block; }
+    .table-wrap { overflow:visible; }
+    .table-wrap > div { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    #murid-tbody    { min-width:620px; }
+    #mentor-tbody   { min-width:700px; }
+    #presensi-tbody { min-width:680px; }
+    #pay-tbody, #ops-tbody { min-width:600px; }
+    #spp-tbody      { min-width:900px; }
+    #buku-tbody     { min-width:580px; }
+    #gaji-tbody     { min-width:520px; }
+  }
+  .table-controls { gap:3px !important; }
+  .ctrl-divider   { margin:0 1px !important; }
+  .ctrl-btn       { height:29px !important; padding:0 8px !important; font-size:0.73rem !important; gap:3px !important; }
+  .ctrl-btn.icon-only { width:28px !important; padding:0 !important; }
+  .ctrl-btn svg, .ctrl-btn i { width:12px !important; height:12px !important; }
+  .light-mode .mentor-avatar { background:#dde8ff; color:#1d4ed8; }
+  .light-mode .avatar-initial { background:#dde8ff; color:#1d4ed8; }
+  .info-note {
+    display:flex; align-items:center; gap:8px; padding:10px 12px;
+    background:var(--primary-dim); border-radius:8px;
+    font-size:0.8rem; color:var(--text-secondary);
+  }
+  .info-note i { width:14px; height:14px; color:var(--primary); flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -669,14 +726,10 @@
         <div id="ops-today-summary" style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:12px;"></div>
         <div class="table-wrap">
           <div class="table-toolbar">
-            <div class="table-title">
-              <i data-lucide="trending-down"></i> Riwayat Pengeluaran
-            </div>
+            <div class="table-title"><i data-lucide="trending-down"></i> Riwayat Pengeluaran</div>
             <div class="table-controls">
-              <input class="search-input" type="text"
-                     placeholder="Cari kategori / deskripsi..."
-                     oninput="OperasionalPage.search(this.value)"
-                     style="width:200px;">
+              <input class="search-input" type="text" placeholder="Cari kategori / deskripsi..."
+                     oninput="OperasionalPage.search(this.value)" style="width:190px;">
               <div class="ctrl-divider ctrl-hide-mobile"></div>
               <button class="ctrl-btn ctrl-hide-mobile" onclick="OperasionalPage.load(true)" title="Refresh">
                 <i data-lucide="refresh-cw"></i> Refresh
@@ -703,7 +756,7 @@
           <div class="selection-bar" id="ops-sel-bar">
             <i data-lucide="check-square-2" style="width:14px;height:14px;color:var(--primary);flex-shrink:0;"></i>
             <span class="sel-count" id="ops-sel-count">0 dipilih</span>
-            <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('ops')" title="Pilih semua">
+            <button class="sel-btn sel-btn-all" onclick="Selection.toggleAll('ops')">
               <i data-lucide="list-checks"></i> Pilih Semua
             </button>
             <button class="sel-btn sel-btn-delete" id="ops-sel-delete"
@@ -721,7 +774,7 @@
                 <th>Tanggal</th>
                 <th>Kategori</th>
                 <th>Deskripsi</th>
-                <th>Jumlah</th>
+                <th>Total</th>
                 <th>Metode</th>
                 <th>Aksi</th>
               </tr></thead>
@@ -730,7 +783,7 @@
           </div>
         </div>
       </section>
-      <!-- ===== END PENGELUARAN PAGE ===== -->
+      <!-- ===== END PENGELUARAN ===== -->
 
 <section id="page-spp" class="page-section">
   <div class="page-header">
@@ -966,13 +1019,40 @@
       <section id="page-logs" class="page-section">
         <div class="page-header">
           <h2><i data-lucide="scroll-text"></i> System Logs</h2>
-          <button class="btn btn-outline" onclick="LogsPage.load()"><i data-lucide="refresh-cw"></i> Refresh</button>
         </div>
         <div class="table-wrap">
-          <div class="table-toolbar"><div class="table-title"><i data-lucide="scroll-text"></i> Log Aktivitas Sistem</div></div>
+          <div class="table-toolbar">
+            <div class="table-title"><i data-lucide="scroll-text"></i> Log Aktivitas Sistem</div>
+            <div class="table-controls">
+              <input class="search-input" type="text" placeholder="Cari event / detail / user..."
+                     oninput="LogsPage.search(this.value)" style="width:210px;">
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn" onclick="LogsPage.load(true)" title="Refresh">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button class="ctrl-btn icon-only" id="logs-undo-btn"
+                      onclick="LogsPage.undo()" title="Undo" disabled>
+                <i data-lucide="undo-2"></i>
+              </button>
+              <button class="ctrl-btn icon-only" id="logs-redo-btn"
+                      onclick="LogsPage.redo()" title="Redo" disabled>
+                <i data-lucide="redo-2"></i>
+              </button>
+              <div class="ctrl-divider"></div>
+              <button class="ctrl-btn ctrl-danger" onclick="LogsPage.clearLogs()" title="Hapus semua log">
+                <i data-lucide="trash-2"></i> Hapus Log
+              </button>
+            </div>
+          </div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Waktu</th><th>Level</th><th>Event</th><th>Detail</th><th>User</th></tr></thead>
+              <thead><tr>
+                <th style="min-width:110px;">Waktu</th>
+                <th style="min-width:75px;">Level</th>
+                <th style="min-width:160px;">Aktivitas</th>
+                <th>Detail</th>
+                <th style="min-width:90px;">User</th>
+              </tr></thead>
               <tbody id="logs-tbody"></tbody>
             </table>
           </div>
@@ -1262,64 +1342,6 @@
   </div>
 </div>
 
-<!-- ===== MODAL OPERASIONAL / PENGELUARAN ===== -->
-<div id="modal-operasional" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modal-ops-title">Catat Pengeluaran</h3>
-      <button class="modal-close" onclick="UI.closeModal('modal-operasional')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="ops-id-field">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tanggal</label>
-          <input type="date" id="ops-tanggal">
-        </div>
-        <div class="form-group">
-          <label>Kategori *</label>
-          <select id="ops-kategori">
-            <option value="ATK">ATK (Alat Tulis Kantor)</option>
-            <option value="INVENTARIS">Inventaris</option>
-            <option value="LISTRIK">Listrik / Utilitas</option>
-            <option value="BUKU">Buku (Beli dari Pusat)</option>
-            <option value="LAINNYA">Lainnya</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Deskripsi</label>
-        <input type="text" id="ops-deskripsi" placeholder="Contoh: Beli kertas A4, bayar listrik bulan ini">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Jumlah (Rp) *</label>
-          <input type="number" id="ops-jumlah" placeholder="0" min="1">
-        </div>
-        <div class="form-group">
-          <label>Metode</label>
-          <select id="ops-metode">
-            <option value="TUNAI">Tunai</option>
-            <option value="TRANSFER">Transfer</option>
-            <option value="QRIS">QRIS</option>
-          </select>
-        </div>
-      </div>
-      <div class="info-note">
-        <i data-lucide="info"></i>
-        Pengeluaran ini otomatis dikategorikan sebagai <strong>arus keluar</strong>.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-operasional')">Batal</button>
-      <button type="button" class="btn btn-primary" onclick="OperasionalPage.saveForm()">
-        <i data-lucide="save"></i> Simpan
-      </button>
-    </div>
-  </div>
-</div>
-<!-- ===== END MODAL OPERASIONAL ===== -->
-
 <!-- ===== MODAL ITEM PICKER (3 langkah) ===== -->
 <div id="modal-item-picker" class="modal">
   <div class="modal-content" style="max-width:480px;">
@@ -1339,6 +1361,76 @@
     </div>
   </div>
 </div>
+
+<!-- ===== MODAL OPERASIONAL / PENGELUARAN ===== -->
+<div id="modal-operasional" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-ops-title">Catat Pengeluaran</h3>
+      <button class="modal-close" onclick="UI.closeModal('modal-operasional');OperasionalPage._resetOpsFormPublic?.()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ops-id-field">
+      <input type="hidden" id="ops-jumlah-hidden" value="0">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="ops-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Kategori *</label>
+          <select id="ops-kategori">
+            <option value="ATK">ATK (Alat Tulis Kantor)</option>
+            <option value="INVENTARIS">Inventaris</option>
+            <option value="LISTRIK">Listrik / Utilitas</option>
+            <option value="BUKU">Buku (Beli dari Pusat)</option>
+            <option value="LAINNYA">Lainnya</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Deskripsi</label>
+        <input type="text" id="ops-deskripsi" placeholder="Contoh: Kertas A4 rim, Meja belajar baru">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jumlah (pcs) *</label>
+          <input type="number" id="ops-jumlah-pcs" placeholder="1" min="1" value="1"
+                 oninput="OperasionalPage._updateTotalPublic?.()">
+        </div>
+        <div class="form-group">
+          <label>Harga Satuan (Rp) *</label>
+          <input type="number" id="ops-harga-satuan" placeholder="0" min="1"
+                 oninput="OperasionalPage._updateTotalPublic?.()">
+        </div>
+      </div>
+      <div class="ops-total-box">
+        <span class="ops-total-label">Total Pengeluaran</span>
+        <span class="ops-total-value" id="ops-total-display">Rp 0</span>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Metode</label>
+        <select id="ops-metode">
+          <option value="TUNAI">Tunai</option>
+          <option value="TRANSFER">Transfer</option>
+          <option value="QRIS">QRIS</option>
+        </select>
+      </div>
+      <div class="info-note" style="margin-top:10px;">
+        <i data-lucide="info"></i>
+        Pengeluaran otomatis dikategorikan sebagai <strong>arus keluar</strong>.
+        Pilih <strong>BUKU</strong> untuk beli modul dari pusat.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-operasional')">Batal</button>
+      <button type="button" class="btn btn-primary" onclick="OperasionalPage.saveForm()">
+        <i data-lucide="save"></i> Simpan
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ===== END MODAL OPERASIONAL ===== -->
 
 <div id="modal-spp" class="modal">
   <div class="modal-content">
@@ -1458,6 +1550,8 @@
 </div>
 
 <div id="toast-container"></div>
+<!-- Global dropdown menu untuk mobile toolbar -->
+<div id="global-more-menu"></div>
 
 <!-- ⋯ Global Dropdown — dirender di body, tidak terpotong overflow -->
 <div id="global-more-menu" style="
