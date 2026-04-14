@@ -622,9 +622,10 @@ const PresensiPage = (() => {
 
     if (!tanggal || !muridSel.value) { UI.toast('Tanggal dan murid wajib diisi','error'); return; }
 
-    const muridOpt  = muridSel.options[muridSel.selectedIndex];
-    const mentorOpt = mentorSel.options[mentorSel.selectedIndex];
+    const muridOpt     = muridSel.options[muridSel.selectedIndex];
+    const mentorOpt    = mentorSel.options[mentorSel.selectedIndex];
     const programMurid = muridOpt.dataset.program;
+    const namaMurid    = muridOpt.dataset.nama;
 
     const btn = document.getElementById('presensi-save-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = `<div class="spinner spinner-sm"></div> ${id ? 'Memperbarui...' : 'Memvalidasi...'}`; }
@@ -632,12 +633,40 @@ const PresensiPage = (() => {
     try {
       let idPaketTerpilih = '';
       if (!id) {
-        const sppRes = await API.spp.getAll();
-        const paketAktif = (sppRes.data || []).find(p =>
-          p.id_murid === muridSel.value && p.program === programMurid &&
-          p.status === 'AKTIF' && Number(p.sisa_pertemuan) > 0
+        const [sppRes, presensiRes] = await Promise.all([
+          API.spp.getAll(), API.presensi.getAll()
+        ]);
+
+        // ── Cek duplikat di frontend (murid + hari sama) ──
+        const presensiHari = (presensiRes.data || []).filter(p =>
+          p.id_murid === muridSel.value && p.tanggal === tanggal
         );
-        if (!paketAktif) { UI.toast(`Kuota ${programMurid} habis atau paket belum aktif!`,'error'); throw new Error('Kuota Habis'); }
+        if (presensiHari.length > 0) {
+          UI.toast(`⚠ ${namaMurid} sudah dicatat presensinya pada ${tanggal}. Cek data yang ada.`, 'error');
+          throw new Error('Duplikat');
+        }
+
+        // ── Cek paket SPP aktif dan validasi periode ──
+        const paketAktif = (sppRes.data || []).find(p =>
+          p.id_murid === muridSel.value &&
+          p.status === 'AKTIF' &&
+          Number(p.sisa_pertemuan) > 0
+        );
+        if (!paketAktif) {
+          UI.toast(`${namaMurid} tidak memiliki paket SPP aktif. Buat paket SPP terlebih dahulu.`, 'error');
+          throw new Error('Kuota Habis');
+        }
+
+        // Validasi tanggal dalam periode SPP
+        const tglObj   = new Date(tanggal);
+        const tglStart = new Date(paketAktif.periode_mulai);
+        const tglEnd   = new Date(paketAktif.periode_akhir);
+        if (tglObj < tglStart || tglObj > tglEnd) {
+          const fmt = d => new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+          UI.toast(`Presensi hanya bisa dilakukan dalam periode aktif (${fmt(paketAktif.periode_mulai)} – ${fmt(paketAktif.periode_akhir)}). Tanggal ${tanggal} di luar periode.`, 'error');
+          throw new Error('Luar Periode');
+        }
+
         idPaketTerpilih = paketAktif.id;
       }
 
@@ -657,7 +686,8 @@ const PresensiPage = (() => {
         UI.toast(res.message || 'Gagal menyimpan','error');
       }
     } catch(e) {
-      if (e.message !== 'Kuota Habis') UI.toast('Error: '+e.message,'error');
+      const skipMsg = ['Kuota Habis','Duplikat','Luar Periode'];
+      if (!skipMsg.includes(e.message)) UI.toast('Error: '+e.message,'error');
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save"></i> Simpan Presensi'; lucide.createIcons({ nodes:[btn] }); }
     }
@@ -907,13 +937,36 @@ const SPPPage = (() => {
     const akhir    = document.getElementById('spp-akhir').value;
     const harga    = parseFloat(document.getElementById('spp-harga').value) || 0;
     if (!muridSel.value || !mulai || !akhir) { UI.toast('Semua field wajib diisi','error'); return; }
+
     const opt = muridSel.options[muridSel.selectedIndex];
+
+    // ── Validasi periode di frontend ──────────────────────────────────────────
+    if (new Date(mulai) >= new Date(akhir)) {
+      UI.toast('Periode akhir harus setelah periode mulai','error'); return;
+    }
+
+    // Cek overlap dengan paket lain murid yang sama (kecuali paket yang sedang diedit)
+    const paketMusrid = allData.filter(p =>
+      p.id_murid === muridSel.value && p.id !== id && p.status !== 'EXPIRED'
+    );
+    for (const p of paketMusrid) {
+      const s = new Date(p.periode_mulai), e = new Date(p.periode_akhir);
+      const mulaiNew = new Date(mulai), akhirNew = new Date(akhir);
+      if (mulaiNew < e && akhirNew > s) {
+        const fmt = d => new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+        UI.toast(`Periode tumpang tindih dengan paket ${p.id} (${fmt(p.periode_mulai)} – ${fmt(p.periode_akhir)}). Selesaikan paket tersebut terlebih dahulu.`, 'error');
+        return;
+      }
+    }
+
     const payload = { id, id_murid: muridSel.value, nama_murid: opt.dataset.nama, program: opt.dataset.program, periode_mulai: mulai, periode_akhir: akhir, harga };
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = id ? '<div class="spinner spinner-sm"></div> Memperbarui paket...' : '<div class="spinner spinner-sm"></div> Menyimpan paket...'; }
       const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
       if (res.status === 'OK') {
-        const msg = id ? 'Paket SPP berhasil diperbarui' : `Berhasil! Total: ${res.data.total_pertemuan} pertemuan.`;
+        const msg = id
+          ? 'Paket SPP berhasil diperbarui'
+          : `Berhasil! ${res.data.total_pertemuan} sesi di periode ini (dihitung murni dari jadwal).`;
         UI.toast(msg,'success');
         UI.closeModal('modal-spp');
         allData = []; isFetched = false; load();
