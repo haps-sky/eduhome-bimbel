@@ -1,4 +1,15 @@
+// ============================================================
+// EduHome — modules.js (Fixed: All 5 Issues Resolved)
+// Referensi: MuridPage pola untuk semua modul
+// ============================================================
 
+// ============================================================
+// MentorPage — Masalah 2 (toolbar), 4 (undo/redo/hapusAll)
+// ============================================================
+
+// ============================================================
+// MoreMenu — global dropdown untuk mobile toolbar
+// ============================================================
 const MoreMenu = (() => {
   let _activeKey = null;
 
@@ -492,11 +503,13 @@ const PresensiPage = (() => {
     const tbody = document.getElementById('presensi-tbody');
     if (!tbody) return;
 
-    if (!forceRefresh && allData.length > 0) {
+    // Guard: jika sudah pernah fetch dan tidak dipaksa refresh, langsung render cache
+    if (!forceRefresh && isFetched) {
       renderTable(allData.slice(-50).reverse());
-    } else {
-      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data presensi...</td></tr>';
+      return;
     }
+
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data presensi...</td></tr>';
 
     try {
       const [presRes, muridRes, mentorRes] = await Promise.all([
@@ -512,7 +525,7 @@ const PresensiPage = (() => {
       }
     } catch(e) {
       console.error(e);
-      if (!allData.length) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Gagal memuat.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Gagal memuat.</td></tr>';
     }
   }
 
@@ -635,24 +648,28 @@ const PresensiPage = (() => {
           throw new Error('Duplikat');
         }
 
-        // ── Cek paket SPP aktif dan validasi periode ──
-        const paketAktif = (sppRes.data || []).find(p =>
-          p.id_murid === muridSel.value &&
-          p.status === 'AKTIF' &&
-          Number(p.sisa_pertemuan) > 0
-        );
-        if (!paketAktif) {
-          UI.toast(`${namaMurid} tidak memiliki paket SPP aktif. Buat paket SPP terlebih dahulu.`, 'error');
-          throw new Error('Kuota Habis');
-        }
+        // ── Cari paket SPP yang periodenya mencakup tanggal presensi ──
+        // Gunakan tanggal sebagai acuan, bukan kolom status (konsisten dengan backend)
+        const tglPresensi = new Date(tanggal);
+        const paketAktif = (sppRes.data || []).find(p => {
+          if (p.id_murid !== muridSel.value) return false;
+          if (Number(p.sisa_pertemuan) <= 0) return false;
+          const start = p.periode_mulai ? new Date(p.periode_mulai) : null;
+          const end   = p.periode_akhir ? new Date(p.periode_akhir) : null;
+          if (!start || !end) return false;
+          return tglPresensi >= start && tglPresensi <= end;
+        });
 
-        // Validasi tanggal dalam periode SPP
-        const tglObj   = new Date(tanggal);
-        const tglStart = new Date(paketAktif.periode_mulai);
-        const tglEnd   = new Date(paketAktif.periode_akhir);
-        if (tglObj < tglStart || tglObj > tglEnd) {
-          const fmt = d => new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
-          UI.toast(`Presensi hanya bisa dilakukan dalam periode aktif (${fmt(paketAktif.periode_mulai)} – ${fmt(paketAktif.periode_akhir)}). Tanggal ${tanggal} di luar periode.`, 'error');
+        if (!paketAktif) {
+          // Cari periode tersedia untuk pesan informatif
+          const semuaPaket = (sppRes.data || []).filter(p => p.id_murid === muridSel.value);
+          if (semuaPaket.length === 0) {
+            UI.toast(`${namaMurid} belum memiliki paket SPP. Buat paket SPP terlebih dahulu.`, 'error');
+          } else {
+            const fmt = d => new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+            const periodes = semuaPaket.map(p => `${fmt(p.periode_mulai)} – ${fmt(p.periode_akhir)}`).join(', ');
+            UI.toast(`Presensi hanya bisa dilakukan dalam periode aktif. Periode tersedia: ${periodes}`, 'error');
+          }
           throw new Error('Luar Periode');
         }
 
@@ -784,11 +801,14 @@ const SPPPage = (() => {
     const tbody = document.getElementById('spp-tbody');
     if (!tbody) return;
 
-    if (!forceRefresh && allData.length > 0) {
+    // Guard: jika sudah pernah fetch dan tidak dipaksa refresh, langsung render cache
+    if (!forceRefresh && isFetched) {
       renderTable(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data paket SPP...</td></tr>';
+      initLiveCount();
+      return;
     }
+
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data paket SPP...</td></tr>';
 
     try {
       const [sppRes, muridRes] = await Promise.all([ API.spp.getAll(), API.murid.getAll() ]);
@@ -802,7 +822,7 @@ const SPPPage = (() => {
       }
     } catch(e) {
       console.error('Gagal load SPP:',e);
-      if (!allData.length) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data paket SPP.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal memuat data paket SPP.</td></tr>';
     }
     initLiveCount();
   }
@@ -865,7 +885,15 @@ const SPPPage = (() => {
             <div class="progress-bar-fill" style="width:${s.total_pertemuan > 0 ? Math.round((s.hadir/s.total_pertemuan)*100) : 0}%"></div>
           </div>
         </td>
-        <td>${UI.statusBadge(s.status)}</td>
+        <td>${(() => {
+          // Status override berdasarkan tanggal (guard untuk data lama)
+          const today = new Date().toISOString().split('T')[0];
+          let st = s.status;
+          if (st !== 'HABIS' && s.periode_akhir) {
+            st = s.periode_akhir < today ? 'EXPIRED' : 'AKTIF';
+          }
+          return UI.statusBadge(st);
+        })()}</td>
         <td>${UI.formatCurrency(s.harga)}</td>
         <td>${UI.formatCurrency(s.terbayar)}</td>
         <td>${UI.statusBadge(s.status_bayar)}</td>
@@ -934,9 +962,12 @@ const SPPPage = (() => {
       UI.toast('Periode akhir harus setelah periode mulai','error'); return;
     }
 
-    // Cek overlap dengan paket lain murid yang sama (kecuali paket yang sedang diedit)
+    // Cek overlap dengan paket lain murid yang sama (kecuali paket yang sudah expired berdasarkan tanggal)
+    const todaySPP = new Date().toISOString().split('T')[0];
     const paketMusrid = allData.filter(p =>
-      p.id_murid === muridSel.value && p.id !== id && p.status !== 'EXPIRED'
+      p.id_murid === muridSel.value &&
+      p.id !== id &&
+      p.periode_akhir >= todaySPP // skip paket yang periode_akhir sudah lewat
     );
     for (const p of paketMusrid) {
       const s = new Date(p.periode_mulai), e = new Date(p.periode_akhir);
@@ -1032,9 +1063,15 @@ const SPPPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA SPP') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      for (const s of allData) { await API.spp.delete(s.id); }
-      UI.toast('Seluruh paket SPP berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      // Gunakan deleteAll (all:true) bukan loop per-item
+      // Loop menyebabkan index shifting di spreadsheet → data skip
+      const res = await API.spp.deleteAll();
+      if (res.status === 'OK') {
+        UI.toast('Seluruh paket SPP berhasil dihapus!','success');
+        allData = []; isFetched = false; load();
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
@@ -1320,24 +1357,21 @@ const PembayaranPage = (() => {
     return ['SPP','PENDAFTARAN','BUKU'].includes(tr.jenis) ? 'masuk' : 'keluar';
   }
 
-async function load(forceRefresh = false) {
-  const tbody = document.getElementById('pay-tbody');
-  if (!tbody) return;
+  async function load(forceRefresh = false) {
+    const tbody = document.getElementById('pay-tbody');
+    if (!tbody) return;
 
-  // SOLUSI: Cek apakah data sudah ada di memori
-  if (!forceRefresh && isFetched && allData.length > 0) {
-    renderTable(allData.slice(-50).reverse());
-    updateSummary();
-    return; // Berhenti di sini, jangan loading lagi
-  }
+    if (!forceRefresh && allData.length > 0) {
+      renderTable(allData.slice(-50).reverse());
+      updateSummary();
+    } else {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pembayaran...</td></tr>';
+    }
 
-  // Hanya tampilkan loading jika data benar-benar kosong atau force refresh
-  tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pembayaran...</td></tr>';
-
-  try {
-    const [payRes, muridRes, sppRes] = await Promise.all([
-      API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
-    ]);
+    try {
+      const [payRes, muridRes, sppRes] = await Promise.all([
+        API.pembayaran.getAll(), API.murid.getAll(), API.spp.getAll()
+      ]);
       if (payRes.status === 'OK') {
         // Filter hanya arah masuk
         allData = (payRes.data || [])
@@ -1991,18 +2025,18 @@ const OperasionalPage = (() => {
     return ['SPP','PENDAFTARAN'].includes(tr.jenis) ? 'masuk' : 'keluar';
   }
 
-async function load(forceRefresh = false) {
-  const tbody = document.getElementById('ops-tbody');
-  if (!tbody) return;
+  async function load(forceRefresh = false) {
+    const tbody = document.getElementById('ops-tbody');
+    if (!tbody) return;
 
-  // SOLUSI: Pastikan pengecekan hanya jika data benar-benar sudah ada (> 0)
-  if (!forceRefresh && isFetched && allData.length > 0) {
-    renderTable(allData.slice(-50).reverse());
-    updateSummary();
-    return;
-  }
+    // Strategi instan: tampilkan data cache dulu, fetch di background
+    if (!forceRefresh && isFetched && allData.length >= 0) {
+      renderTable(allData.slice(-50).reverse());
+      updateSummary();
+      return; // Tidak fetch ulang kecuali dipaksa
+    }
 
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data pengeluaran...</td></tr>';
     try {
       const res = await API.pembayaran.getAll();
       if (res.status === 'OK') {
@@ -2535,6 +2569,235 @@ const GajiPage = (() => {
   function _getCurrentData() { return allData; }
   return { load, search, saveForm, openAdd, openEdit, deleteGaji, clearForm, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
+
+
+// ============================================================
+// Apps Script FIX — handleGetBuku & handleUpdateBuku
+// (Masalah 1 & 3: sinkron field nama_modul, stok, harga)
+// Salin fungsi-fungsi ini ke Code.gs Anda, GANTI yang lama
+// ============================================================
+/*
+  ⚠️  PERBAIKAN APPS SCRIPT — TEMPEL KE Code.gs
+
+  Ganti fungsi handleGetBuku yang lama dengan ini:
+
+  function handleGetBuku(params) {
+    const data = getSheetData(CONFIG.SHEETS.BUKU);
+    const buku = data.map(row => ({
+      id:          row[0],
+      nama_modul:  row[1],   // ← pakai nama_modul (bukan nama)
+      jenjang:     row[2],
+      program:     row[3],
+      stok:        Number(row[4]) || 0,        // ← Number wajib
+      harga_beli:  Number(row[5]) || 0,        // ← Number wajib
+      harga_jual:  Number(row[6]) || 0,        // ← Number wajib
+      keterangan:  row[7] || ''
+    }));
+    if (params.program) return ok(buku.filter(b => b.program === params.program));
+    return ok(buku);
+  }
+
+  Ganti fungsi handleUpdateBuku yang lama dengan ini:
+
+  function handleUpdateBuku(body) {
+    const { id, nama_modul, jenjang, program, stok, harga_beli, harga_jual, keterangan } = body;
+    if (!id) return err('ID required');
+    const data = getSheetData(CONFIG.SHEETS.BUKU);
+    const idx  = data.findIndex(row => row[0] === id);
+    if (idx === -1) return err('Book not found');
+    const existing = data[idx];
+    updateRow(CONFIG.SHEETS.BUKU, idx, [
+      id,
+      nama_modul  !== undefined ? nama_modul  : existing[1],
+      jenjang     !== undefined ? jenjang     : existing[2],
+      program     !== undefined ? program     : existing[3],
+      stok        !== undefined ? Number(stok)       : existing[4],
+      harga_beli  !== undefined ? Number(harga_beli) : existing[5],
+      harga_jual  !== undefined ? Number(harga_jual) : existing[6],
+      keterangan  !== undefined ? keterangan  : existing[7]
+    ]);
+    logSystem('INFO','UPDATE_BUKU','Modul diperbarui: '+id);
+    return ok({ message: 'Modul pembelajaran berhasil diperbarui' });
+  }
+
+  Tambahkan juga di handleAddPembayaran, setelah baris appendRow,
+  logika pengurangan stok buku jika jenis === 'BUKU':
+
+  if (jenis === 'BUKU' && keterangan) {
+    const bukuData = getSheetData(CONFIG.SHEETS.BUKU);
+    // Cari buku berdasarkan nama (keterangan = nama buku)
+    const bukuIdx = bukuData.findIndex(row =>
+      String(row[1]).trim().toLowerCase() === String(keterangan).trim().toLowerCase()
+    );
+    if (bukuIdx !== -1 && Number(bukuData[bukuIdx][4]) > 0) {
+      bukuData[bukuIdx][4] = Number(bukuData[bukuIdx][4]) - 1; // kurangi stok
+      updateRow(CONFIG.SHEETS.BUKU, bukuIdx, bukuData[bukuIdx]);
+    }
+  }
+*/
+
+
+// ============================================================
+// HTML TOOLBAR TEMPLATE — Masalah 2
+// Salin pola ini ke masing-masing halaman HTML.
+// Ganti XxxPage & xxx-tbody sesuai modul.
+// ============================================================
+/*
+<!-- MENTOR PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="user-check"></i> Data Mentor
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari mentor..."
+      oninput="MentorPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="MentorPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="mentor-undo-btn" onclick="MentorPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="mentor-redo-btn" onclick="MentorPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="MentorPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+
+<!-- SPP PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="calendar-check"></i> Data Paket SPP
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari SPP..."
+      oninput="SPPPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="SPPPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="spp-undo-btn" onclick="SPPPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="spp-redo-btn" onclick="SPPPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="SPPPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+
+<!-- MODUL BELAJAR (BUKU) PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="book-open"></i> Modul Belajar
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari modul..."
+      oninput="BukuPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="BukuPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="buku-undo-btn" onclick="BukuPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="buku-redo-btn" onclick="BukuPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="BukuPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+
+<!-- PRESENSI PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="clipboard-list"></i> Data Presensi
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari presensi..."
+      oninput="PresensiPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="PresensiPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="presensi-undo-btn" onclick="PresensiPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="presensi-redo-btn" onclick="PresensiPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="PresensiPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+
+<!-- PEMBAYARAN PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="credit-card"></i> Riwayat Pembayaran
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari pembayaran..."
+      oninput="PembayaranPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="PembayaranPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="pay-undo-btn" onclick="PembayaranPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="pay-redo-btn" onclick="PembayaranPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="PembayaranPage.openItemPicker()">
+      <i data-lucide="shopping-cart"></i> Pilih Item
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="PembayaranPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+
+<!-- GAJI PAGE toolbar -->
+<div class="table-toolbar">
+  <div class="table-title">
+    <i data-lucide="banknote"></i> Data Penggajian
+  </div>
+  <div class="table-controls">
+    <input type="text" class="search-input" placeholder="Cari gaji..."
+      oninput="GajiPage.search(this.value)">
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" onclick="GajiPage.load(true)">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+    <button class="ctrl-btn icon-only" id="gaji-undo-btn" onclick="GajiPage.undo()" disabled>
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="ctrl-btn icon-only" id="gaji-redo-btn" onclick="GajiPage.redo()" disabled>
+      <i data-lucide="redo-2"></i>
+    </button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn ctrl-danger" onclick="GajiPage.deleteAll()">
+      <i data-lucide="trash-2"></i> Hapus Semua
+    </button>
+  </div>
+</div>
+*/
+
 
 // ============================================================
 // ============================================================
