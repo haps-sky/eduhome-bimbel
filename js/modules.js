@@ -230,6 +230,7 @@ const MentorPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
   let lastAddedId     = null;
+  let lastRestoredId  = null;
   let history = [];
   let future  = [];
 
@@ -434,6 +435,7 @@ const MentorPage = (() => {
         res = await API.mentor.add(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Data mentor dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
         }
@@ -449,14 +451,15 @@ const MentorPage = (() => {
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('mentor-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.mentor.add(lastDeletedData);
+      const res = await API.mentor.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Data dipulihkan kembali!','success');
+        UI.toast('Redo Berhasil: Data mentor dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('mentor-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
         load(true);
@@ -474,11 +477,14 @@ const MentorPage = (() => {
     const konfirmasi = prompt("Ketik 'HAPUS SEMUA MENTOR' untuk melanjutkan:");
     if (konfirmasi !== 'HAPUS SEMUA MENTOR') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
-    // Hapus satu per satu karena tidak ada deleteAll di API mentor
     try {
-      for (const m of allData) { await API.mentor.delete(m.id); }
-      UI.toast('Seluruh data mentor berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      const res = await API.mentor.delete({ all: true });
+      if (res.status === 'OK') {
+        UI.toast('Seluruh data mentor berhasil dihapus!','success');
+        load(true);
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
@@ -498,6 +504,7 @@ const PresensiPage = (() => {
   let isFetched       = false;
   let lastDeletedData = null;
   let lastAction      = null;
+  let lastRestoredId  = null;
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('presensi-tbody');
@@ -686,7 +693,6 @@ const PresensiPage = (() => {
       if (res.status === 'OK') {
         UI.toast(id ? 'Presensi diperbarui' : 'Presensi berhasil dicatat!','success');
         UI.closeModal('modal-presensi');
-        allData = []; isFetched = false;
         setTimeout(() => load(true), 500);
       } else {
         UI.toast(res.message || 'Gagal menyimpan','error');
@@ -715,7 +721,6 @@ const PresensiPage = (() => {
       const res = await API.presensi.delete(id);
       if (res.status === 'OK') {
         UI.toast('Data presensi berhasil dihapus & kuota SPP dikembalikan','success');
-        allData = []; isFetched = false;
         if (window.SPPPage) SPPPage.isFetched = false;
         await load(true);
         const undoBtn = document.getElementById('presensi-undo-btn');
@@ -742,26 +747,28 @@ const PresensiPage = (() => {
         const res = await API.presensi.add(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Presensi dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
-          allData = []; isFetched = false; load(true);
+          load(true);
         }
       }
     } catch(e) { UI.toast('Gagal melakukan Undo','error'); if (undoBtn) undoBtn.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('presensi-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.presensi.add(lastDeletedData);
+      const res = await API.presensi.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Data dipulihkan!','success');
+        UI.toast('Redo Berhasil: Presensi dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('presensi-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal melakukan Redo','error'); if (redoBtn) redoBtn.disabled = false; }
   }
@@ -774,9 +781,13 @@ const PresensiPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA PRESENSI') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      for (const p of allData) { await API.presensi.delete(p.id); }
-      UI.toast('Seluruh data presensi berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      const res = await API.presensi.delete({ all: true });
+      if (res.status === 'OK') {
+        UI.toast('Seluruh data presensi berhasil dihapus!','success');
+        load(true);
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
@@ -796,6 +807,7 @@ const SPPPage = (() => {
   let isFetched    = false;
   let lastDeletedData = null;
   let lastAction      = null;
+  let lastRestoredId  = null;
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('spp-tbody');
@@ -856,8 +868,12 @@ const SPPPage = (() => {
       if (!hariLes.length) { display.textContent = 'Total: 0 Sesi (Jadwal kosong)'; return; }
       const dayMap = { 'minggu':0,'senin':1,'selasa':2,'rabu':3,'kamis':4,'jumat':5,'sabtu':6 };
       const targetDays = hariLes.map(h => dayMap[h]);
-      let count = 0, cur = new Date(mulai.replace(/-/g,'\/')), end = new Date(akhir.replace(/-/g,'\/'));
-      while (cur < end) { if (targetDays.includes(cur.getDay())) count++; cur.setDate(cur.getDate()+1); }
+      const startDate = new Date(mulai.replace(/-/g,'\/'));
+      const endDate   = new Date(akhir.replace(/-/g,'\/'));
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+      let count = 0, cur = new Date(startDate);
+      while (cur <= endDate) { if (targetDays.includes(cur.getDay())) count++; cur.setDate(cur.getDate()+1); }
       display.innerHTML = `Total: <strong>${count}</strong> Sesi`;
     } catch(e) { display.textContent = 'Gagal menghitung'; }
   }
@@ -989,7 +1005,7 @@ const SPPPage = (() => {
           : `Berhasil! ${res.data.total_pertemuan} sesi di periode ini (dihitung murni dari jadwal).`;
         UI.toast(msg,'success');
         UI.closeModal('modal-spp');
-        allData = []; isFetched = false; load();
+        load(true);
       } else { UI.toast(res.message || 'Gagal memproses paket SPP','error'); }
     } catch(e) { UI.toast('Gagal terhubung ke server','error'); }
     finally { if (btn) { btn.disabled = false; btn.innerHTML = 'Simpan Paket'; } }
@@ -1031,26 +1047,28 @@ const SPPPage = (() => {
         const res = await API.spp.create(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Paket SPP dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
-          allData = []; isFetched = false; load(true);
+          load(true);
         }
       }
     } catch(e) { UI.toast('Gagal melakukan Undo','error'); if (undoBtn) undoBtn.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('spp-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.spp.create(lastDeletedData);
+      const res = await API.spp.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Paket SPP dipulihkan!','success');
+        UI.toast('Redo Berhasil: Paket SPP dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('spp-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal melakukan Redo','error'); if (redoBtn) redoBtn.disabled = false; }
   }
@@ -1063,12 +1081,10 @@ const SPPPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA SPP') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      // Gunakan deleteAll (all:true) bukan loop per-item
-      // Loop menyebabkan index shifting di spreadsheet → data skip
       const res = await API.spp.deleteAll();
       if (res.status === 'OK') {
         UI.toast('Seluruh paket SPP berhasil dihapus!','success');
-        allData = []; isFetched = false; load();
+        load(true);
       } else {
         UI.toast(res.message || 'Gagal menghapus semua data','error');
       }
@@ -1093,6 +1109,7 @@ const BukuPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
   let lastAddedId     = null;
+  let lastRestoredId  = null;
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('buku-tbody');
@@ -1231,14 +1248,12 @@ const BukuPage = (() => {
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = id ? '<div class="spinner spinner-sm"></div> Memperbarui...' : '<div class="spinner spinner-sm"></div> Menyimpan...'; }
 
-      // FIX MASALAH 1: handleUpdateBuku di Apps Script harus menerima field baru
       const res = id ? await API.buku.update({ id, ...payload }) : await API.buku.add(payload);
 
       if (res.status === 'OK') {
         UI.toast(id ? 'Modul diperbarui' : 'Modul berhasil ditambahkan!','success');
         if (!id) { lastAddedId = res.data?.id || null; lastAction = 'ADD'; }
         UI.closeModal('modal-buku');
-        allData = []; isFetched = false;
         setTimeout(() => load(true), 500);
       } else {
         UI.toast(res.message || 'Gagal menyimpan modul','error');
@@ -1288,6 +1303,7 @@ const BukuPage = (() => {
         res = await API.buku.add(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Modul dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
         }
@@ -1295,22 +1311,23 @@ const BukuPage = (() => {
         res = await API.buku.delete(lastAddedId);
         if (res.status === 'OK') { UI.toast('Undo Berhasil: Penambahan modul dibatalkan!','warning'); lastAction = null; }
       }
-      allData = []; isFetched = false; load(true);
+      load(true);
     } catch(e) { UI.toast('Gagal melakukan Undo','error'); if (undoBtn) undoBtn.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('buku-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.buku.add(lastDeletedData);
+      const res = await API.buku.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Modul dipulihkan!','success');
+        UI.toast('Redo Berhasil: Modul dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('buku-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal melakukan Redo','error'); if (redoBtn) redoBtn.disabled = false; }
   }
@@ -1323,9 +1340,13 @@ const BukuPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA MODUL') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      for (const b of allData) { await API.buku.delete(b.id); }
-      UI.toast('Seluruh modul berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      const res = await API.buku.delete({ all: true });
+      if (res.status === 'OK') {
+        UI.toast('Seluruh modul berhasil dihapus!','success');
+        load(true);
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
@@ -1350,6 +1371,7 @@ const PembayaranPage = (() => {
   let sppData      = [];
   let lastDeletedData = null;
   let lastAction      = null;
+  let lastRestoredId  = null;
 
   // Backward compat: infer arah dari jenis untuk data lama
   function inferArah(tr) {
@@ -1550,17 +1572,14 @@ const PembayaranPage = (() => {
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = id ? '<div class="spinner spinner-sm"></div> Memperbarui data...' : '<div class="spinner spinner-sm"></div> Memproses pembayaran...'; }
 
-      // FIX MASALAH 1: Saat transaksi buku, stok dikurangi di backend
-      // Pastikan jenis='BUKU' dikirim agar backend bisa proses stok
       const res = id ? await API.pembayaran.update({ id, ...payload }) : await API.pembayaran.add(payload);
 
       if (res.status === 'OK') {
         UI.toast(id ? 'Data pembayaran diperbarui' : 'Pembayaran berhasil dicatat!','success');
         UI.closeModal('modal-pembayaran');
-        // Reset state picker buku
         _pickerState.bukuQty = null; _pickerState.bukuNama = null;
-        _pickerState.cachedBuku = null; // force refresh stok
-        allData = []; isFetched = false; load();
+        _pickerState.cachedBuku = null;
+        load(true);
       } else {
         UI.toast(res.message || 'Gagal menyimpan pembayaran','error');
       }
@@ -1609,26 +1628,28 @@ const PembayaranPage = (() => {
         const res = await API.pembayaran.add(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Pembayaran dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
-          allData = []; isFetched = false; load(true);
+          load(true);
         }
       }
     } catch(e) { UI.toast('Gagal melakukan Undo','error'); if (undoBtn) undoBtn.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('pay-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.pembayaran.add(lastDeletedData);
+      const res = await API.pembayaran.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Pembayaran dipulihkan!','success');
+        UI.toast('Redo Berhasil: Pembayaran dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('pay-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal melakukan Redo','error'); if (redoBtn) redoBtn.disabled = false; }
   }
@@ -1641,9 +1662,13 @@ const PembayaranPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA PEMBAYARAN') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      for (const p of allData) { await API.pembayaran.delete(p.id); }
-      UI.toast('Seluruh data pembayaran berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      const res = await API.pembayaran.delete({ all: true });
+      if (res.status === 'OK') {
+        UI.toast('Seluruh data pembayaran berhasil dihapus!','success');
+        load(true);
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
@@ -2018,6 +2043,7 @@ const OperasionalPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
   let lastAddedId     = null;
+  let lastRestoredId  = null;
   let _cachedBukuOps  = null;
 
   function inferArah(tr) {
@@ -2195,7 +2221,6 @@ const OperasionalPage = (() => {
         if (!id) { lastAddedId = res.data?.id || null; lastAction = 'ADD'; }
         UI.closeModal('modal-operasional');
         _resetOpsForm();
-        allData = []; isFetched = false;
         setTimeout(() => load(true), 500);
       } else {
         UI.toast(res.message || 'Gagal menyimpan','error');
@@ -2242,25 +2267,27 @@ const OperasionalPage = (() => {
         const res = await API.pembayaran.add(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo: Pengeluaran dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id;
           lastAction = 'UNDO_DELETE';
           if (r) r.disabled = false;
-          allData = []; isFetched = false; load(true);
+          load(true);
         }
       }
     } catch(e) { UI.toast('Gagal Undo','error'); if (u) u.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const r = document.getElementById('ops-redo-btn');
     try {
       if (r) r.disabled = true;
-      const res = await API.pembayaran.add(lastDeletedData);
+      const res = await API.pembayaran.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo: Pengeluaran dipulihkan!','success');
+        UI.toast('Redo: Pengeluaran dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const u = document.getElementById('ops-undo-btn'); if (u) u.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal Redo','error'); if (r) r.disabled = false; }
   }
@@ -2344,6 +2371,7 @@ const GajiPage = (() => {
   let isFetched    = false;
   let lastDeletedData = null;
   let lastAction      = null;
+  let lastRestoredId  = null;
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('gaji-tbody');
@@ -2483,7 +2511,7 @@ const GajiPage = (() => {
       if (res.status === 'OK') {
         UI.toast(id ? 'Data gaji berhasil diperbarui' : 'Gaji berhasil dicatat!','success');
         UI.closeModal('modal-gaji');
-        allData = []; isFetched = false; await load(true);
+        await load(true);
       } else { UI.toast(res.message || 'Gagal menyimpan data','error'); }
     } catch(e) { UI.toast('Terjadi kesalahan koneksi ke server','error'); }
     finally { if (btn) { btn.disabled = false; btn.innerHTML = 'Simpan Penggajian'; } }
@@ -2527,26 +2555,28 @@ const GajiPage = (() => {
         const res = await API.gaji.record(lastDeletedData);
         if (res.status === 'OK') {
           UI.toast('Undo Berhasil: Catatan gaji dikembalikan!','success');
+          lastRestoredId = res.data?.id || lastDeletedData.id_trx;
           lastAction = 'UNDO_DELETE';
           if (redoBtn) redoBtn.disabled = false;
-          allData = []; isFetched = false; load(true);
+          load(true);
         }
       }
     } catch(e) { UI.toast('Gagal melakukan Undo','error'); if (undoBtn) undoBtn.disabled = false; }
   }
 
   async function redo() {
-    if (!lastDeletedData || lastAction !== 'UNDO_DELETE') return;
+    if (!lastRestoredId || lastAction !== 'UNDO_DELETE') return;
     const redoBtn = document.getElementById('gaji-redo-btn');
     try {
       if (redoBtn) redoBtn.disabled = true;
-      const res = await API.gaji.record(lastDeletedData);
+      const res = await API.gaji.delete(lastRestoredId);
       if (res.status === 'OK') {
-        UI.toast('Redo Berhasil: Catatan gaji dipulihkan!','success');
+        UI.toast('Redo Berhasil: Catatan gaji dihapus kembali!','success');
         lastAction = 'DELETE';
+        lastRestoredId = null;
         const undoBtn = document.getElementById('gaji-undo-btn');
         if (undoBtn) undoBtn.disabled = false;
-        allData = []; isFetched = false; load(true);
+        load(true);
       }
     } catch(e) { UI.toast('Gagal melakukan Redo','error'); if (redoBtn) redoBtn.disabled = false; }
   }
@@ -2559,9 +2589,13 @@ const GajiPage = (() => {
     if (konfirmasi !== 'HAPUS SEMUA GAJI') { UI.toast('Penghapusan massal dibatalkan.','error'); return; }
     UI.toast('Sedang membersihkan database...','info');
     try {
-      for (const g of allData) { await API.gaji.delete(g.id_trx); }
-      UI.toast('Seluruh catatan gaji berhasil dihapus!','success');
-      allData = []; isFetched = false; load();
+      const res = await API.gaji.delete({ all: true });
+      if (res.status === 'OK') {
+        UI.toast('Seluruh catatan gaji berhasil dihapus!','success');
+        load(true);
+      } else {
+        UI.toast(res.message || 'Gagal menghapus semua data','error');
+      }
     } catch(e) { UI.toast('Gagal menghapus semua data','error'); }
   }
 
