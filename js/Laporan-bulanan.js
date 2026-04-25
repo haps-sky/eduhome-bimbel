@@ -4,7 +4,6 @@ const LaporanBulananPage = (() => {
   let _savingsPct = 15;
 
 async function load(month, year) {
-  init(); // 🔥 TAMBAHKAN INI
 
   const now = new Date();
   month = month || (now.getMonth() + 1);
