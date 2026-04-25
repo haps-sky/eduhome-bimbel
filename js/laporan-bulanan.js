@@ -3,23 +3,33 @@ const LaporanBulananPage = (() => {
   let _ownerPct   = 65;
   let _savingsPct = 15;
 
-  async function load(month, year) {
-    const now = new Date();
-    month = month || (now.getMonth() + 1);
-    year  = year  || now.getFullYear();
-    _setLoadingState(true);
-    try {
-      const res = await API.laporan.getBulanan(month, year, _ownerPct, _savingsPct);
-      if (res.status !== 'OK') { UI.toast(res.message || 'Gagal memuat laporan', 'error'); return; }
-      _lastData = res.data;
-      _render(res.data);
-    } catch(e) {
-      console.error('LaporanBulanan load error:', e);
-      UI.toast('Gagal terhubung ke server', 'error');
-    } finally {
-      _setLoadingState(false);
+async function load(month, year) {
+  init(); // 🔥 TAMBAHKAN INI
+
+  const now = new Date();
+  month = month || (now.getMonth() + 1);
+  year  = year  || now.getFullYear();
+
+  _setLoadingState(true);
+
+  try {
+    const res = await API.laporan.getBulanan(month, year, _ownerPct, _savingsPct);
+
+    if (res.status !== 'OK') {
+      UI.toast(res.message || 'Gagal memuat laporan', 'error');
+      return;
     }
+
+    _lastData = res.data;
+    _render(res.data);
+
+  } catch(e) {
+    console.error('LaporanBulanan load error:', e);
+    UI.toast('Gagal terhubung ke server', 'error');
+  } finally {
+    _setLoadingState(false);
   }
+}
 
   function _render(d) {
     if (!d) return;
@@ -176,7 +186,7 @@ const LaporanBulananPage = (() => {
     }
   }
 
-  return { load, init, onMonthChange, onPctChange, refresh };
+  return { load, onMonthChange, onPctChange, refresh };
 })();
 
 window.LaporanBulananPage = LaporanBulananPage;
