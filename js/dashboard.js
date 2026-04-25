@@ -138,3 +138,5 @@ async function load() {
 
   return { load };
 })();
+
+window.Dashboard = Dashboard;

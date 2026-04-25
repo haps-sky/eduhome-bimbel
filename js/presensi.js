@@ -269,3 +269,5 @@ const PresensiPage = (() => {
 
   return { load, search, saveForm, filterByDate, openAdd, openEdit, deleteItem, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
+
+window.PresensiPage = PresensiPage;

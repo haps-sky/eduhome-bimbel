@@ -120,3 +120,5 @@ const Selection = (() => {
 
   return { toggle, toggleRow, toggleAll, deleteSelected, checkbox, isActive };
 })();
+
+window.Selection = Selection;

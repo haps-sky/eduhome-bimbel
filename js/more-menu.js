@@ -77,3 +77,5 @@ const MoreMenu = (() => {
 
   return { toggle, close };
 })();
+
+window.MoreMenu = MoreMenu;

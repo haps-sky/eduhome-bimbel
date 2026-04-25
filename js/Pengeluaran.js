@@ -330,3 +330,5 @@ const OperasionalPage = (() => {
   window._opsUpdateTotal = _updateTotal;
   return { load, search, openAdd, openEdit, saveForm, deleteItem, updateSummary, undo, redo, deleteSelected, renderTable, _getCurrentData, _pilihBukuOps, _updateTotalPublic: _updateTotal };
 })();
+
+window.OperasionalPage = OperasionalPage;

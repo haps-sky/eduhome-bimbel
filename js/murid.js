@@ -434,3 +434,5 @@ const MuridPage = (() => {
 
   return { load, search, openAdd, openEdit, saveForm, deleteMurid, renderDayCheckboxes, toggleTimeInput, viewSchedule, undo, redo, deleteAll, sortBy, deleteSelected, renderTable, _getCurrentData };
 })();
+
+window.MuridPage = MuridPage;

@@ -1,14 +1,14 @@
 const RBAC = {
   pages: {
-    OWNER:  ['dashboard', 'owner-finance', 'murid', 'presensi', 'spp', 'gaji', 'logs'],
-    ADMIN:  ['dashboard', 'murid', 'mentor', 'presensi', 'pembayaran', 'pengeluaran', 'spp', 'buku', 'gaji'],
+    OWNER:  ['dashboard', 'owner-finance', 'laporan', 'murid', 'presensi', 'spp', 'gaji', 'logs'],
+    ADMIN:  ['dashboard', 'murid', 'mentor', 'presensi', 'pembayaran', 'pengeluaran', 'spp', 'buku', 'gaji', 'laporan'],
     MENTOR: ['dashboard', 'mentor-students', 'mentor-presensi']
   },
-
 
   titles: {
     'dashboard':        'Dashboard',
     'owner-finance':    'Laporan Keuangan',
+    'laporan':          'Laporan Laba Rugi',
     'murid':            'Data Murid',
     'mentor':           'Data Mentor',
     'presensi':         'Presensi',
@@ -22,24 +22,22 @@ const RBAC = {
     'mentor-presensi':  'Catat Presensi'
   },
 
-  // Default landing page per role
   defaultPage: {
     OWNER:  'dashboard',
     ADMIN:  'dashboard',
     MENTOR: 'dashboard'
   },
 
-  // Sidebar label groups per role
   groups: {
     OWNER: [
       { label: 'Utama',    pages: ['dashboard'] },
-      { label: 'Laporan',  pages: ['owner-finance', 'murid', 'presensi', 'spp', 'gaji'] },
+      { label: 'Laporan',  pages: ['owner-finance', 'laporan', 'murid', 'presensi', 'spp', 'gaji'] },
       { label: 'Sistem',   pages: ['logs'] }
     ],
     ADMIN: [
       { label: 'Utama',      pages: ['dashboard'] },
       { label: 'Manajemen',  pages: ['murid', 'mentor', 'spp', 'buku'] },
-      { label: 'Transaksi',  pages: ['presensi', 'pembayaran', 'pengeluaran', 'gaji'] }
+      { label: 'Transaksi',  pages: ['presensi', 'pembayaran', 'pengeluaran', 'gaji', 'laporan'] }
     ],
     MENTOR: [
       { label: 'Utama',      pages: ['dashboard'] },
@@ -47,10 +45,10 @@ const RBAC = {
     ]
   },
 
-  // Icons per page
   icons: {
     'dashboard':       'layout-dashboard',
     'owner-finance':   'bar-chart-2',
+    'laporan':         'file-bar-chart',
     'murid':           'users',
     'mentor':          'user-check',
     'presensi':        'calendar-check',
@@ -63,7 +61,6 @@ const RBAC = {
     'mentor-students': 'users',
     'mentor-presensi': 'calendar-check'
   },
-
 
   badges: {
     OWNER:  { cls: 'role-owner',  label: 'Owner' },
@@ -83,7 +80,6 @@ const App = (() => {
     cache: {}
   };
 
-  // ── Session management ──────────────────────────────────
   function getSession() {
     const s = sessionStorage.getItem('eduhome_user');
     return s ? JSON.parse(s) : null;
@@ -99,13 +95,13 @@ const App = (() => {
     state.user = null;
   }
 
-function buildSidebar(role) {
-    const nav = document.getElementById('sidebar-nav');
+  function buildSidebar(role) {
+    const nav   = document.getElementById('sidebar-nav');
     const brand = document.getElementById('sidebar-role-label');
     if (!nav) return;
 
     const groups = RBAC.groups[role] || [];
-    const badge = RBAC.badges[role] || { cls: '', label: role };
+    const badge  = RBAC.badges[role] || { cls: '', label: role };
     if (brand) { brand.textContent = badge.label; brand.className = 'role-badge ' + badge.cls; }
 
     nav.innerHTML = groups.map(g => `
@@ -116,7 +112,6 @@ function buildSidebar(role) {
           ${RBAC.titles[p] || p}
         </div>`).join('')}
     `).join('');
-
 
     nav.querySelectorAll('.nav-item').forEach(el => {
       el.addEventListener('click', () => {
@@ -129,12 +124,10 @@ function buildSidebar(role) {
     lucide.createIcons({ nodes: [nav] });
   }
 
-  // ── Router with access guard ────────────────────────────
   function navigate(page) {
     const role = state.user ? state.user.role : null;
     if (!role) return;
 
-    // ── Frontend access guard ────────────────────────────
     if (!RBAC.canAccess(role, page)) {
       UI.toast('Akses ditolak: halaman ini tidak tersedia untuk role Anda', 'error');
       return;
@@ -142,17 +135,14 @@ function buildSidebar(role) {
 
     state.currentPage = page;
 
-    // Update nav active state
     document.querySelectorAll('.nav-item').forEach(el => {
       el.classList.toggle('active', el.dataset.page === page);
     });
 
-    // Show / hide page sections
     document.querySelectorAll('.page-section').forEach(el => {
       el.style.display = el.id === 'page-' + page ? 'block' : 'none';
     });
 
-    // Update topbar title
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.textContent = RBAC.titles[page] || page;
 
@@ -161,53 +151,44 @@ function buildSidebar(role) {
 
   function loadPage(page) {
     switch (page) {
-      case 'dashboard':        Dashboard.load();          break;
-      case 'owner-finance':    OwnerFinancePage.load();   break;
-      case 'murid':            MuridPage.load();          break;
-      case 'mentor':           MentorPage.load();         break;
-      case 'presensi':         PresensiPage.load();       break;
-      case 'pembayaran':       PembayaranPage.load();     break;
-      case 'pengeluaran':      OperasionalPage.load();    break;
-      case 'spp':              SPPPage.load();            break;
-      case 'buku':             BukuPage.load();           break;
-      case 'gaji':             GajiPage.load();           break;
-      case 'logs':             LogsPage.load();           break;
-      case 'mentor-students':  MentorStudentsPage.load(); break;
-      case 'mentor-presensi':  MentorPresensiPage.load(); break;
+      case 'dashboard':        Dashboard.load();                              break;
+      case 'owner-finance':    OwnerFinancePage.load();                      break;
+      case 'laporan':          LaporanBulananPage.init(); LaporanBulananPage.load(); break;
+      case 'murid':            MuridPage.load();                             break;
+      case 'mentor':           MentorPage.load();                            break;
+      case 'presensi':         PresensiPage.load();                          break;
+      case 'pembayaran':       PembayaranPage.load();                        break;
+      case 'pengeluaran':      OperasionalPage.load();                       break;
+      case 'spp':              SPPPage.load();                               break;
+      case 'buku':             BukuPage.load();                              break;
+      case 'gaji':             GajiPage.load();                              break;
+      case 'logs':             LogsPage.load();                              break;
+      case 'mentor-students':  MentorStudentsPage.load();                    break;
+      case 'mentor-presensi':  MentorPresensiPage.load();                    break;
     }
   }
 
-  // ── Auth ─────────────────────────────────────────────────
-async function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value.trim();
     const btn      = document.getElementById('login-btn');
 
-    if (!username || !password) { 
-      UI.toast('Username dan password diperlukan', 'error'); 
-      return; 
+    if (!username || !password) {
+      UI.toast('Username dan password diperlukan', 'error');
+      return;
     }
 
-    // 1. Matikan tombol & pasang spinner
-    btn.disabled = true;
-    const originalText = btn.innerHTML; // Simpan teks asli (misal: "Login")
+    btn.disabled  = true;
+    const originalText = btn.innerHTML;
     btn.innerHTML = '<div class="spinner-sm"></div> Loading...';
 
     try {
       const res = await API.auth.login(username, password);
-      
       if (res.status === 'OK') {
         setSession(res.data);
         showApp(res.data);
-        
-        const startPage = RBAC.defaultPage[res.data.role] || 'dashboard';
-        
-        // Cukup panggil navigate(startPage). 
-        // Di dalam fungsi navigate() kamu sudah otomatis panggil loadPage().
-        // Jadi nggak usah panggil loadPage() lagi di sini biar nggak narik API 2x.
-        navigate(startPage);
-        
+        navigate(RBAC.defaultPage[res.data.role] || 'dashboard');
         UI.toast('Selamat datang, ' + res.data.username + '!', 'success');
       } else {
         UI.toast(res.message || 'Login gagal', 'error');
@@ -216,93 +197,74 @@ async function handleLogin(e) {
       console.error(err);
       UI.toast('Koneksi gagal. Periksa URL API.', 'error');
     } finally {
-      // 2. KUNCI UTAMA: Nyalakan lagi tombolnya kalau proses selesai/gagal
-      // Supaya kalau user salah password, mereka bisa coba klik lagi tanpa refresh web
-      btn.disabled = false;
+      btn.disabled  = false;
       btn.innerHTML = originalText;
     }
   }
 
-function handleLogout() {
+  function handleLogout() {
     sessionStorage.clear();
-    // [BARU] Bersihkan class light-mode agar layar login kembali ke dark mode default
     document.body.classList.remove('light-mode');
     UI.toast('Berhasil keluar', 'info');
-    window.location.replace(window.location.pathname); 
-}
-
-// ============================================================
-// [BARU] Theme Manager — Per-User Dark/Light Mode
-// Simpan pilihan tema di localStorage dengan key: theme_{username}
-// ============================================================
-const Theme = (() => {
-  // Ambil username user yang sedang login
-  function _getUsername() {
-    try {
-      const s = sessionStorage.getItem('eduhome_user');
-      return s ? JSON.parse(s).username : 'guest';
-    } catch { return 'guest'; }
+    window.location.replace(window.location.pathname);
   }
 
-  // Key localStorage unik per user: contoh "theme_admin", "theme_owner"
-  function _storageKey() {
-    return 'theme_' + _getUsername().toLowerCase();
-  }
+  const Theme = (() => {
+    function _getUsername() {
+      try {
+        const s = sessionStorage.getItem('eduhome_user');
+        return s ? JSON.parse(s).username : 'guest';
+      } catch { return 'guest'; }
+    }
 
-  // Update ikon tombol — bekerja setelah lucide render <i> jadi <svg>
-  function _updateIcon(isLight) {
-    const btn = document.getElementById('theme-toggle-btn');
-    if (!btn) return;
-    // Lucide mengubah <i> menjadi <svg>, cari berdasarkan data-lucide attribute
-    const moon = btn.querySelector('[data-lucide="moon"], svg[data-lucide="moon"]')
-               || document.getElementById('theme-icon-moon');
-    const sun  = btn.querySelector('[data-lucide="sun"],  svg[data-lucide="sun"]')
-               || document.getElementById('theme-icon-sun');
-    if (moon) moon.style.display = isLight ? 'none' : '';
-    if (sun)  sun.style.display  = isLight ? ''     : 'none';
-  }
+    function _storageKey() { return 'theme_' + _getUsername().toLowerCase(); }
 
-  // Terapkan tema ke <body> dan update ikon
-  function _apply(isLight) {
-    document.body.classList.toggle('light-mode', isLight);
-    // Update ikon SETELAH lucide selesai, agar display style tidak ditimpa
-    _updateIcon(isLight);
-  }
+    function _updateIcon(isLight) {
+      const btn  = document.getElementById('theme-toggle-btn');
+      if (!btn) return;
+      const moon = btn.querySelector('[data-lucide="moon"], svg[data-lucide="moon"]')
+                 || document.getElementById('theme-icon-moon');
+      const sun  = btn.querySelector('[data-lucide="sun"],  svg[data-lucide="sun"]')
+                 || document.getElementById('theme-icon-sun');
+      if (moon) moon.style.display = isLight ? 'none' : '';
+      if (sun)  sun.style.display  = isLight ? ''     : 'none';
+    }
 
-  // Dipanggil tepat setelah login berhasil (atau saat restore session)
-  function init() {
-    const saved = localStorage.getItem(_storageKey());
-    // Default: dark mode (saved === null → isLight = false)
-    const isLight = saved === 'light';
-    _apply(isLight);
-  }
+    function _apply(isLight) {
+      document.body.classList.toggle('light-mode', isLight);
+      _updateIcon(isLight);
+    }
 
-  // Dipanggil saat user klik tombol toggle
-  function toggle() {
-    const isCurrentlyLight = document.body.classList.contains('light-mode');
-    const next = !isCurrentlyLight;
-    localStorage.setItem(_storageKey(), next ? 'light' : 'dark');
-    _apply(next);
-  }
+    function init() {
+      const saved   = localStorage.getItem(_storageKey());
+      const isLight = saved === 'light';
+      _apply(isLight);
+    }
 
-  return { init, toggle };
-})();
+    function toggle() {
+      const isCurrentlyLight = document.body.classList.contains('light-mode');
+      const next = !isCurrentlyLight;
+      localStorage.setItem(_storageKey(), next ? 'light' : 'dark');
+      _apply(next);
+    }
 
-// [FIX] Expose Theme ke global scope agar onclick="Theme.toggle()" bisa diakses dari HTML
-window.Theme = Theme;
+    return { init, toggle };
+  })();
 
-function showApp(user) {
+  window.Theme = Theme;
+
+  function showApp(user) {
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-shell').style.display = 'flex';
+    document.getElementById('app-shell').style.display    = 'flex';
 
     const el = document.getElementById('current-date');
     if (el) {
-      el.textContent = new Date().toLocaleDateString('id-ID', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      el.textContent = new Date().toLocaleDateString('id-ID', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
       });
     }
 
-    const badge = RBAC.badges[user.role] || { cls: '', label: user.role };
+    const badge       = RBAC.badges[user.role] || { cls: '', label: user.role };
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) {
       userDisplay.innerHTML = `<strong>${user.username}</strong><span class="role-badge ${badge.cls}">${badge.label}</span>`;
@@ -313,8 +275,8 @@ function showApp(user) {
 
     buildSidebar(user.role);
     applyPageVisibility(user.role);
-    Theme.init(); // [BARU] Muat tema pilihan user dari localStorage
-}
+    Theme.init();
+  }
 
   function applyPageVisibility(role) {
     const adminBtns = [
@@ -328,38 +290,36 @@ function showApp(user) {
       if (el) el.style.display = (role === 'ADMIN') ? 'inline-flex' : 'none';
     });
 
-    // ── Finance section: hide from MENTOR ────────────────
     const financeSection = document.getElementById('dash-finance-section');
     if (financeSection) {
       financeSection.style.display = (role === 'MENTOR') ? 'none' : 'block';
     }
 
-    // ── Mentor personal stat KPIs: show only for MENTOR ──
     const mentorStats = document.getElementById('dash-mentor-stats');
     if (mentorStats) {
       mentorStats.style.display = (role === 'MENTOR') ? 'block' : 'none';
     }
 
-    // ── Payment/Unpaid KPI cards: hide from MENTOR ────────
     ['kpi-card-pembayaran', 'kpi-card-unpaid'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = (role === 'MENTOR') ? 'none' : 'block';
     });
 
-    // ── Owner read-only: sembunyikan SEMUA tombol aksi ──────────
     if (role === 'OWNER') {
-      [
-        'btn-tambah-murid', 'btn-tambah-mentor', 'btn-tambah-presensi',
-        'btn-tambah-pembayaran', 'btn-tambah-pengeluaran',
-        'btn-buat-spp', 'btn-tambah-buku', 'btn-bayar-gaji'
-      ].forEach(id => {
+      adminBtns.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+
+      // Tampilkan tombol admin tools untuk OWNER dan ADMIN di halaman laporan
+    const reconcileBtn = document.getElementById('btn-reconcile-spp');
+    const migrateBtn   = document.getElementById('btn-migrate-buku');
+    if (reconcileBtn) reconcileBtn.style.display = (role === 'ADMIN' || role === 'OWNER') ? 'inline-flex' : 'none';
+    if (migrateBtn)   migrateBtn.style.display   = role === 'OWNER' ? 'inline-flex' : 'none';
+
     }
   }
 
-  // ── Init ─────────────────────────────────────────────────
   function init() {
     const saved = getSession();
     if (saved) {
@@ -368,35 +328,34 @@ function showApp(user) {
       navigate(RBAC.defaultPage[saved.role] || 'dashboard');
     } else {
       document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('app-shell').style.display = 'none';
+      document.getElementById('app-shell').style.display    = 'none';
     }
 
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
     document.getElementById('mobile-menu-btn').addEventListener('click', (e) => {
-  e.stopPropagation(); // TAMBAHKAN INI: Agar klik tidak "tembus" ke bawah
-  document.getElementById('sidebar').classList.toggle('open');
-});
+      e.stopPropagation();
+      document.getElementById('sidebar').classList.toggle('open');
+    });
   }
-  
+
   return { init, navigate, state, RBAC };
 })();
 
-
 const UI = {
-toast(message, type = 'info') {
+  toast(message, type = 'info') {
     const container = document.getElementById('toast-container');
-    if (!container) return; 
+    if (!container) return;
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    
-    const icons = { 
-      success: 'check-circle', 
-      error: 'x-circle', 
-      info: 'info', 
-      warning: 'alert-triangle' 
+
+    const icons = {
+      success: 'check-circle',
+      error:   'x-circle',
+      info:    'info',
+      warning: 'alert-triangle'
     };
 
     toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${message}</span>`;
@@ -404,16 +363,10 @@ toast(message, type = 'info') {
     lucide.createIcons({ nodes: [toast] });
 
     setTimeout(() => toast.classList.add('show'), 10);
-
     setTimeout(() => {
       toast.classList.remove('show');
-      
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.remove();
-        }
-      }, 300);
-    }, 3500); 
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300);
+    }, 3500);
   },
 
   formatCurrency(val) {
@@ -444,14 +397,14 @@ toast(message, type = 'info') {
 
   stars(count) {
     const n = parseInt(count) || 0;
-    return '<span class="stars">★'.repeat(Math.min(n, 10)) + '</span> <small>' + n + '</small>';
+    return '<span class="stars">★</span>'.repeat(Math.min(n, 10)) + ' <small>' + n + '</small>';
   },
 
   renderTable(tbodyId, rows, emptyMsg = 'Tidak ada data') {
     const el = document.getElementById(tbodyId);
     if (!el) return;
     if (!rows || rows.length === 0) {
-      const cols = el.closest('table').querySelector('thead tr').children.length;
+      const cols = el.closest('table')?.querySelector('thead tr')?.children.length || 5;
       el.innerHTML = `<tr><td colspan="${cols}" class="empty-row">${emptyMsg}</td></tr>`;
       return;
     }
@@ -472,40 +425,69 @@ toast(message, type = 'info') {
   closeAllModals() {
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
   }
+  
 };
 
-async function handleSaveStudent(e) {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]');
-  if (!btn) return;
+const AdminTools = (() => {
+  async function reconcile() {
+    UI.toast('Menjalankan reconciliation SPP...', 'info');
+    try {
+      const res = await API.laporan.reconcileSPP();
+      if (res.status !== 'OK') { UI.toast(res.message || 'Gagal', 'error'); return; }
+      const d       = res.data;
+      const panel   = document.getElementById('laporan-reconcile-panel');
+      const summary = document.getElementById('laporan-reconcile-summary');
+      const tbody   = document.getElementById('laporan-reconcile-tbody');
+      if (!panel) return;
 
-  const originalHTML = btn.innerHTML;
+      if (summary) {
+        summary.textContent = `Diperiksa: ${d.summary.total_checked} paket SPP · Mismatch: ${d.summary.total_mismatch}`;
+      }
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-sm"></span> Menyimpan...';
+      const rows = (d.items || []).map(r => `
+        <tr>
+          <td><span class="id-badge">${r.id_spp}</span></td>
+          <td>${r.nama_murid || r.id_murid}</td>
+          <td>${r.expected_hadir}</td>
+          <td>${r.actual_hadir}</td>
+          <td>${r.sisa_pertemuan}</td>
+          <td><span class="badge ${r.status === 'MATCH' ? 'badge-success' : 'badge-danger'}">${r.status}</span></td>
+        </tr>`);
 
-  try {
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    
-    const res = data.id ? await API.murid.update(data) : await API.murid.add(data);
-    
-    if (res.status === 'OK') {
-      UI.toast('Berhasil disimpan!', 'success');
-      UI.closeAllModals();
-      App.navigate('murid');
-    } else {
-      UI.toast(res.message || 'Gagal menyimpan', 'error');
+      if (tbody) {
+        tbody.innerHTML = rows.length
+          ? rows.join('')
+          : '<tr><td colspan="6" class="empty-row">Semua paket SPP konsisten</td></tr>';
+      }
+
+      panel.style.display = 'block';
+      lucide.createIcons({ nodes: [panel] });
+      UI.toast(`Reconciliation selesai. ${d.summary.total_mismatch} mismatch ditemukan.`,
+        d.summary.total_mismatch > 0 ? 'warning' : 'success');
+    } catch(e) {
+      UI.toast('Gagal menjalankan reconciliation', 'error');
     }
-  } catch (err) {
-    UI.toast('Gagal: ' + err.message, 'error');
-  } finally {
-  
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-    lucide.createIcons({ nodes: [btn] });
   }
-}
+
+  async function migrateBuku() {
+    if (!confirm('Migrasi data BUKU lama? Proses ini akan mengisi field arah yang kosong berdasarkan jumlah transaksi. Aman untuk dijalankan ulang.')) return;
+    UI.toast('Menjalankan migrasi BUKU...', 'info');
+    try {
+      const res = await API.laporan.migrateLegacyBuku();
+      if (res.status !== 'OK') { UI.toast(res.message || 'Gagal', 'error'); return; }
+      const d = res.data;
+      UI.toast(`Migrasi selesai. Diupdate: ${d.updated}, Dilewati: ${d.skipped}, Peringatan: ${d.warnings.length}`,
+        d.warnings.length > 0 ? 'warning' : 'success');
+      if (d.warnings.length > 0) {
+        console.warn('BUKU migration warnings:', d.warnings);
+      }
+    } catch(e) {
+      UI.toast('Gagal menjalankan migrasi', 'error');
+    }
+  }
+
+  return { reconcile, migrateBuku };
+})();
 
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
@@ -520,20 +502,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mainArea) {
     mainArea.addEventListener('click', () => {
       const sidebar = document.getElementById('sidebar');
-      if (sidebar && sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-      }
+      if (sidebar && sidebar.classList.contains('open')) sidebar.classList.remove('open');
     });
   }
 
   const updateDate = () => {
     const el = document.getElementById('current-date');
-    if (el) el.textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    if (el) el.textContent = new Date().toLocaleDateString('id-ID', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
   };
   updateDate();
 
-  const skrg = new Date();
-  const offset = skrg.getTimezoneOffset() * 60000;
+  const skrg      = new Date();
+  const offset    = skrg.getTimezoneOffset() * 60000;
   const localDate = (new Date(skrg - offset)).toISOString().split('T')[0];
   ['presensi-tanggal','pay-tanggal','gaji-tgl','murid-tgl','mentor-presensi-tanggal'].forEach(id => {
     const el = document.getElementById(id);

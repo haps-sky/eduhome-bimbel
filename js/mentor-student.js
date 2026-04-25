@@ -44,3 +44,5 @@ const MentorStudentsPage = (() => {
   }
   return { load };
 })();
+
+window.MentorStudentsPage = MentorStudentsPage;

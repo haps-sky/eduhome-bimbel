@@ -306,3 +306,5 @@ const SPPPage = (() => {
 
   return { load, search, saveForm, openAdd, openEdit, deleteSPP, initLiveCount, calculateLiveSessions, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData, invalidateCache };
 })();
+
+window.SPPPage = SPPPage;

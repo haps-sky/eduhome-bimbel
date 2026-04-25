@@ -122,3 +122,4 @@ const LogsPage = (() => {
   return { load, search, clearLogs, undo, redo };
 })();
 
+window.LogsPage = LogsPage;

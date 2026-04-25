@@ -1342,3 +1342,31 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   background: var(--bg-hover) !important;
   color: var(--text-primary) !important;
 }
+
+/* ── Laporan Laba Rugi Bulanan ──────────────────────────── */
+.laporan-row {
+  border-bottom: 1px solid var(--border);
+}
+.laporan-row:last-child {
+  border-bottom: none;
+}
+.laporan-label {
+  padding: 8px 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.laporan-value {
+  padding: 8px 0;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.profit-positive { color: var(--success) !important; }
+.profit-negative { color: var(--danger)  !important; }
+
+@media (max-width: 640px) {
+  #page-laporan .card-body > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+  }
+}

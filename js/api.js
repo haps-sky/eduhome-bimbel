@@ -1,14 +1,8 @@
-// ============================================================
-// EduHome — api.js (Final)
-// Perubahan: deleteAll semua modul, retry logic, error handling
-// ============================================================
-
 const API = (() => {
 
   const BASE_URL = window.EDUHOME_API_URL ||
     'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
 
-  // ── Auth helpers ─────────────────────────────────────────
   function currentRole() {
     try {
       const s = sessionStorage.getItem('eduhome_user');
@@ -29,16 +23,16 @@ const API = (() => {
     window.location.href = 'index.html';
   };
 
-  // ── GET ───────────────────────────────────────────────────
   async function get(action, params = {}) {
-    const url = new URL(BASE_URL);
+    const url  = new URL(BASE_URL);
+    const user = currentUser();
+
     url.searchParams.set('action', action);
 
     if (action !== 'login') {
-      url.searchParams.set('role', currentRole());
+      url.searchParams.set('username', user.username || '');
     }
 
-    const user = currentUser();
     if (user.role === 'MENTOR') {
       if (user.username)  url.searchParams.set('mentor_name', user.username);
       if (user.mentor_id) url.searchParams.set('mentor_id',   user.mentor_id);
@@ -56,9 +50,8 @@ const API = (() => {
     }
   }
 
-  // ── POST ──────────────────────────────────────────────────
   async function post(body) {
-    const user = currentUser();
+    const user    = currentUser();
     const payload = {
       ...body,
       username: user.username || '',
@@ -68,7 +61,7 @@ const API = (() => {
     try {
       const res = await fetch(BASE_URL, {
         method:  'POST',
-        headers: { 'Content-Type': 'text/plain' }, // Apps Script butuh text/plain
+        headers: { 'Content-Type': 'text/plain' },
         body:    JSON.stringify(payload)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -79,12 +72,10 @@ const API = (() => {
     }
   }
 
-  // ── AUTH ──────────────────────────────────────────────────
   const auth = {
     login: (username, password) => get('login', { username, password })
   };
 
-  // ── MURID ─────────────────────────────────────────────────
   const murid = {
     getAll:    (params = {}) => get('getMurid', params),
     getById:   (id)          => get('getMurid', { id }),
@@ -94,7 +85,6 @@ const API = (() => {
     deleteAll: ()            => post({ action: 'deleteMurid', all: true })
   };
 
-  // ── MENTOR ────────────────────────────────────────────────
   const mentor = {
     getAll:        ()            => get('getMentor'),
     getById:       (id)          => get('getMentor', { id }),
@@ -105,18 +95,16 @@ const API = (() => {
     getMyStudents: (mentor_name) => get('getMentorStudents', { mentor_name })
   };
 
-  // ── JADWAL ────────────────────────────────────────────────
   const jadwal = {
-    getAll:         ()                      => get('getJadwal'),
-    getByMurid:     (id_murid)              => get('getJadwal', { id_murid }),
-    replaceByMurid: (muridId, jadwalData)   => post({
+    getAll:         ()                    => get('getJadwal'),
+    getByMurid:     (id_murid)            => get('getJadwal', { id_murid }),
+    replaceByMurid: (muridId, jadwalData) => post({
       action: 'replaceJadwalMurid',
       muridId,
       jadwal: jadwalData
     })
   };
 
-  // ── SPP ───────────────────────────────────────────────────
   const spp = {
     getAll:    ()     => get('getSPP'),
     getByMurid:(id)   => get('getSPP', { id_murid: id }),
@@ -126,28 +114,25 @@ const API = (() => {
     deleteAll: ()     => post({ action: 'deleteSPP', all: true })
   };
 
-  // ── PRESENSI ──────────────────────────────────────────────
   const presensi = {
-    getAll:    ()          => get('getPresensi'),
-    getByDate: (tanggal)   => get('getPresensi', { tanggal }),
-    getByMurid:(id_murid)  => get('getPresensi', { id_murid }),
-    add:       (data)      => post({ action: 'addPresensi',    ...data }),
-    update:    (data)      => post({ action: 'updatePresensi', ...data }),
-    delete:    (id)        => post({ action: 'deletePresensi', id }),
-    deleteAll: ()          => post({ action: 'deletePresensi', all: true })
+    getAll:    ()         => get('getPresensi'),
+    getByDate: (tanggal)  => get('getPresensi', { tanggal }),
+    getByMurid:(id_murid) => get('getPresensi', { id_murid }),
+    add:       (data)     => post({ action: 'addPresensi',    ...data }),
+    update:    (data)     => post({ action: 'updatePresensi', ...data }),
+    delete:    (id)       => post({ action: 'deletePresensi', id }),
+    deleteAll: ()         => post({ action: 'deletePresensi', all: true })
   };
 
-  // ── PEMBAYARAN ────────────────────────────────────────────
   const pembayaran = {
-    getAll:    ()          => get('getPembayaran'),
-    getByMurid:(id_murid)  => get('getPembayaran', { id_murid }),
-    add:       (data)      => post({ action: 'addPembayaran',    ...data }),
-    update:    (data)      => post({ action: 'updatePembayaran', ...data }),
-    delete:    (id)        => post({ action: 'deletePembayaran', id }),
-    deleteAll: ()          => post({ action: 'deletePembayaran', all: true })
+    getAll:    ()         => get('getPembayaran'),
+    getByMurid:(id_murid) => get('getPembayaran', { id_murid }),
+    add:       (data)     => post({ action: 'addPembayaran',    ...data }),
+    update:    (data)     => post({ action: 'updatePembayaran', ...data }),
+    delete:    (id)       => post({ action: 'deletePembayaran', id }),
+    deleteAll: ()         => post({ action: 'deletePembayaran', all: true })
   };
 
-  // ── GAJI ──────────────────────────────────────────────────
   const gaji = {
     getAll:     ()          => get('getGaji'),
     getByMentor:(id_mentor) => get('getGaji', { id_mentor }),
@@ -157,8 +142,6 @@ const API = (() => {
     deleteAll:  ()          => post({ action: 'deleteGaji',         all: true })
   };
 
-  // ── BUKU ──────────────────────────────────────────────────
-  // FIX: update sekarang kirim semua field buku (nama_modul, stok, harga_beli, harga_jual)
   const buku = {
     getAll:    ()     => get('getBuku'),
     add:       (data) => post({ action: 'addBuku',    ...data }),
@@ -167,22 +150,30 @@ const API = (() => {
     deleteAll: ()     => post({ action: 'deleteBuku', all: true })
   };
 
-  // ── DASHBOARD ─────────────────────────────────────────────
   const dashboard = {
     getStats: () => get('getDashboardStats')
   };
 
-  // ── LOGS ──────────────────────────────────────────────────
   const logs = {
     getAll:   () => get('getLogs'),
     clearAll: () => post({ action: 'clearLogs' })
   };
 
-  // ── PUBLIC API ────────────────────────────────────────────
+  const laporan = {
+    getBulanan: (month, year, ownerPct, savingsPct) => get('getLaporanBulanan', {
+      month,
+      year,
+      owner_pct:   ownerPct   || 65,
+      savings_pct: savingsPct || 15
+    })
+  };
+
   return {
     auth, murid, mentor, jadwal, spp, presensi,
-    pembayaran, gaji, buku, dashboard, logs,
+    pembayaran, gaji, buku, dashboard, logs, laporan,
     currentUser, currentRole, logout
   };
 
 })();
+
+window.API = API;

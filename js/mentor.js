@@ -276,3 +276,5 @@ const MentorPage = (() => {
 
   return { load, search, openAdd, openEdit, saveForm, deleteMentor, updateSummary, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
+
+window.MentorPage = MentorPage;

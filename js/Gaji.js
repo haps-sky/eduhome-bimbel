@@ -246,3 +246,5 @@ const GajiPage = (() => {
 
   return { load, search, saveForm, openAdd, openEdit, deleteGaji, clearForm, undo, redo, deleteAll, deleteSelected, renderTable, _getCurrentData };
 })();
+
+window.GajiPage = GajiPage;
