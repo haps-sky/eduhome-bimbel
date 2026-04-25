@@ -16,7 +16,7 @@ const LaporanBulananPage = (() => {
 
       if (res.status !== 'OK') {
         UI.toast(res.message || 'Gagal memuat laporan', 'error');
-        _renderEmpty();
+        _renderFullEmpty();
         return;
       }
 
@@ -26,7 +26,7 @@ const LaporanBulananPage = (() => {
     } catch (e) {
       console.error('LaporanBulanan load error:', e);
       UI.toast('Gagal terhubung ke server', 'error');
-      _renderEmpty();
+      _renderFullEmpty();
     } finally {
       _setLoadingState(false);
     }
@@ -34,7 +34,16 @@ const LaporanBulananPage = (() => {
 
   function _render(d) {
     if (!d) {
-      _renderEmpty();
+      _renderFullEmpty();
+      return;
+    }
+
+    // 🔥 EMPTY STATE GLOBAL
+    if (
+      (d.revenue?.total || 0) === 0 &&
+      (d.expense?.total || 0) === 0
+    ) {
+      _renderFullEmpty();
       return;
     }
 
@@ -96,17 +105,40 @@ const LaporanBulananPage = (() => {
     _renderProfitIndicator(d);
   }
 
-  function _renderEmpty() {
+  // 🔥 EMPTY STATE YANG BENAR (TIDAK HAPUS LAYOUT)
+  function _renderFullEmpty() {
+    _setVal('laporan-rev-spp', 0);
+    _setVal('laporan-rev-buku', 0);
+    _setVal('laporan-rev-pendaftaran', 0);
+    _setVal('laporan-rev-lain', 0);
+    _setVal('laporan-rev-total', 0);
+
+    _setVal('laporan-exp-gaji', 0);
+    _setVal('laporan-exp-buku', 0);
+    _setVal('laporan-exp-operasional', 0);
+    _setVal('laporan-exp-total', 0);
+
+    const netEl = document.getElementById('laporan-net-profit');
+    if (netEl) netEl.textContent = UI.formatCurrency(0);
+
     const tbody = document.getElementById('laporan-gaji-tbody');
     if (tbody) {
       tbody.innerHTML = `
         <tr>
           <td colspan="5" style="text-align:center;color:#888;padding:20px">
-            Belum ada data
+            📭 Belum ada data transaksi bulan ini
           </td>
         </tr>
       `;
     }
+
+    const metaEl = document.getElementById('laporan-meta');
+    if (metaEl) {
+      metaEl.textContent = `0 transaksi masuk · 0 transaksi keluar · 0 catatan gaji`;
+    }
+
+    const bar = document.getElementById('laporan-profit-bar');
+    if (bar) bar.innerHTML = '';
   }
 
   function _setVal(id, amount) {
@@ -116,7 +148,16 @@ const LaporanBulananPage = (() => {
 
   function _renderGajiDetail(gajiList) {
     if (!gajiList.length) {
-      _renderEmpty();
+      const tbody = document.getElementById('laporan-gaji-tbody');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center;color:#888;padding:20px">
+              Tidak ada penggajian bulan ini
+            </td>
+          </tr>
+        `;
+      }
       return;
     }
 
@@ -132,7 +173,7 @@ const LaporanBulananPage = (() => {
       </tr>
     `);
 
-    UI.renderTable('laporan-gaji-tbody', rows, 'Tidak ada penggajian bulan ini');
+    UI.renderTable('laporan-gaji-tbody', rows);
   }
 
   function _renderProfitIndicator(d) {
