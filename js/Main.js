@@ -524,7 +524,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   lucide.createIcons();
 });
-<<<<<<< HEAD:js/main.js
-
-=======
->>>>>>> 2261640:js/Main.js
