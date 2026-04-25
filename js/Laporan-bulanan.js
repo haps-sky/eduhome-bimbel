@@ -14,6 +14,8 @@ async function load(month, year) {
   try {
     const res = await API.laporan.getBulanan(month, year, _ownerPct, _savingsPct);
 
+    console.log('DATA LAPORAN:', res);
+
     if (res.status !== 'OK') {
       UI.toast(res.message || 'Gagal memuat laporan', 'error');
       return;
@@ -185,7 +187,7 @@ async function load(month, year) {
     }
   }
 
-  return { load, onMonthChange, onPctChange, refresh };
+  return { init, load, onMonthChange, onPctChange, refresh };
 })();
 
 window.LaporanBulananPage = LaporanBulananPage;
