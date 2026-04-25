@@ -21,7 +21,7 @@ const LaporanBulananPage = (() => {
       }
 
       _lastData = res.data;
-      _render(res.data);
+      _render(res.data, month, year);
 
     } catch (e) {
       console.error('LaporanBulanan load error:', e);
@@ -30,27 +30,30 @@ const LaporanBulananPage = (() => {
     }
   }
 
-  function _render(d) {
+  // month dan year diteruskan eksplisit agar tidak bergantung pada d.month/d.year
+  // (getBulanan lama tidak mengembalikan field tersebut)
+  function _render(d, month, year) {
     if (!d) {
       _renderFullEmpty();
       return;
     }
 
-    // 🔥 EMPTY STATE GLOBAL (SAMA SEPERTI PAGE LAIN)
-    if (
-      (d.revenue?.total || 0) === 0 &&
-      (d.expense?.total || 0) === 0
-    ) {
-      _renderFullEmpty();
-      return;
-    }
+    // Fallback: ambil dari selector jika parameter tidak dikirim
+    const _month = d.month
+      || month
+      || parseInt(document.getElementById('laporan-month-select')?.value)
+      || (new Date().getMonth() + 1);
+    const _year  = d.year
+      || year
+      || parseInt(document.getElementById('laporan-year-select')?.value)
+      || new Date().getFullYear();
 
     const monthNames = ['','Januari','Februari','Maret','April','Mei','Juni',
                         'Juli','Agustus','September','Oktober','November','Desember'];
 
     const periodEl = document.getElementById('laporan-period-label');
     if (periodEl) {
-      periodEl.textContent = `${monthNames[d.month] || '-'} ${d.year || ''}`;
+      periodEl.textContent = `${monthNames[_month] || '-'} ${_year}`;
     }
 
     // ===== REVENUE =====
@@ -81,19 +84,20 @@ const LaporanBulananPage = (() => {
     _setVal('laporan-dist-savings', d.distribution?.savings);
 
     const pctOwnerEl = document.getElementById('laporan-owner-pct-display');
-    if (pctOwnerEl) pctOwnerEl.textContent = `${d.distribution?.owner_pct || 0}%`;
+    if (pctOwnerEl) pctOwnerEl.textContent = `${d.distribution?.owner_pct || _ownerPct}%`;
 
     const pctSavEl = document.getElementById('laporan-savings-pct-display');
-    if (pctSavEl) pctSavEl.textContent = `${d.distribution?.savings_pct || 0}%`;
+    if (pctSavEl) pctSavEl.textContent = `${d.distribution?.savings_pct || _savingsPct}%`;
 
-    // ===== META =====
+    // ===== META (opsional — tidak ada di getBulanan lama, aman jika kosong) =====
     const meta = d.meta || {};
     const metaEl = document.getElementById('laporan-meta');
     if (metaEl) {
+      const masuk  = meta.total_transaksi_masuk  !== undefined ? meta.total_transaksi_masuk  : '-';
+      const keluar = meta.total_transaksi_keluar !== undefined ? meta.total_transaksi_keluar : '-';
+      const gaji   = meta.total_gaji_records     !== undefined ? meta.total_gaji_records     : '-';
       metaEl.textContent =
-        `${meta.total_transaksi_masuk || 0} transaksi masuk · ` +
-        `${meta.total_transaksi_keluar || 0} transaksi keluar · ` +
-        `${meta.total_gaji_records || 0} catatan gaji`;
+        `${masuk} transaksi masuk · ${keluar} transaksi keluar · ${gaji} catatan gaji`;
     }
 
     // ===== TABLE =====
@@ -103,7 +107,6 @@ const LaporanBulananPage = (() => {
     _renderProfitIndicator(d);
   }
 
-  // 🔥 LOADING STYLE (SAMA SEPERTI MURID/MENTOR)
   function _setLoadingState(loading) {
     const tbody = document.getElementById('laporan-gaji-tbody');
     if (!tbody) return;
@@ -119,7 +122,6 @@ const LaporanBulananPage = (() => {
     }
   }
 
-  // 🔥 EMPTY STATE (TIDAK HANCURIN LAYOUT)
   function _renderFullEmpty() {
     _setVal('laporan-rev-spp', 0);
     _setVal('laporan-rev-buku', 0);
@@ -133,14 +135,17 @@ const LaporanBulananPage = (() => {
     _setVal('laporan-exp-total', 0);
 
     const netEl = document.getElementById('laporan-net-profit');
-    if (netEl) netEl.textContent = UI.formatCurrency(0);
+    if (netEl) {
+      netEl.textContent = UI.formatCurrency(0);
+      netEl.className   = 'laporan-value profit-positive';
+    }
 
     const tbody = document.getElementById('laporan-gaji-tbody');
     if (tbody) {
       tbody.innerHTML = `
         <tr>
           <td colspan="5" style="text-align:center;padding:20px;color:#888">
-            Belum ada data
+            Belum ada data untuk periode ini
           </td>
         </tr>
       `;
@@ -161,33 +166,33 @@ const LaporanBulananPage = (() => {
   }
 
   function _renderGajiDetail(gajiList) {
-    if (!gajiList.length) {
-      const tbody = document.getElementById('laporan-gaji-tbody');
-      if (tbody) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" style="text-align:center;padding:20px;color:#888">
-              Tidak ada penggajian bulan ini
-            </td>
-          </tr>
-        `;
-      }
+    const tbody = document.getElementById('laporan-gaji-tbody');
+    if (!tbody) return;
+
+    if (!gajiList || !gajiList.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:20px;color:#888">
+            Tidak ada penggajian bulan ini
+          </td>
+        </tr>
+      `;
       return;
     }
 
     const rows = gajiList.map(g => `
       <tr>
-        <td>-</td>
-        <td><strong>${g.nama || '-'}</strong></td>
-        <td>-</td>
+        <td>${g.tanggal ? UI.formatDate(g.tanggal) : '-'}</td>
+        <td><strong>${g.nama_mentor || g.nama || '-'}</strong></td>
+        <td>${g.bulan_gaji || '-'}</td>
         <td style="font-weight:600;color:var(--danger)">
           ${UI.formatCurrency(g.jumlah)}
         </td>
-        <td>-</td>
+        <td>${g.metode || '-'}</td>
       </tr>
     `);
 
-    UI.renderTable('laporan-gaji-tbody', rows);
+    UI.renderTable('laporan-gaji-tbody', rows, 'Tidak ada penggajian bulan ini');
   }
 
   function _renderProfitIndicator(d) {
@@ -203,10 +208,10 @@ const LaporanBulananPage = (() => {
 
     el.innerHTML = `
       <div style="display:flex;gap:4px;margin-top:8px;">
-        <div style="flex:${profPct || 1};height:8px;background:var(--success)"></div>
-        <div style="flex:${expPct || 1};height:8px;background:var(--danger)"></div>
+        <div style="flex:${profPct || 1};height:8px;background:var(--success);border-radius:4px 0 0 4px;min-width:4px;"></div>
+        <div style="flex:${expPct  || 1};height:8px;background:var(--danger);border-radius:0 4px 4px 0;min-width:4px;"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-top:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-secondary);margin-top:4px;">
         <span>Profit ${profPct}%</span>
         <span>Expense ${expPct}%</span>
       </div>
@@ -225,7 +230,7 @@ const LaporanBulananPage = (() => {
 
     if (!ownerInput || !savingsInput) return;
 
-    const newOwner   = Math.min(100, Math.max(0, parseInt(ownerInput.value) || 0));
+    const newOwner   = Math.min(100, Math.max(0, parseInt(ownerInput.value)   || 0));
     const newSavings = Math.min(100, Math.max(0, parseInt(savingsInput.value) || 0));
 
     if (newOwner + newSavings > 100) {
@@ -237,13 +242,16 @@ const LaporanBulananPage = (() => {
     _savingsPct = newSavings;
 
     if (_lastData) {
-      const net = _lastData.net_profit || 0;
-
-      const owner   = net > 0 ? Math.round(net * (_ownerPct / 100)) : 0;
+      const net     = _lastData.net_profit || 0;
+      const owner   = net > 0 ? Math.round(net * (_ownerPct   / 100)) : 0;
       const savings = net > 0 ? Math.round(net * (_savingsPct / 100)) : 0;
-
-      _setVal('laporan-dist-owner', owner);
+      _setVal('laporan-dist-owner',   owner);
       _setVal('laporan-dist-savings', savings);
+
+      const pctOwnerEl = document.getElementById('laporan-owner-pct-display');
+      if (pctOwnerEl) pctOwnerEl.textContent = `${_ownerPct}%`;
+      const pctSavEl = document.getElementById('laporan-savings-pct-display');
+      if (pctSavEl) pctSavEl.textContent = `${_savingsPct}%`;
     }
   }
 
@@ -259,14 +267,12 @@ const LaporanBulananPage = (() => {
     if (monthSel && monthSel.options.length === 0) {
       const months = ['Januari','Februari','Maret','April','Mei','Juni',
                       'Juli','Agustus','September','Oktober','November','Desember'];
-
       months.forEach((m, i) => {
-        const opt = document.createElement('option');
-        opt.value = i + 1;
+        const opt       = document.createElement('option');
+        opt.value       = i + 1;
         opt.textContent = m;
         monthSel.appendChild(opt);
       });
-
       monthSel.value = new Date().getMonth() + 1;
     }
 
@@ -274,14 +280,12 @@ const LaporanBulananPage = (() => {
 
     if (yearSel && yearSel.options.length === 0) {
       const cy = new Date().getFullYear();
-
       for (let y = cy - 2; y <= cy + 1; y++) {
-        const opt = document.createElement('option');
-        opt.value = y;
+        const opt       = document.createElement('option');
+        opt.value       = y;
         opt.textContent = y;
         yearSel.appendChild(opt);
       }
-
       yearSel.value = cy;
     }
   }
