@@ -27,8 +27,6 @@ const LaporanBulananPage = (() => {
       console.error('LaporanBulanan load error:', e);
       UI.toast('Gagal terhubung ke server', 'error');
       _renderFullEmpty();
-    } finally {
-      _setLoadingState(false);
     }
   }
 
@@ -38,7 +36,7 @@ const LaporanBulananPage = (() => {
       return;
     }
 
-    // 🔥 EMPTY STATE GLOBAL
+    // 🔥 EMPTY STATE GLOBAL (SAMA SEPERTI PAGE LAIN)
     if (
       (d.revenue?.total || 0) === 0 &&
       (d.expense?.total || 0) === 0
@@ -105,7 +103,23 @@ const LaporanBulananPage = (() => {
     _renderProfitIndicator(d);
   }
 
-  // 🔥 EMPTY STATE YANG BENAR (TIDAK HAPUS LAYOUT)
+  // 🔥 LOADING STYLE (SAMA SEPERTI MURID/MENTOR)
+  function _setLoadingState(loading) {
+    const tbody = document.getElementById('laporan-gaji-tbody');
+    if (!tbody) return;
+
+    if (loading) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:20px;color:#888">
+            Memuat laporan...
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  // 🔥 EMPTY STATE (TIDAK HANCURIN LAYOUT)
   function _renderFullEmpty() {
     _setVal('laporan-rev-spp', 0);
     _setVal('laporan-rev-buku', 0);
@@ -125,8 +139,8 @@ const LaporanBulananPage = (() => {
     if (tbody) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center;color:#888;padding:20px">
-            📭 Belum ada data transaksi bulan ini
+          <td colspan="5" style="text-align:center;padding:20px;color:#888">
+            Belum ada data
           </td>
         </tr>
       `;
@@ -152,7 +166,7 @@ const LaporanBulananPage = (() => {
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="text-align:center;color:#888;padding:20px">
+            <td colspan="5" style="text-align:center;padding:20px;color:#888">
               Tidak ada penggajian bulan ini
             </td>
           </tr>
@@ -197,14 +211,6 @@ const LaporanBulananPage = (() => {
         <span>Expense ${expPct}%</span>
       </div>
     `;
-  }
-
-  function _setLoadingState(loading) {
-    const container = document.getElementById('laporan-content');
-    if (!container) return;
-
-    container.style.opacity       = loading ? '0.5' : '1';
-    container.style.pointerEvents = loading ? 'none' : 'auto';
   }
 
   function onMonthChange() {
