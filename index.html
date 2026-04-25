@@ -1088,6 +1088,212 @@
         </div>
       </section>
 
+
+<!-- ===== LAPORAN LABA RUGI BULANAN ===== -->
+<section id="page-laporan" class="page-section">
+  <div class="page-header">
+    <div>
+      <h2><i data-lucide="bar-chart-2"></i> Laporan Laba Rugi</h2>
+      <p style="color:var(--text-secondary);font-size:0.82rem;margin-top:4px;">
+        Ringkasan pemasukan, pengeluaran, dan laba bersih bulanan
+      </p>
+    </div>
+    <button class="btn btn-outline" onclick="LaporanBulananPage.refresh()">
+      <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Period Controls -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-body" style="padding:14px 16px;">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Bulan</label>
+          <select id="laporan-month-select" class="form-control"
+                  onchange="LaporanBulananPage.onMonthChange()" style="width:140px;">
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Tahun</label>
+          <select id="laporan-year-select" class="form-control"
+                  onchange="LaporanBulananPage.onMonthChange()" style="width:100px;">
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Periode</div>
+          <div id="laporan-period-label"
+               style="font-size:1.1rem;font-weight:700;color:var(--primary);padding:6px 0;min-height:32px;">
+            —
+          </div>
+        </div>
+        <div id="laporan-meta"
+             style="font-size:0.78rem;color:var(--text-secondary);align-self:center;margin-left:auto;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="laporan-content">
+
+    <!-- Revenue + Expense -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+      <div class="card">
+        <div class="card-header" style="border-bottom:2px solid var(--success);">
+          <h3 class="card-title" style="color:var(--success);">
+            <i data-lucide="trending-up"></i> Pemasukan
+          </h3>
+        </div>
+        <div class="card-body">
+          <table style="width:100%;border-collapse:collapse;">
+            <tbody>
+              <tr class="laporan-row">
+                <td class="laporan-label">Pembayaran SPP</td>
+                <td class="laporan-value" id="laporan-rev-spp">Rp0</td>
+              </tr>
+              <tr class="laporan-row">
+                <td class="laporan-label">Penjualan Buku</td>
+                <td class="laporan-value" id="laporan-rev-buku">Rp0</td>
+              </tr>
+              <tr class="laporan-row">
+                <td class="laporan-label">Pendaftaran</td>
+                <td class="laporan-value" id="laporan-rev-pendaftaran">Rp0</td>
+              </tr>
+              <tr class="laporan-row">
+                <td class="laporan-label">Lain-lain</td>
+                <td class="laporan-value" id="laporan-rev-lain">Rp0</td>
+              </tr>
+              <tr style="border-top:2px solid var(--success);font-weight:700;">
+                <td class="laporan-label" style="padding-top:10px;">Total Pemasukan</td>
+                <td class="laporan-value" id="laporan-rev-total"
+                    style="color:var(--success);padding-top:10px;">Rp0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="border-bottom:2px solid var(--danger);">
+          <h3 class="card-title" style="color:var(--danger);">
+            <i data-lucide="trending-down"></i> Pengeluaran
+          </h3>
+        </div>
+        <div class="card-body">
+          <table style="width:100%;border-collapse:collapse;">
+            <tbody>
+              <tr class="laporan-row">
+                <td class="laporan-label">Gaji Mentor</td>
+                <td class="laporan-value" id="laporan-exp-gaji">Rp0</td>
+              </tr>
+              <tr class="laporan-row">
+                <td class="laporan-label">Pembelian Buku</td>
+                <td class="laporan-value" id="laporan-exp-buku">Rp0</td>
+              </tr>
+              <tr class="laporan-row">
+                <td class="laporan-label">Operasional</td>
+                <td class="laporan-value" id="laporan-exp-operasional">Rp0</td>
+              </tr>
+              <tr style="border-top:2px solid var(--danger);font-weight:700;">
+                <td class="laporan-label" style="padding-top:10px;">Total Pengeluaran</td>
+                <td class="laporan-value" id="laporan-exp-total"
+                    style="color:var(--danger);padding-top:10px;">Rp0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Net Profit -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-body" style="text-align:center;padding:28px;">
+        <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:8px;
+                    text-transform:uppercase;letter-spacing:0.05em;">
+          Laba Bersih Bulan Ini
+        </div>
+        <div id="laporan-net-profit" class="laporan-value profit-positive"
+             style="font-size:2rem;font-weight:800;">
+          Rp0
+        </div>
+        <div id="laporan-profit-bar"
+             style="margin-top:12px;max-width:400px;margin-left:auto;margin-right:auto;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribution -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i data-lucide="pie-chart"></i> Distribusi Laba
+        </h3>
+        <small style="color:var(--text-secondary);">Hanya dihitung jika laba bersih &gt; 0</small>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;">
+          <div>
+            <label class="form-label">
+              Bagian Owner (<span id="laporan-owner-pct-display">65</span>%)
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" id="laporan-owner-pct" class="form-control"
+                     value="65" min="0" max="100" style="width:80px;"
+                     oninput="LaporanBulananPage.onPctChange()">
+              <span style="font-size:1.05rem;font-weight:700;color:var(--primary);"
+                    id="laporan-dist-owner">Rp0</span>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">
+              Tabungan (<span id="laporan-savings-pct-display">15</span>%)
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" id="laporan-savings-pct" class="form-control"
+                     value="15" min="0" max="100" style="width:80px;"
+                     oninput="LaporanBulananPage.onPctChange()">
+              <span style="font-size:1.05rem;font-weight:700;color:var(--success);"
+                    id="laporan-dist-savings">Rp0</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-note">
+          <i data-lucide="info"></i>
+          Persentase bersifat estimasi. Perubahan tidak memengaruhi data transaksi.
+        </div>
+      </div>
+    </div>
+
+    <!-- Gaji Detail -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i data-lucide="users"></i> Detail Penggajian Bulan Ini
+        </h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tanggal Bayar</th>
+              <th>Nama Mentor</th>
+              <th>Bulan Gaji</th>
+              <th>Jumlah</th>
+              <th>Metode</th>
+            </tr>
+          </thead>
+          <tbody id="laporan-gaji-tbody">
+            <tr><td colspan="5" class="empty-row">Pilih periode untuk melihat data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end laporan-content -->
+</section>
+<!-- ===== END LAPORAN BULANAN ===== -->
+
     </main>
   </div>
 </div>
@@ -1550,210 +1756,6 @@
   </div>
 </div>
 
-<!-- ===== LAPORAN LABA RUGI BULANAN ===== -->
-<section id="page-laporan" class="page-section">
-  <div class="page-header">
-    <div>
-      <h2><i data-lucide="bar-chart-2"></i> Laporan Laba Rugi</h2>
-      <p style="color:var(--text-secondary);font-size:0.82rem;margin-top:4px;">
-        Ringkasan pemasukan, pengeluaran, dan laba bersih bulanan
-      </p>
-    </div>
-    <button class="btn btn-outline" onclick="LaporanBulananPage.refresh()">
-      <i data-lucide="refresh-cw"></i> Refresh
-    </button>
-  </div>
-
-  <!-- Period Controls -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-body" style="padding:14px 16px;">
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">Bulan</label>
-          <select id="laporan-month-select" class="form-control"
-                  onchange="LaporanBulananPage.onMonthChange()" style="width:140px;">
-          </select>
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">Tahun</label>
-          <select id="laporan-year-select" class="form-control"
-                  onchange="LaporanBulananPage.onMonthChange()" style="width:100px;">
-          </select>
-        </div>
-        <div>
-          <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Periode</div>
-          <div id="laporan-period-label"
-               style="font-size:1.1rem;font-weight:700;color:var(--primary);padding:6px 0;min-height:32px;">
-            —
-          </div>
-        </div>
-        <div id="laporan-meta"
-             style="font-size:0.78rem;color:var(--text-secondary);align-self:center;margin-left:auto;">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="laporan-content">
-
-    <!-- Revenue + Expense -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-
-      <div class="card">
-        <div class="card-header" style="border-bottom:2px solid var(--success);">
-          <h3 class="card-title" style="color:var(--success);">
-            <i data-lucide="trending-up"></i> Pemasukan
-          </h3>
-        </div>
-        <div class="card-body">
-          <table style="width:100%;border-collapse:collapse;">
-            <tbody>
-              <tr class="laporan-row">
-                <td class="laporan-label">Pembayaran SPP</td>
-                <td class="laporan-value" id="laporan-rev-spp">Rp0</td>
-              </tr>
-              <tr class="laporan-row">
-                <td class="laporan-label">Penjualan Buku</td>
-                <td class="laporan-value" id="laporan-rev-buku">Rp0</td>
-              </tr>
-              <tr class="laporan-row">
-                <td class="laporan-label">Pendaftaran</td>
-                <td class="laporan-value" id="laporan-rev-pendaftaran">Rp0</td>
-              </tr>
-              <tr class="laporan-row">
-                <td class="laporan-label">Lain-lain</td>
-                <td class="laporan-value" id="laporan-rev-lain">Rp0</td>
-              </tr>
-              <tr style="border-top:2px solid var(--success);font-weight:700;">
-                <td class="laporan-label" style="padding-top:10px;">Total Pemasukan</td>
-                <td class="laporan-value" id="laporan-rev-total"
-                    style="color:var(--success);padding-top:10px;">Rp0</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header" style="border-bottom:2px solid var(--danger);">
-          <h3 class="card-title" style="color:var(--danger);">
-            <i data-lucide="trending-down"></i> Pengeluaran
-          </h3>
-        </div>
-        <div class="card-body">
-          <table style="width:100%;border-collapse:collapse;">
-            <tbody>
-              <tr class="laporan-row">
-                <td class="laporan-label">Gaji Mentor</td>
-                <td class="laporan-value" id="laporan-exp-gaji">Rp0</td>
-              </tr>
-              <tr class="laporan-row">
-                <td class="laporan-label">Pembelian Buku</td>
-                <td class="laporan-value" id="laporan-exp-buku">Rp0</td>
-              </tr>
-              <tr class="laporan-row">
-                <td class="laporan-label">Operasional</td>
-                <td class="laporan-value" id="laporan-exp-operasional">Rp0</td>
-              </tr>
-              <tr style="border-top:2px solid var(--danger);font-weight:700;">
-                <td class="laporan-label" style="padding-top:10px;">Total Pengeluaran</td>
-                <td class="laporan-value" id="laporan-exp-total"
-                    style="color:var(--danger);padding-top:10px;">Rp0</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Net Profit -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-body" style="text-align:center;padding:28px;">
-        <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:8px;
-                    text-transform:uppercase;letter-spacing:0.05em;">
-          Laba Bersih Bulan Ini
-        </div>
-        <div id="laporan-net-profit" class="laporan-value profit-positive"
-             style="font-size:2rem;font-weight:800;">
-          Rp0
-        </div>
-        <div id="laporan-profit-bar"
-             style="margin-top:12px;max-width:400px;margin-left:auto;margin-right:auto;">
-        </div>
-      </div>
-    </div>
-
-    <!-- Distribution -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-header">
-        <h3 class="card-title">
-          <i data-lucide="pie-chart"></i> Distribusi Laba
-        </h3>
-        <small style="color:var(--text-secondary);">Hanya dihitung jika laba bersih &gt; 0</small>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;">
-          <div>
-            <label class="form-label">
-              Bagian Owner (<span id="laporan-owner-pct-display">65</span>%)
-            </label>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="number" id="laporan-owner-pct" class="form-control"
-                     value="65" min="0" max="100" style="width:80px;"
-                     oninput="LaporanBulananPage.onPctChange()">
-              <span style="font-size:1.05rem;font-weight:700;color:var(--primary);"
-                    id="laporan-dist-owner">Rp0</span>
-            </div>
-          </div>
-          <div>
-            <label class="form-label">
-              Tabungan (<span id="laporan-savings-pct-display">15</span>%)
-            </label>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="number" id="laporan-savings-pct" class="form-control"
-                     value="15" min="0" max="100" style="width:80px;"
-                     oninput="LaporanBulananPage.onPctChange()">
-              <span style="font-size:1.05rem;font-weight:700;color:var(--success);"
-                    id="laporan-dist-savings">Rp0</span>
-            </div>
-          </div>
-        </div>
-        <div class="info-note">
-          <i data-lucide="info"></i>
-          Persentase bersifat estimasi. Perubahan tidak memengaruhi data transaksi.
-        </div>
-      </div>
-    </div>
-
-    <!-- Gaji Detail -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">
-          <i data-lucide="users"></i> Detail Penggajian Bulan Ini
-        </h3>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Tanggal Bayar</th>
-              <th>Nama Mentor</th>
-              <th>Bulan Gaji</th>
-              <th>Jumlah</th>
-              <th>Metode</th>
-            </tr>
-          </thead>
-          <tbody id="laporan-gaji-tbody">
-            <tr><td colspan="5" class="empty-row">Pilih periode untuk melihat data</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div><!-- end laporan-content -->
-</section>
-<!-- ===== END LAPORAN BULANAN ===== -->
 
 <div id="toast-container"></div>
 <!-- Global dropdown menu untuk mobile toolbar -->
