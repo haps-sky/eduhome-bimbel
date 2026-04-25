@@ -8,7 +8,7 @@ const LaporanBulananPage = (() => {
     month = month || (now.getMonth() + 1);
     year  = year  || now.getFullYear();
 
-    _setLoadingState(true);
+    _setLoadingState(true); // ✅ FIX #3: loading state diaktifkan
 
     try {
       const res = await API.laporan.getBulanan(month, year, _ownerPct, _savingsPct);
@@ -16,7 +16,7 @@ const LaporanBulananPage = (() => {
 
       if (res.status !== 'OK') {
         UI.toast(res.message || 'Gagal memuat laporan', 'error');
-        _renderFullEmpty();
+        _renderFullEmpty(month, year);
         return;
       }
 
@@ -26,19 +26,19 @@ const LaporanBulananPage = (() => {
     } catch (e) {
       console.error('LaporanBulanan load error:', e);
       UI.toast('Gagal terhubung ke server', 'error');
-      _renderFullEmpty();
+      _renderFullEmpty(month, year);
+    } finally {
+      // ✅ FIX #3: loading state selalu dimatikan, baik sukses maupun gagal
+      _setLoadingState(false);
     }
   }
 
-  // month dan year diteruskan eksplisit agar tidak bergantung pada d.month/d.year
-  // (getBulanan lama tidak mengembalikan field tersebut)
   function _render(d, month, year) {
     if (!d) {
-      _renderFullEmpty();
+      _renderFullEmpty(month, year);
       return;
     }
 
-    // Fallback: ambil dari selector jika parameter tidak dikirim
     const _month = d.month
       || month
       || parseInt(document.getElementById('laporan-month-select')?.value)
@@ -51,26 +51,27 @@ const LaporanBulananPage = (() => {
     const monthNames = ['','Januari','Februari','Maret','April','Mei','Juni',
                         'Juli','Agustus','September','Oktober','November','Desember'];
 
+    // ── Period label ──────────────────────────────────────────────────────────
     const periodEl = document.getElementById('laporan-period-label');
     if (periodEl) {
       periodEl.textContent = `${monthNames[_month] || '-'} ${_year}`;
     }
 
-    // ===== REVENUE =====
+    // ── Revenue ───────────────────────────────────────────────────────────────
     _setVal('laporan-rev-spp',         d.revenue?.spp);
     _setVal('laporan-rev-buku',        d.revenue?.buku);
     _setVal('laporan-rev-pendaftaran', d.revenue?.pendaftaran);
     _setVal('laporan-rev-lain',        d.revenue?.lain);
     _setVal('laporan-rev-total',       d.revenue?.total);
 
-    // ===== EXPENSE =====
+    // ── Expense ───────────────────────────────────────────────────────────────
     _setVal('laporan-exp-gaji',        d.expense?.gaji);
     _setVal('laporan-exp-buku',        d.expense?.buku);
     _setVal('laporan-exp-operasional', d.expense?.operasional);
     _setVal('laporan-exp-total',       d.expense?.total);
 
-    // ===== PROFIT =====
-    const net = d.net_profit || 0;
+    // ── Net Profit ────────────────────────────────────────────────────────────
+    const net   = d.net_profit ?? 0; // ✅ pakai ?? bukan || agar 0 tetap valid
     const netEl = document.getElementById('laporan-net-profit');
     if (netEl) {
       netEl.textContent = UI.formatCurrency(net);
@@ -79,60 +80,128 @@ const LaporanBulananPage = (() => {
         : 'laporan-value profit-negative';
     }
 
-    // ===== DISTRIBUTION =====
+    // ── Distribution ──────────────────────────────────────────────────────────
     _setVal('laporan-dist-owner',   d.distribution?.owner);
     _setVal('laporan-dist-savings', d.distribution?.savings);
 
     const pctOwnerEl = document.getElementById('laporan-owner-pct-display');
-    if (pctOwnerEl) pctOwnerEl.textContent = `${d.distribution?.owner_pct || _ownerPct}%`;
+    if (pctOwnerEl) pctOwnerEl.textContent = `${d.distribution?.owner_pct ?? _ownerPct}%`;
 
     const pctSavEl = document.getElementById('laporan-savings-pct-display');
-    if (pctSavEl) pctSavEl.textContent = `${d.distribution?.savings_pct || _savingsPct}%`;
+    if (pctSavEl) pctSavEl.textContent = `${d.distribution?.savings_pct ?? _savingsPct}%`;
 
-    // ===== META (opsional — tidak ada di getBulanan lama, aman jika kosong) =====
-    const meta = d.meta || {};
+    // ── Meta ──────────────────────────────────────────────────────────────────
+    const meta   = d.meta || {};
     const metaEl = document.getElementById('laporan-meta');
     if (metaEl) {
-      const masuk  = meta.total_transaksi_masuk  !== undefined ? meta.total_transaksi_masuk  : '-';
-      const keluar = meta.total_transaksi_keluar !== undefined ? meta.total_transaksi_keluar : '-';
-      const gaji   = meta.total_gaji_records     !== undefined ? meta.total_gaji_records     : '-';
+      const masuk  = meta.total_transaksi_masuk  ?? 0;
+      const keluar = meta.total_transaksi_keluar ?? 0;
+      const gaji   = meta.total_gaji_records     ?? 0;
       metaEl.textContent =
         `${masuk} transaksi masuk · ${keluar} transaksi keluar · ${gaji} catatan gaji`;
     }
 
-    // ===== TABLE =====
+    // ── Empty state banner ────────────────────────────────────────────────────
+    // Tampilkan banner "belum ada transaksi" jika semua nilai benar-benar 0
+    _renderEmptyBanner(d, _month, _year);
+
+    // ── Tabel gaji ────────────────────────────────────────────────────────────
+    // ✅ FIX #2: _renderGajiDetail sekarang tidak bergantung pada UI.renderTable
     _renderGajiDetail(d.detail?.gaji || []);
 
-    // ===== INDICATOR =====
+    // ── Profit indicator ──────────────────────────────────────────────────────
+    // ✅ FIX #1: _renderProfitIndicator sekarang menampilkan empty state
     _renderProfitIndicator(d);
   }
 
+  // ── FIX #3: _setLoadingState sekarang handle kedua state (true/false) ──────
   function _setLoadingState(loading) {
-    const tbody = document.getElementById('laporan-gaji-tbody');
-    if (!tbody) return;
+    const tbody    = document.getElementById('laporan-gaji-tbody');
+    const bannerEl = document.getElementById('laporan-empty-banner');
 
     if (loading) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align:center;padding:20px;color:#888">
-            Memuat laporan...
-          </td>
-        </tr>
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center;padding:24px;color:#888">
+              <span style="display:inline-flex;align-items:center;gap:8px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" style="animation:spin 1s linear infinite">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                Memuat laporan...
+              </span>
+            </td>
+          </tr>
+        `;
+      }
+      // Sembunyikan banner saat loading
+      if (bannerEl) bannerEl.style.display = 'none';
+    }
+    // Saat loading = false, tabel akan diisi oleh _renderGajiDetail atau _renderFullEmpty
+  }
+
+  // ── FIX #1 & empthy state: banner informatif di atas kartu angka ──────────
+  function _renderEmptyBanner(d, month, year) {
+    const bannerEl = document.getElementById('laporan-empty-banner');
+    if (!bannerEl) return;
+
+    const revTotal = d.revenue?.total  ?? 0;
+    const expTotal = d.expense?.total  ?? 0;
+    const isEmpty  = revTotal === 0 && expTotal === 0;
+
+    const monthNames = ['','Januari','Februari','Maret','April','Mei','Juni',
+                        'Juli','Agustus','September','Oktober','November','Desember'];
+
+    if (isEmpty) {
+      bannerEl.style.display = 'flex';
+      bannerEl.innerHTML = `
+        <div style="
+          display:flex; align-items:center; gap:12px;
+          background:var(--bg-secondary, #f8f9fa);
+          border:1px solid var(--border, #e0e0e0);
+          border-left:4px solid var(--warning, #f59e0b);
+          border-radius:8px; padding:14px 18px;
+          color:var(--text-secondary, #666); font-size:0.875rem;
+        ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning,#f59e0b)"
+            stroke-width="2" flex-shrink="0">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>
+            Belum ada transaksi pada
+            <strong>${monthNames[month] || '-'} ${year}</strong>.
+            Semua nilai ditampilkan sebagai <strong>Rp 0</strong>.
+          </span>
+        </div>
       `;
+    } else {
+      bannerEl.style.display = 'none';
+      bannerEl.innerHTML = '';
     }
   }
 
-  function _renderFullEmpty() {
-    _setVal('laporan-rev-spp', 0);
-    _setVal('laporan-rev-buku', 0);
-    _setVal('laporan-rev-pendaftaran', 0);
-    _setVal('laporan-rev-lain', 0);
-    _setVal('laporan-rev-total', 0);
+  function _renderFullEmpty(month, year) {
+    const now    = new Date();
+    const _month = month || (now.getMonth() + 1);
+    const _year  = year  || now.getFullYear();
 
-    _setVal('laporan-exp-gaji', 0);
-    _setVal('laporan-exp-buku', 0);
+    // Set semua angka ke 0 — tetap tampil, bukan hilang
+    _setVal('laporan-rev-spp',         0);
+    _setVal('laporan-rev-buku',        0);
+    _setVal('laporan-rev-pendaftaran', 0);
+    _setVal('laporan-rev-lain',        0);
+    _setVal('laporan-rev-total',       0);
+
+    _setVal('laporan-exp-gaji',        0);
+    _setVal('laporan-exp-buku',        0);
     _setVal('laporan-exp-operasional', 0);
-    _setVal('laporan-exp-total', 0);
+    _setVal('laporan-exp-total',       0);
+
+    _setVal('laporan-dist-owner',      0);
+    _setVal('laporan-dist-savings',    0);
 
     const netEl = document.getElementById('laporan-net-profit');
     if (netEl) {
@@ -140,39 +209,54 @@ const LaporanBulananPage = (() => {
       netEl.className   = 'laporan-value profit-positive';
     }
 
+    const metaEl = document.getElementById('laporan-meta');
+    if (metaEl) {
+      metaEl.textContent = `0 transaksi masuk · 0 transaksi keluar · 0 catatan gaji`;
+    }
+
     const tbody = document.getElementById('laporan-gaji-tbody');
     if (tbody) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center;padding:20px;color:#888">
+          <td colspan="5" style="text-align:center;padding:24px;color:#888">
             Belum ada data untuk periode ini
           </td>
         </tr>
       `;
     }
 
-    const metaEl = document.getElementById('laporan-meta');
-    if (metaEl) {
-      metaEl.textContent = `0 transaksi masuk · 0 transaksi keluar · 0 catatan gaji`;
+    // ✅ FIX #1: profit bar tetap tampil dengan empty state
+    const bar = document.getElementById('laporan-profit-bar');
+    if (bar) {
+      bar.innerHTML = `
+        <div style="margin-top:8px;height:8px;background:var(--border,#e0e0e0);border-radius:4px;"></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;
+                    color:var(--text-secondary,#999);margin-top:4px;">
+          <span>Belum ada data</span>
+          <span>—</span>
+        </div>
+      `;
     }
 
-    const bar = document.getElementById('laporan-profit-bar');
-    if (bar) bar.innerHTML = '';
+    // Tampilkan empty banner
+    _renderEmptyBanner({ revenue: { total: 0 }, expense: { total: 0 } }, _month, _year);
   }
 
   function _setVal(id, amount) {
     const el = document.getElementById(id);
-    if (el) el.textContent = UI.formatCurrency(amount || 0);
+    // ✅ Gunakan ?? 0 bukan || 0 agar nilai 0 dari server tetap valid (bukan di-replace)
+    if (el) el.textContent = UI.formatCurrency(amount ?? 0);
   }
 
+  // ── FIX #2: Tidak bergantung pada UI.renderTable — render langsung ke tbody ─
   function _renderGajiDetail(gajiList) {
     const tbody = document.getElementById('laporan-gaji-tbody');
     if (!tbody) return;
 
-    if (!gajiList || !gajiList.length) {
+    if (!gajiList || gajiList.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center;padding:20px;color:#888">
+          <td colspan="5" style="text-align:center;padding:24px;color:#888">
             Tidak ada penggajian bulan ini
           </td>
         </tr>
@@ -180,38 +264,53 @@ const LaporanBulananPage = (() => {
       return;
     }
 
-    const rows = gajiList.map(g => `
+    // ✅ Render langsung pakai innerHTML — tidak bergantung UI.renderTable
+    tbody.innerHTML = gajiList.map(g => `
       <tr>
         <td>${g.tanggal ? UI.formatDate(g.tanggal) : '-'}</td>
         <td><strong>${g.nama_mentor || g.nama || '-'}</strong></td>
         <td>${g.bulan_gaji || '-'}</td>
         <td style="font-weight:600;color:var(--danger)">
-          ${UI.formatCurrency(g.jumlah)}
+          ${UI.formatCurrency(g.jumlah ?? 0)}
         </td>
         <td>${g.metode || '-'}</td>
       </tr>
-    `);
-
-    UI.renderTable('laporan-gaji-tbody', rows, 'Tidak ada penggajian bulan ini');
+    `).join('');
   }
 
+  // ── FIX #1: Profit indicator tetap tampil walau data kosong ──────────────
   function _renderProfitIndicator(d) {
     const el = document.getElementById('laporan-profit-bar');
+    if (!el) return;
 
-    if (!el || !d?.revenue?.total) {
-      if (el) el.innerHTML = '';
+    const revTotal = d?.revenue?.total ?? 0;
+    const expTotal = d?.expense?.total ?? 0;
+
+    // ✅ Data kosong: tampilkan bar abu-abu + label informatif (bukan diam-diam kosong)
+    if (revTotal === 0) {
+      el.innerHTML = `
+        <div style="margin-top:8px;height:8px;background:var(--border,#e0e0e0);border-radius:4px;"></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;
+                    color:var(--text-secondary,#999);margin-top:4px;">
+          <span>Belum ada pemasukan</span>
+          <span>—</span>
+        </div>
+      `;
       return;
     }
 
-    const expPct  = Math.min(100, Math.round((d.expense.total / d.revenue.total) * 100));
+    const expPct  = Math.min(100, Math.round((expTotal / revTotal) * 100));
     const profPct = 100 - expPct;
 
     el.innerHTML = `
       <div style="display:flex;gap:4px;margin-top:8px;">
-        <div style="flex:${profPct || 1};height:8px;background:var(--success);border-radius:4px 0 0 4px;min-width:4px;"></div>
-        <div style="flex:${expPct  || 1};height:8px;background:var(--danger);border-radius:0 4px 4px 0;min-width:4px;"></div>
+        <div style="flex:${profPct || 1};height:8px;background:var(--success);
+                    border-radius:4px 0 0 4px;min-width:4px;" title="Profit ${profPct}%"></div>
+        <div style="flex:${expPct  || 1};height:8px;background:var(--danger);
+                    border-radius:0 4px 4px 0;min-width:4px;" title="Expense ${expPct}%"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-secondary);margin-top:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;
+                  color:var(--text-secondary);margin-top:4px;">
         <span>Profit ${profPct}%</span>
         <span>Expense ${expPct}%</span>
       </div>
@@ -242,7 +341,7 @@ const LaporanBulananPage = (() => {
     _savingsPct = newSavings;
 
     if (_lastData) {
-      const net     = _lastData.net_profit || 0;
+      const net     = _lastData.net_profit ?? 0;
       const owner   = net > 0 ? Math.round(net * (_ownerPct   / 100)) : 0;
       const savings = net > 0 ? Math.round(net * (_savingsPct / 100)) : 0;
       _setVal('laporan-dist-owner',   owner);
@@ -294,3 +393,11 @@ const LaporanBulananPage = (() => {
 })();
 
 window.LaporanBulananPage = LaporanBulananPage;
+
+// ── CSS: animasi spin untuk loading icon (inject sekali) ─────────────────────
+if (!document.getElementById('laporan-style-patch')) {
+  const s = document.createElement('style');
+  s.id = 'laporan-style-patch';
+  s.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+  document.head.appendChild(s);
+}
