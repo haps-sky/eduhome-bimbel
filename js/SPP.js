@@ -202,12 +202,6 @@ const SPPPage = (() => {
       }
     }
 
-    const payload = {
-      id, id_murid: muridSel.value,
-      nama_murid: opt.dataset.nama, program: opt.dataset.program,
-      periode_mulai: mulai, periode_akhir: akhir, harga
-    };
-
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan paket...'; }
       const res = id ? await API.spp.update(payload) : await API.spp.create(payload);
