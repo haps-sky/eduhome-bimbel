@@ -58,16 +58,21 @@ async function load() {
     });
   }
 
-  function renderFinanceCards(f) {
+function renderFinanceCards(f) {
     const items = {
-      'fin-spp':         f.total_spp,
-      'fin-operational': f.total_operational,
-      'fin-savings':     f.total_savings,
-      'fin-revenue':     f.total_revenue
+      'fin-spp':         f.total_masuk,
+      'fin-operational': f.total_keluar,
+      'fin-savings':     f.total_gaji,
+      'fin-revenue':     f.laba_bersih
     };
     Object.entries(items).forEach(([id, val]) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = UI.formatCurrency(val);
+      if (el) {
+        el.textContent = UI.formatCurrency(val);
+        if (id === 'fin-revenue') {
+          el.style.color = (val >= 0) ? 'var(--success)' : 'var(--danger)';
+        }
+      }
     });
   }
 
