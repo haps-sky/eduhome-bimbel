@@ -75,7 +75,7 @@ const SPPPage = (() => {
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(0, 0, 0, 0);
       let count = 0, cur = new Date(startDate);
-      while (cur <= endDate) { if (targetDays.includes(cur.getDay())) count++; cur.setDate(cur.getDate() + 1); }
+      while (cur < endDate) { if (targetDays.includes(cur.getDay())) count++; cur.setDate(cur.getDate() + 1); }
       display.innerHTML = `Total: <strong>${count}</strong> Sesi`;
     } catch(e) { display.textContent = 'Gagal menghitung'; }
   }
@@ -174,7 +174,17 @@ const SPPPage = (() => {
     if (!muridSel.value || !mulai || !akhir) { UI.toast('Semua field wajib diisi', 'error'); return; }
     if (new Date(mulai) >= new Date(akhir)) { UI.toast('Periode akhir harus setelah periode mulai', 'error'); return; }
 
-    const opt      = muridSel.options[muridSel.selectedIndex];
+    const selectedOption = muridSel.options[muridSel.selectedIndex];
+
+    const payload = {
+      id,
+      id_murid: muridSel.value,
+      nama_murid: selectedOption?.dataset?.nama || '',
+      program: selectedOption?.dataset?.program || '',
+      periode_mulai: mulai,
+      periode_akhir: akhir,
+      harga
+    };
     const todaySPP = new Date().toISOString().split('T')[0];
 
     const paketMurid = allData.filter(p =>
