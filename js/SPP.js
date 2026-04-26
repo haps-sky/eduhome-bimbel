@@ -55,6 +55,8 @@ const SPPPage = (() => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', calculateLiveSessions);
     });
+      const muridEl = document.getElementById('spp-murid');
+    if (muridEl) muridEl.addEventListener('change', e => autoFillNextPeriod(e.target.value));
   }
 
   async function calculateLiveSessions() {
@@ -161,6 +163,39 @@ const SPPPage = (() => {
     document.getElementById('spp-mulai').value = s.periode_mulai;
     document.getElementById('spp-akhir').value = s.periode_akhir;
     document.getElementById('spp-harga').value = s.harga;
+  }
+
+  async function autoFillNextPeriod(idMurid) {
+    if (!idMurid) return;
+
+    const hint = document.getElementById('spp-period-hint');
+
+    // Cari paket terakhir mirid ini dari allData
+    const paketMurid = allData
+      .filter(p => p.id_murid === idMurid)
+      .sort((a, b) => b.periode_akhir.localeCompare(a.periode_akhir));
+
+    if (!paketMurid.length) {
+      if (hint) hint.textContent = '';
+      return;
+    }
+
+    const last       = paketMurid[0];
+    const mulaiDate  = new Date(last.periode_akhir); // eksklusif jadi langsung jadi mulai
+    const akhirDate  = new Date(last.periode_akhir);
+    akhirDate.setMonth(akhirDate.getMonth() + 1);
+
+    const toInput = d => d.toISOString().split('T')[0];
+
+    document.getElementById('spp-mulai').value = toInput(mulaiDate);
+    document.getElementById('spp-akhir').value = toInput(akhirDate);
+
+    if (hint) {
+      const fmt = d => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+      hint.innerHTML = `🔄 Lanjut dari paket sebelumnya: <strong>${fmt(toInput(mulaiDate))} – ${fmt(toInput(akhirDate))}</strong>`;
+    }
+
+    calculateLiveSessions();
   }
 
   async function saveForm() {
