@@ -23,7 +23,7 @@ const PembayaranPage = (() => {
       lastRestoredId  = null;
     }
 
-    if (!forceRefresh && allData.length > 0) {
+    if (!forceRefresh && isFetched && allData.length >= 0) {
       renderTable(allData.slice(-50).reverse());
       updateSummary();
     } else {
