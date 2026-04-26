@@ -1102,8 +1102,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 .spinner-sm {
     width: 14px;
     height: 14px;
-    border: 2px solid var(--border);
-    border-top-color: var(--primary);
+    border: 2px solid rgba(136,136,136,0.2);
+    border-top-color: #888888;
     border-radius: 50%;
     display: inline-block;
     vertical-align: middle;
