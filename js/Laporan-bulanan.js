@@ -237,7 +237,10 @@ const LaporanBulananPage = (() => {
                color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;">
         ↓ Pengeluaran
       </button>`;
-    container.querySelector('.card-body').insertBefore(tabBar, tableEl);
+    // HTML laporan tidak pakai .card-body — wrapper table adalah div[style*=overflow]
+    // Gunakan parentNode dari tableEl sebagai target insert
+    const tableWrapper = tableEl.parentNode;
+    tableWrapper.insertBefore(tabBar, tableEl);
 
     const thead = tableEl.querySelector('thead');
     if (thead) {
