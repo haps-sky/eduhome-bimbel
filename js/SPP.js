@@ -192,7 +192,7 @@ const SPPPage = (() => {
 
     if (hint) {
       const fmt = d => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-      hint.innerHTML = `🔄 Lanjut dari paket sebelumnya: <strong>${fmt(toInput(mulaiDate))} – ${fmt(toInput(akhirDate))}</strong>`;
+      hint.innerHTML = `↻ Lanjut dari paket sebelumnya: <strong>${fmt(toInput(mulaiDate))} – ${fmt(toInput(akhirDate))}</strong>`;
     }
 
     calculateLiveSessions();
