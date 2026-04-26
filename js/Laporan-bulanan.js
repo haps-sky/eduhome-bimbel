@@ -108,6 +108,9 @@ const LaporanBulananPage = (() => {
     const bannerEl = document.getElementById('laporan-empty-banner');
 
     if (loading) {
+      // Inject tab UI lebih awal agar thead langsung benar saat loading
+      _renderTabUI();
+
       if (tbody) {
         tbody.innerHTML = `
           <tr>

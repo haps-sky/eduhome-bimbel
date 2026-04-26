@@ -235,6 +235,16 @@ select option { background: var(--bg-card); }
 }
 .btn-outline:hover { background: var(--bg-hover); color: var(--text-primary); }
 
+/* Light mode: btn-outline lebih solid agar tidak hilang di background putih */
+.light-mode .btn-outline {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.light-mode .btn-outline:hover {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-full   { width: 100%; justify-content: center; display: flex; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -1086,20 +1096,45 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 .student-card-meta { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
 .student-card-header .badge { margin-left: auto; }
 
+/* Spinner — tipis, cocok di background gelap maupun terang */
 .spinner-sm {
-    width: 12px;
-    height: 12px;
-    border: 5px solid rgba(255, 255, 255, 0.1);
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
     border-top-color: var(--primary);
     border-radius: 50%;
     display: inline-block;
     vertical-align: middle;
-    margin-right: 5px;
-    animation: spin 0.6s linear infinite;  
+    margin-right: 6px;
+    animation: spin 0.7s linear infinite;
+}
+
+/* Spinner di dalam tombol berwarna — otomatis putih via CSS, tidak perlu class tambahan */
+.btn-primary .spinner-sm,
+.btn-danger  .spinner-sm,
+.btn-success .spinner-sm,
+.btn-primary div[class*="spinner"],
+.btn-danger  div[class*="spinner"],
+.btn-success div[class*="spinner"] {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Animasi icon Refresh saat tombol diklik */
+.btn:active i[data-lucide="refresh-cw"],
+.btn:active svg,
+.ctrl-btn:active i[data-lucide="refresh-cw"],
+.ctrl-btn:active svg {
+    animation: spin 0.5s linear;
+}
+
+/* Class spin manual — untuk trigger via JS jika perlu */
+.spinning {
+    animation: spin 0.6s linear infinite !important;
 }
 
 

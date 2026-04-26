@@ -181,7 +181,7 @@ const App = (() => {
 
     btn.disabled  = true;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<div class="spinner-sm"></div> Loading...';
+    btn.innerHTML = '<div class="spinner spinner-sm"></div> Loading...';
 
     try {
       const res = await API.auth.login(username, password);
