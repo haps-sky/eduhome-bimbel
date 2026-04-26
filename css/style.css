@@ -218,7 +218,7 @@ select option { background: var(--bg-card); }
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 20px; min-height: 42px;
   border: none; border-radius: var(--radius);
-  font-family: var(--font); font-size: 0.875rem; font-weight: 600; color: #ffffff !important;
+  font-family: var(--font); font-size: 0.875rem; font-weight: 600; color: #ffffff;
   cursor: pointer; transition: all 0.15s; text-decoration: none; line-height: 1;
 }
 
@@ -1384,6 +1384,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 .laporan-row {
   border-bottom: 1px solid var(--border);
 }
+
+.light-mode .text-muted { color: #3a5a8a; }
+
 .laporan-row:last-child {
   border-bottom: none;
 }
@@ -1406,66 +1409,4 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   #page-laporan .card-body > div[style*="grid"] {
     grid-template-columns: 1fr !important;
   }
-}
-
-/* ── Light mode — fix teks putih ───────────────────────── */
-
-/* Tanggal di topbar kanan */
-.light-mode #current-date {
-  color: #3a5a8a;
-}
-
-/* Tombol Refresh di dashboard */
-.light-mode .btn-outline {
-  color: #0d1f3c;
-  border-color: #93b8f0;
-  background: transparent;
-}
-.light-mode .btn-outline:hover {
-  background: #c8dafc;
-  color: #0d1f3c;
-  border-color: #1d6ef5;
-}
-
-/* Tombol Keluar di sidebar */
-.light-mode #logout-btn {
-  color: #0d1f3c;
-  border-color: #93b8f0;
-}
-.light-mode #logout-btn:hover {
-  background: #c8dafc;
-  color: #0d1f3c;
-}
-
-/* ctrl-btn (Refresh di tiap halaman) */
-.light-mode .ctrl-btn {
-  color: #3a5a8a;
-  background: #ddeaff;
-  border-color: #93b8f0;
-}
-.light-mode .ctrl-btn:hover {
-  background: #c8dafc;
-  color: #0d1f3c;
-}
-
-/* Theme toggle button */
-.light-mode #theme-toggle-btn {
-  color: #0d1f3c;
-  border-color: #93b8f0;
-  background: #ddeaff;
-}
-.light-mode #theme-toggle-btn:hover {
-  background: #c8dafc;
-  color: #1d6ef5;
-  border-color: #1d6ef5;
-}
-
-/* User display nama di sidebar */
-.light-mode .user-info strong,
-.light-mode #user-display strong {
-  color: #0d1f3c;
-}
-.light-mode .user-info span,
-.light-mode #user-display {
-  color: #3a5a8a;
 }
