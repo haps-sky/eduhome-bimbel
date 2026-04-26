@@ -235,14 +235,16 @@ select option { background: var(--bg-card); }
 }
 .btn-outline:hover { background: var(--bg-hover); color: var(--text-primary); }
 
-/* Light mode: btn-outline lebih solid agar tidak hilang di background putih */
+/* Light mode: btn-outline — teks gelap agar kontras */
 .light-mode .btn-outline {
   border-color: var(--primary);
-  color: var(--primary);
+  color: var(--text-primary);
 }
-.light-mode .btn-outline:hover {
+.light-mode .btn-outline:hover,
+.light-mode .btn-outline:active {
   background: var(--primary-dim);
-  color: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-primary);
 }
 
 .btn-danger { background: var(--danger); color: #fff; }
