@@ -16,11 +16,11 @@ const GajiPage = (() => {
       lastRestoredId  = null;
     }
 
-    if (!forceRefresh && allData.length > 0) {
+    if (!forceRefresh && isFetched) {
       renderTable(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data gaji...</td></tr>';
+      return;
     }
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data gaji...</td></tr>';
 
     try {
       const [gajiRes, mentorRes] = await Promise.all([API.gaji.getAll(), API.mentor.getAll()]);

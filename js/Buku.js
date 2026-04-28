@@ -17,11 +17,11 @@ const BukuPage = (() => {
       lastRestoredId  = null;
     }
 
-    if (!forceRefresh && allData.length > 0) {
+      if (!forceRefresh && isFetched) {
       renderTable(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data modul belajar...</td></tr>';
+      return;
     }
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data modul belajar...</td></tr>';
 
     try {
       const bukuRes = await API.buku.getAll();
@@ -261,3 +261,5 @@ const BukuPage = (() => {
 
   return { load, search, openAdd, openEdit, saveForm, deleteBuku, undo, redo, deleteAll, getData, deleteSelected, renderTable, _getCurrentData };
 })();
+
+window.BukuPage = BukuPage;

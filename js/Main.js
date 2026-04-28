@@ -522,5 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.value = localDate;
   });
 
+function openProfileModal() {
+  GantiPasswordPage.load();
+  UI.openModal('modal-profile');
+}
+
   lucide.createIcons();
 });

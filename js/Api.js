@@ -1,7 +1,6 @@
 const API = (() => {
 
-  const BASE_URL = window.EDUHOME_API_URL ||
-    'https://script.google.com/macros/s/AKfycbyw1oWuGAGc_VQhX2GmjVt237nMeP0Jy1Xz6XSN1RGYhM91HmWS0lBEqOTbjSsZgWJ6/exec';
+  const BASE_URL = window.EDUHOME_API_URL || '';
 
   function currentRole() {
     try {

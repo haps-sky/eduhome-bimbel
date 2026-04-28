@@ -17,12 +17,12 @@ const MentorPage = (() => {
       lastRestoredId  = null;
     }
 
-    if (!forceRefresh && allData.length > 0) {
+    if (!forceRefresh && isFetched) {
       renderTable(allData);
       updateSummary(allData);
-    } else {
-      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data mentor...</td></tr>';
+      return;
     }
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data mentor...</td></tr>';
 
     try {
       const res = await API.mentor.getAll();

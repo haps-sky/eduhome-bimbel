@@ -1,19 +1,30 @@
-// ============================================================
-// OwnerFinancePage (tidak berubah)
-// ============================================================
-
 const OwnerFinancePage = (() => {
-  async function load() {
+  let _cache    = null;
+  let isFetched = false;
+
+  async function load(forceRefresh = false) {
+    if (!forceRefresh && isFetched && _cache) {
+      _render(_cache);
+      return;
+    }
+
     try {
       const [statsRes, payRes, sppRes, gajiRes] = await Promise.all([
         API.dashboard.getStats(), API.pembayaran.getAll(), API.spp.getAll(), API.gaji.getAll()
       ]);
-      if (statsRes.status === 'OK' && statsRes.data.finance) renderFinanceSummary(statsRes.data.finance, statsRes.data.payments);
-      if (payRes.status === 'OK')  renderPaymentHistory(payRes.data || []);
-      if (sppRes.status === 'OK')  renderSPPStatus(sppRes.data || []);
-      if (gajiRes.status === 'OK') renderGajiHistory(gajiRes.data || []);
-    } catch(e) { UI.toast('Error memuat laporan keuangan: '+e.message,'error'); }
+      _cache    = { statsRes, payRes, sppRes, gajiRes };
+      isFetched = true;
+      _render(_cache);
+    } catch(e) { UI.toast('Error memuat laporan keuangan: ' + e.message, 'error'); }
   }
+
+  function _render({ statsRes, payRes, sppRes, gajiRes }) {
+    if (statsRes.status === 'OK' && statsRes.data.finance) renderFinanceSummary(statsRes.data.finance, statsRes.data.payments);
+    if (payRes.status === 'OK')  renderPaymentHistory(payRes.data || []);
+    if (sppRes.status === 'OK')  renderSPPStatus(sppRes.data || []);
+    if (gajiRes.status === 'OK') renderGajiHistory(gajiRes.data || []);
+  }
+
   function renderFinanceSummary(finance, payments) {
     const ids = {
       'owner-fin-spp': finance.total_spp, 'owner-fin-op': finance.total_operational,
@@ -22,23 +33,29 @@ const OwnerFinancePage = (() => {
     };
     Object.entries(ids).forEach(([id,val]) => { const el = document.getElementById(id); if (el) el.textContent = UI.formatCurrency(val); });
   }
+
   function renderPaymentHistory(data) {
     const sppOnly = data.filter(p => p.jenis === 'SPP').slice(-30).reverse();
     const rows = sppOnly.map(p => `<tr><td>${UI.formatDate(p.tanggal)}</td><td><strong>${p.nama}</strong></td><td>${p.periode||'-'}</td><td><strong>${UI.formatCurrency(p.jumlah)}</strong></td><td>${p.metode}</td></tr>`);
     UI.renderTable('owner-pay-tbody', rows, 'Belum ada data pembayaran');
   }
+
   function renderSPPStatus(data) {
-    const unpaid = data.filter(s => s.status_bayar === 'UNPAID').length;
+    const unpaid  = data.filter(s => s.status_bayar === 'UNPAID').length;
     const partial = data.filter(s => s.status_bayar === 'PARTIAL').length;
-    const paid = data.filter(s => s.status_bayar === 'PAID').length;
+    const paid    = data.filter(s => s.status_bayar === 'PAID').length;
     const els = { 'owner-spp-unpaid': unpaid, 'owner-spp-partial': partial, 'owner-spp-paid': paid };
     Object.entries(els).forEach(([id,val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
   }
+
   function renderGajiHistory(data) {
     const rows = data.slice(-20).reverse().map(g => `<tr><td>${UI.formatDate(g.tgl_bayar)}</td><td>${g.bulan_gaji}</td><td><strong>${g.nama_mentor}</strong></td><td><strong class="text-success">${UI.formatCurrency(g.jumlah)}</strong></td><td>${g.metode}</td></tr>`);
     UI.renderTable('owner-gaji-tbody', rows, 'Belum ada data penggajian');
   }
-  return { load };
+
+  function invalidateCache() { isFetched = false; _cache = null; }
+
+  return { load, invalidateCache };
 })();
 
 window.OwnerFinancePage = OwnerFinancePage;
