@@ -53,9 +53,13 @@ const API = (() => {
     const user    = currentUser();
     const payload = {
       ...body,
-      username: user.username || '',
-      role:     currentRole()
+      role: currentRole()
     };
+
+    // JANGAN override username saat login
+    if (body.action !== 'login') {
+      payload.username = user.username || '';
+    }
 
     try {
       const res = await fetch(BASE_URL, {
@@ -72,7 +76,11 @@ const API = (() => {
   }
 
   const auth = {
-    login: (username, password) => get('login', { username, password })
+    login: (username, password) => post({
+    action: 'login',
+    username,
+    password
+  })
   };
 
   const murid = {
