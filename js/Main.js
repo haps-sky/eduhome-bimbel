@@ -545,3 +545,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+window.openProfileModal = function (e) {
+  if (e) e.stopPropagation();
+
+  console.log('CLICK OK ✅');
+
+  const modal = document.getElementById('modal-profile');
+  console.log('Modal display:', modal.style.display);
+
+  UI.openModal('modal-profile');
+};
