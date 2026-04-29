@@ -534,3 +534,14 @@ function openProfileModal() {
   UI.openModal('modal-profile');
   GantiPasswordPage.load(); // reset form biar bersih
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const userInfo = document.querySelector('.user-info');
+
+  if (userInfo) {
+    userInfo.addEventListener('click', () => {
+      console.log('CLICK OK ✅');
+      UI.openModal('modal-profile');
+    });
+  }
+});
