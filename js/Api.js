@@ -64,7 +64,7 @@ const API = (() => {
     try {
       const res = await fetch(BASE_URL, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body:    JSON.stringify(payload)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
