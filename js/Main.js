@@ -529,3 +529,8 @@ function openProfileModal() {
 
   lucide.createIcons();
 });
+
+function openProfileModal() {
+  UI.openModal('modal-profile');
+  GantiPasswordPage.load(); // reset form biar bersih
+}
