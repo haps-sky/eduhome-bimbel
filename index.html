@@ -1810,53 +1810,30 @@ function applyAdminButtons(role) {
 
 <script src="js/Main.js"></script>
 <!-- Modal Profil -->
-<div id="modal-profile" class="modal" style="display:none;">
-  <div class="modal-box" style="max-width:400px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Pengaturan Profil</h3>
-      <button class="modal-close" onclick="UI.closeModal('modal-profile')">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Password Lama</label>
-        <div class="input-with-toggle">
-          <input type="password" id="gp-old" placeholder="Masukkan password lama">
-          <button class="btn-toggle-pass" type="button" data-toggle="gp-old" onclick="GantiPasswordPage.togglePass('gp-old')">
-            <i data-lucide="eye"></i>
-          </button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Password Baru</label>
-        <div class="input-with-toggle">
-          <input type="password" id="gp-new" placeholder="Minimal 6 karakter">
-          <button class="btn-toggle-pass" type="button" onclick="GantiPasswordPage.togglePass('gp-new')">
-            <i data-lucide="eye"></i>
-          </button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Konfirmasi Password Baru</label>
-        <div class="input-with-toggle">
-          <input type="password" id="gp-confirm" placeholder="Ulangi password baru">
-          <button class="btn-toggle-pass" type="button" onclick="GantiPasswordPage.togglePass('gp-confirm')">
-            <i data-lucide="eye"></i>
-          </button>
-        </div>
-      </div>
-      <p id="gp-msg" class="gp-msg"></p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="UI.closeModal('modal-profile')">Batal</button>
-      <button class="btn btn-primary" id="gp-btn" onclick="GantiPasswordPage.saveForm()">
-        <i data-lucide="save"></i> Simpan Password
+<div class="modal-body">
+  <div class="form-group">
+    <label>Pilih Pengguna</label>
+    <select id="gp-target-user">
+      <option value="">-- Pilih User --</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Password Baru</label>
+    <div class="input-with-toggle">
+      <input type="password" id="gp-new" placeholder="Minimal 6 karakter">
+      <button class="btn-toggle-pass" type="button" onclick="GantiPasswordPage.togglePass('gp-new')">
+        <i data-lucide="eye"></i>
       </button>
     </div>
   </div>
+  <div class="form-group">
+    <label>Konfirmasi Password Baru</label>
+    <div class="input-with-toggle">
+      <input type="password" id="gp-confirm" placeholder="Ulangi password baru">
+      <button class="btn-toggle-pass" type="button" onclick="GantiPasswordPage.togglePass('gp-confirm')">
+        <i data-lucide="eye"></i>
+      </button>
+    </div>
+  </div>
+  <p id="gp-msg" class="gp-msg"></p>
 </div>
-
-<script src="js/Ganti-password.js"></script>
-</body>
-</html>

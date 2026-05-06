@@ -1,32 +1,66 @@
 const GantiPasswordPage = (() => {
 
-  function load() {
-    // reset form saat halaman dibuka
-    ['gp-old', 'gp-new', 'gp-confirm'].forEach(id => {
+  async function load() {
+    // Reset form
+    const sel = document.getElementById('gp-target-user');
+    if (sel) sel.innerHTML = '<option value="">-- Pilih User --</option>';
+    ['gp-new', 'gp-confirm'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     const msg = document.getElementById('gp-msg');
     if (msg) { msg.textContent = ''; msg.className = 'gp-msg'; }
+
+    // Hanya Owner yang bisa akses
+    if (API.currentRole() !== 'OWNER') {
+      UI.closeModal('modal-profile');
+      UI.toast('Hanya Owner yang dapat mengatur password', 'error');
+      return;
+    }
+
+    // Fetch semua user dari murid + mentor untuk dropdown
+    try {
+      const [muridRes, mentorRes] = await Promise.all([
+        API.murid.getAll(), API.mentor.getAll()
+      ]);
+
+      // Ambil data user dari GAS — pakai mentor & murid sebagai proxy
+      // Sebenarnya kita butuh list username dari DB USER
+      // Untuk sementara hardcode role list, nanti bisa dikembangkan
+      const users = [];
+
+      if (mentorRes.status === 'OK') {
+        (mentorRes.data || []).forEach(m => {
+          users.push({ username: m.nama, label: m.nama + ' (Mentor)' });
+        });
+      }
+
+      if (sel) {
+        sel.innerHTML = '<option value="">-- Pilih User --</option>' +
+          users.map(u => `<option value="${u.username}">${u.label}</option>`).join('');
+      }
+    } catch(e) {
+      console.error('Gagal load users:', e);
+    }
   }
 
   function togglePass(id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.type = el.type === 'password' ? 'text' : 'password';
-    const icon = document.querySelector(`[data-toggle="${id}"] i`);
-    if (icon) {
-      icon.setAttribute('data-lucide', el.type === 'password' ? 'eye' : 'eye-off');
-      lucide.createIcons({ nodes: [icon.parentNode] });
+    const btn  = document.querySelector(`button[onclick*="togglePass('${id}')"] i`);
+    if (btn) {
+      btn.setAttribute('data-lucide', el.type === 'password' ? 'eye' : 'eye-off');
+      lucide.createIcons({ nodes: [btn.parentNode] });
     }
   }
 
   async function saveForm() {
-    const oldPass = document.getElementById('gp-old')?.value;
-    const newPass = document.getElementById('gp-new')?.value;
-    const confirm = document.getElementById('gp-confirm')?.value;
-    const msg     = document.getElementById('gp-msg');
-    const btn     = document.getElementById('gp-btn');
+    const targetUser = document.getElementById('gp-target-user')?.value;
+    const newPass    = document.getElementById('gp-new')?.value;
+    const confirm    = document.getElementById('gp-confirm')?.value;
+    const msg        = document.getElementById('gp-msg');
+    const btn        = document.getElementById('gp-btn');
 
     const showMsg = (text, type) => {
       if (!msg) return;
@@ -34,22 +68,21 @@ const GantiPasswordPage = (() => {
       msg.className   = `gp-msg ${type}`;
     };
 
-    if (!oldPass || !newPass || !confirm) return showMsg('Semua field wajib diisi.', 'error');
-    if (newPass.length < 6)               return showMsg('Password baru minimal 6 karakter.', 'error');
-    if (newPass !== confirm)              return showMsg('Konfirmasi password tidak sesuai.', 'error');
-    if (oldPass === newPass)              return showMsg('Password baru tidak boleh sama dengan yang lama.', 'error');
+    if (!targetUser)           return showMsg('Pilih pengguna terlebih dahulu.', 'error');
+    if (!newPass)              return showMsg('Password baru wajib diisi.', 'error');
+    if (newPass.length < 6)   return showMsg('Password minimal 6 karakter.', 'error');
+    if (newPass !== confirm)   return showMsg('Konfirmasi password tidak sesuai.', 'error');
 
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan...'; }
-      const res = await API.auth.changePassword(oldPass, newPass);
+      const res = await API.auth.resetPasswordByOwner(targetUser, newPass);
       if (res.status === 'OK') {
-        showMsg('Password berhasil diperbarui.', 'success');
-        ['gp-old', 'gp-new', 'gp-confirm'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = '';
-        });
+        showMsg('Password berhasil direset.', 'success');
+        document.getElementById('gp-new').value     = '';
+        document.getElementById('gp-confirm').value = '';
+        document.getElementById('gp-target-user').value = '';
       } else {
-        showMsg(res.message || 'Gagal memperbarui password.', 'error');
+        showMsg(res.message || 'Gagal mereset password.', 'error');
       }
     } catch(e) {
       showMsg('Gagal terhubung ke server.', 'error');

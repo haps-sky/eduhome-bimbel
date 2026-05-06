@@ -75,13 +75,20 @@ const API = (() => {
     }
   }
 
+
   const auth = {
-    login: (username, password) => post({
+  login: (username, password) => post({
     action: 'login',
     username,
     password
+  }),
+    getUsers:             ()                           => get('getUsers'),
+  resetPasswordByOwner: (targetUsername, newPassword) => post({
+    action: 'resetPasswordByOwner',
+    targetUsername,
+    newPassword
   })
-  };
+};
 
   const murid = {
     getAll:    (params = {}) => get('getMurid', params),
