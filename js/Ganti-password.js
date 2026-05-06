@@ -18,26 +18,23 @@ const GantiPasswordPage = (() => {
       return;
     }
 
-    // Fetch semua user dari murid + mentor untuk dropdown
+    // Fetch semua user dari sheet DB USER
     try {
-      const [muridRes, mentorRes] = await Promise.all([
-        API.murid.getAll(), API.mentor.getAll()
-      ]);
+      const res = await API.auth.getUsers();
 
-      // Ambil data user dari GAS — pakai mentor & murid sebagai proxy
-      // Sebenarnya kita butuh list username dari DB USER
-      // Untuk sementara hardcode role list, nanti bisa dikembangkan
-      const users = [];
-
-      if (mentorRes.status === 'OK') {
-        (mentorRes.data || []).forEach(m => {
-          users.push({ username: m.nama, label: m.nama + ' (Mentor)' });
-        });
+      if (res.status !== 'OK') {
+        console.error('Gagal load users:', res.message);
+        return;
       }
+
+      const users = res.data || [];
 
       if (sel) {
         sel.innerHTML = '<option value="">-- Pilih User --</option>' +
-          users.map(u => `<option value="${u.username}">${u.label}</option>`).join('');
+          users.map(u => {
+            const label = u.username + (u.role ? ` (${u.role})` : '');
+            return `<option value="${u.username}">${label}</option>`;
+          }).join('');
       }
     } catch(e) {
       console.error('Gagal load users:', e);
