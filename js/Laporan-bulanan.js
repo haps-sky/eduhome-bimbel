@@ -171,7 +171,6 @@ const LaporanBulananPage = (() => {
     }
   }
 
-  // ── Full empty ────────────────────────────────────────────────────────────
   function _renderFullEmpty(month, year) {
     const now    = new Date();
     const _month = month || (now.getMonth() + 1);
