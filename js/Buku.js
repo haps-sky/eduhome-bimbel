@@ -17,11 +17,11 @@ const BukuPage = (() => {
       lastRestoredId  = null;
     }
 
-      if (!forceRefresh && isFetched) {
+    if (!forceRefresh && isFetched) {
       renderTable(allData);
       return;
     }
-      tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data modul belajar...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data modul belajar...</td></tr>';
 
     try {
       const bukuRes = await API.buku.getAll();
@@ -34,7 +34,9 @@ const BukuPage = (() => {
           stok:       Number(b.stok)       || 0,
           harga_beli: Number(b.harga_beli) || 0,
           harga_jual: Number(b.harga_jual) || 0,
-          keterangan: b.keterangan || ''
+          keterangan: b.keterangan || '',
+          bab:        b.bab        || '',
+          bab_list:   b.bab_list   || []
         }));
         filteredData = [...allData];
         isFetched    = true;
@@ -45,6 +47,9 @@ const BukuPage = (() => {
       if (!allData.length) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Gagal memuat data.</td></tr>';
     }
   }
+
+  // Expose data buku untuk dipakai Presensi dropdown
+  function getData() { return allData; }
 
   function search(term) {
     const filtered = allData.filter(b =>
@@ -58,11 +63,16 @@ const BukuPage = (() => {
   function renderTable(data) {
     const role    = API.currentRole();
     const canEdit = role === 'ADMIN';
-    const rows    = data.map(b => `
+    const rows    = data.map(b => {
+      const babCount = b.bab_list ? b.bab_list.length : 0;
+      return `
       <tr>
         <td style="width:32px;">${Selection.checkbox('buku', b.id)}</td>
         <td><span class="id-badge">${b.id}</span></td>
-        <td><strong>${b.nama_modul}</strong></td>
+        <td>
+          <strong>${b.nama_modul}</strong>
+          ${babCount > 0 ? `<small style="display:block;color:var(--text-secondary);margin-top:2px;">${babCount} bab terdaftar</small>` : ''}
+        </td>
         <td>
           <div class="program-tag">${b.jenjang || '-'}</div>
           <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:2px;">${b.program || '-'}</div>
@@ -82,7 +92,8 @@ const BukuPage = (() => {
             </button>` : '-'}
           </div>
         </td>
-      </tr>`);
+      </tr>`;
+    });
 
     const countEl = document.getElementById('buku-count');
     if (countEl) countEl.innerText = `Total: ${data.length} modul`;
@@ -91,7 +102,7 @@ const BukuPage = (() => {
   }
 
   function _resetBukuForm() {
-    ['buku-id-field','buku-nama','buku-jenjang','buku-program','buku-ket'].forEach(id => {
+    ['buku-id-field','buku-nama','buku-jenjang','buku-program','buku-ket','buku-bab'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     ['buku-stok','buku-harga-beli','buku-harga-jual'].forEach(id => {
@@ -119,6 +130,9 @@ const BukuPage = (() => {
     document.getElementById('buku-harga-beli').value         = b.harga_beli || 0;
     document.getElementById('buku-harga-jual').value         = b.harga_jual || 0;
     document.getElementById('buku-ket').value                = b.keterangan || '';
+    // Isi field bab: tampilkan satu bab per baris
+    const babEl = document.getElementById('buku-bab');
+    if (babEl) babEl.value = (b.bab_list || []).join('\n');
     UI.openModal('modal-buku');
   }
 
@@ -133,6 +147,15 @@ const BukuPage = (() => {
     const harga_jual = Number(document.getElementById('buku-harga-jual').value) || 0;
     const keterangan = document.getElementById('buku-ket').value.trim();
 
+    // Ambil bab: satu per baris, gabung dengan "|" untuk disimpan
+    const babEl  = document.getElementById('buku-bab');
+    const babRaw = babEl ? babEl.value : '';
+    const bab    = babRaw
+      .split('\n')
+      .map(b => b.trim())
+      .filter(Boolean)
+      .join('|');
+
     if (!nama_modul) { UI.toast('Nama modul wajib diisi', 'error'); return; }
     if (stok < 0)       { UI.toast('Stok tidak boleh negatif', 'error'); return; }
     if (harga_beli < 0) { UI.toast('Harga modal tidak valid', 'error'); return; }
@@ -141,7 +164,7 @@ const BukuPage = (() => {
       if (!confirm(`Harga jual (${UI.formatCurrency(harga_jual)}) lebih rendah dari harga modal (${UI.formatCurrency(harga_beli)}). Lanjutkan?`)) return;
     }
 
-    const payload = { nama_modul, jenjang, program, stok, harga_beli, harga_jual, keterangan };
+    const payload = { nama_modul, jenjang, program, stok, harga_beli, harga_jual, keterangan, bab };
 
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-sm"></div> Menyimpan...'; }
@@ -255,7 +278,6 @@ const BukuPage = (() => {
     } catch(e) { UI.toast('Gagal menghapus semua data', 'error'); }
   }
 
-  function getData()         { return allData; }
   function deleteSelected()  { return Selection.deleteSelected('buku'); }
   function _getCurrentData() { return allData; }
 

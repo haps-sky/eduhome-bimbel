@@ -634,6 +634,7 @@
                 <th onclick="PresensiPage.sortBy('program')" style="cursor:pointer;user-select:none;">Program <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                 <th onclick="PresensiPage.sortBy('status')" style="cursor:pointer;user-select:none;">Status <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                 <th>Catatan</th>
+                <th>BAB</th>
                 <th onclick="PresensiPage.sortBy('bintang')" style="cursor:pointer;user-select:none;">Bintang <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                 <th>Aksi</th>
               </tr></thead>
@@ -1084,7 +1085,7 @@
           <div class="table-toolbar"><div class="table-title"><i data-lucide="calendar-check"></i> Presensi Hari Ini (Saya)</div></div>
           <div style="overflow-x:auto">
             <table class="data-table">
-              <thead><tr><th>Murid</th><th>Program</th><th>Status</th><th>Bintang</th><th>Catatan</th><th>AKSI</th></tr></thead>
+              <thead><tr><th>Murid</th><th>Program</th><th>Status</th><th>Bintang</th><th>Catatan</th><th>BAB</th></th><th>AKSI</th></tr></thead>
               <tbody id="mentor-presensi-tbody"></tbody>
             </table>
           </div>
@@ -1404,6 +1405,26 @@
         <div class="form-group"><label>Bintang (0–10)</label><input type="number" id="presensi-bintang" min="0" max="10" value="5"></div>
         <div class="form-group"><label>Catatan</label><input type="text" id="presensi-catatan" placeholder="Opsional"></div>
       </div>
+          <div class="form-group" style="margin-top:12px;">
+      <label class="form-label">
+        <i data-lucide="book-open" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+        Modul yang Digunakan
+        <small style="font-weight:400;color:var(--text-secondary);margin-left:6px;">— opsional</small>
+      </label>
+      <select id="presensi-buku" class="form-input">
+        <option value="">-- Pilih Modul (Opsional) --</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="presensi-bab-wrap" style="margin-top:12px;display:none;">
+      <label class="form-label">
+        <i data-lucide="bookmark" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+        Bab yang Dipelajari
+      </label>
+      <select id="presensi-bab" class="form-input">
+        <option value="">-- Pilih Bab --</option>
+      </select>
+    </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-presensi')">Batal</button>
@@ -1712,6 +1733,23 @@
         <label>Keterangan</label>
         <textarea id="buku-ket" placeholder="Edisi revisi, Kurikulum Merdeka, dll"></textarea>
       </div>
+          <div class="form-group" style="margin-top:12px;">
+      <label class="form-label">
+        <i data-lucide="list" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+        Daftar Bab / Materi
+        <small style="font-weight:400;color:var(--text-secondary);margin-left:6px;">— tulis satu bab per baris</small>
+      </label>
+      <textarea
+        id="buku-bab"
+        class="form-input"
+        rows="5"
+        placeholder="Bab 1 - Bilangan Bulat&#10;Bab 2 - Pecahan&#10;Bab 3 - Geometri&#10;Bab 4 - Statistika"
+        style="resize:vertical;font-family:var(--font-mono);font-size:0.82rem;line-height:1.6;"
+      ></textarea>
+      <small style="color:var(--text-dim);font-size:0.72rem;">
+        Bab ini akan muncul sebagai pilihan dropdown saat mentor mencatat presensi.
+      </small>
+    </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-buku')">Batal</button>

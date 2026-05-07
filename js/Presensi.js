@@ -21,42 +21,91 @@ const PresensiPage = (() => {
       return;
     }
 
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data presensi...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-row"><div class="spinner spinner-sm"></div> Memuat data presensi...</td></tr>';
 
     try {
-      const [presRes, muridRes, mentorRes] = await Promise.all([
-        API.presensi.getAll(), API.murid.getAll(), API.mentor.getAll()
+      const [presRes, muridRes, mentorRes, bukuRes] = await Promise.all([
+        API.presensi.getAll(),
+        API.murid.getAll(),
+        API.mentor.getAll(),
+        API.buku.getAll()
       ]);
       if (presRes.status === 'OK') {
         allData      = presRes.data || [];
         filteredData = [...allData];
         isFetched    = true;
-        const ms     = document.getElementById('presensi-murid');
-        if (ms && ms.options.length <= 1) populateDropdowns(muridRes.data || [], mentorRes.data || []);
+        const ms = document.getElementById('presensi-murid');
+        if (ms && ms.options.length <= 1) {
+          populateDropdowns(
+            muridRes.data  || [],
+            mentorRes.data || [],
+            bukuRes.data   || []
+          );
+        }
         renderTable(allData.slice(-50).reverse());
       }
     } catch(e) {
       console.error(e);
-      tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Gagal memuat.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="empty-row">Gagal memuat.</td></tr>';
     }
   }
 
-  function populateDropdowns(murid, mentor) {
+  function populateDropdowns(murid, mentor, buku) {
+    // Dropdown murid
     const ms = document.getElementById('presensi-murid');
     if (ms) ms.innerHTML = '<option value="">-- Pilih Murid --</option>' +
       murid.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF')
            .map(m => `<option value="${m.id}" data-nama="${m.nama}" data-program="${m.program}">${m.nama} (${m.program})</option>`).join('');
+
+    // Dropdown mentor
     const mt = document.getElementById('presensi-mentor');
     if (mt) mt.innerHTML = '<option value="">-- Pilih Mentor --</option>' +
       mentor.filter(m => String(m.status).trim().toUpperCase() === 'AKTIF')
             .map(m => `<option value="${m.id}" data-nama="${m.nama}">${m.nama}</option>`).join('');
+
+    // Dropdown buku — simpan bab_list di data attribute sebagai JSON
+    const bk = document.getElementById('presensi-buku');
+    if (bk) {
+      bk.innerHTML = '<option value="">-- Pilih Modul (Opsional) --</option>' +
+        buku.filter(b => b.bab_list && b.bab_list.length > 0)
+            .map(b => `<option value="${b.id}" data-nama="${b.nama_modul}" data-bab='${JSON.stringify(b.bab_list)}'>${b.nama_modul}</option>`).join('');
+      // Event: saat buku dipilih, populate dropdown bab
+      bk.addEventListener('change', onBukuChange);
+    }
+  }
+
+  function onBukuChange() {
+    const bk      = document.getElementById('presensi-buku');
+    const babSel  = document.getElementById('presensi-bab');
+    const babWrap = document.getElementById('presensi-bab-wrap');
+    if (!bk || !babSel) return;
+
+    const selected = bk.options[bk.selectedIndex];
+    if (!bk.value || !selected) {
+      babSel.innerHTML = '<option value="">-- Pilih Bab --</option>';
+      if (babWrap) babWrap.style.display = 'none';
+      return;
+    }
+
+    let babList = [];
+    try { babList = JSON.parse(selected.dataset.bab || '[]'); } catch(e) {}
+
+    if (babList.length > 0) {
+      babSel.innerHTML = '<option value="">-- Pilih Bab --</option>' +
+        babList.map(b => `<option value="${b}">${b}</option>`).join('');
+      if (babWrap) babWrap.style.display = 'block';
+    } else {
+      babSel.innerHTML = '<option value="">-- Belum ada bab --</option>';
+      if (babWrap) babWrap.style.display = 'none';
+    }
   }
 
   function search(term) {
     const filtered = allData.filter(p =>
       (p.nama_murid  || '').toLowerCase().includes(term.toLowerCase()) ||
       (p.nama_mentor || '').toLowerCase().includes(term.toLowerCase()) ||
-      (p.program     || '').toLowerCase().includes(term.toLowerCase())
+      (p.program     || '').toLowerCase().includes(term.toLowerCase()) ||
+      (p.nama_bab    || '').toLowerCase().includes(term.toLowerCase())
     );
     renderTable(filtered);
   }
@@ -72,6 +121,9 @@ const PresensiPage = (() => {
         <td>${p.nama_mentor}</td>
         <td><span class="program-tag">${p.program}</span></td>
         <td>${UI.statusBadge(p.status)}</td>
+        <td>${p.nama_bab
+          ? `<span style="font-size:0.78rem;color:var(--primary);font-weight:500;">📖 ${p.nama_bab}</span>`
+          : '<span style="color:var(--text-dim)">-</span>'}</td>
         <td>${p.catatan || '-'}</td>
         <td>${UI.stars(p.bintang)}</td>
         <td>
@@ -108,6 +160,22 @@ const PresensiPage = (() => {
     document.getElementById('presensi-status').value    = p.status;
     document.getElementById('presensi-catatan').value   = p.catatan || '';
     document.getElementById('presensi-bintang').value   = p.bintang || 5;
+
+    // Set buku — trigger onBukuChange dulu agar bab_list terisi
+    const bukuSel = document.getElementById('presensi-buku');
+    if (bukuSel && p.id_buku) {
+      bukuSel.value = p.id_buku;
+      onBukuChange();
+      // Set bab setelah dropdown bab terisi
+      setTimeout(() => {
+        const babSel = document.getElementById('presensi-bab');
+        if (babSel && p.nama_bab) babSel.value = p.nama_bab;
+      }, 50);
+    } else if (bukuSel) {
+      bukuSel.value = '';
+      onBukuChange();
+    }
+
     UI.openModal('modal-presensi');
   }
 
@@ -122,6 +190,11 @@ const PresensiPage = (() => {
     document.getElementById('presensi-status').value  = 'HADIR';
     document.getElementById('presensi-catatan').value = '';
     document.getElementById('presensi-bintang').value = 5;
+
+    // Reset buku & bab
+    const bukuSel = document.getElementById('presensi-buku');
+    if (bukuSel) { bukuSel.value = ''; onBukuChange(); }
+
     UI.openModal('modal-presensi');
   }
 
@@ -133,6 +206,13 @@ const PresensiPage = (() => {
     const status    = document.getElementById('presensi-status').value;
     const catatan   = document.getElementById('presensi-catatan').value.trim();
     const bintang   = document.getElementById('presensi-bintang').value;
+
+    // Ambil data buku & bab
+    const bukuSel   = document.getElementById('presensi-buku');
+    const babSel    = document.getElementById('presensi-bab');
+    const id_buku   = bukuSel  ? bukuSel.value  : '';
+    const nama_bab  = babSel   ? babSel.value   : '';
+    const bukuOpt   = bukuSel  ? bukuSel.options[bukuSel.selectedIndex] : null;
 
     if (!tanggal || !muridSel.value) { UI.toast('Tanggal dan murid wajib diisi', 'error'); return; }
 
@@ -146,12 +226,14 @@ const PresensiPage = (() => {
       const payload = {
         tanggal,
         id_murid:    muridSel.value,
-        nama_murid:  muridOpt ? muridOpt.dataset.nama    : '',
+        nama_murid:  muridOpt  ? muridOpt.dataset.nama    : '',
         id_mentor:   mentorSel.value,
-        nama_mentor: mentorOpt ? mentorOpt.dataset.nama  : '',
-        program:     muridOpt ? muridOpt.dataset.program : '',
+        nama_mentor: mentorOpt ? mentorOpt.dataset.nama   : '',
+        program:     muridOpt  ? muridOpt.dataset.program : '',
         status, catatan,
-        bintang:     parseInt(bintang) || 0
+        bintang: parseInt(bintang) || 0,
+        id_buku,
+        nama_bab
       };
 
       const res = id
