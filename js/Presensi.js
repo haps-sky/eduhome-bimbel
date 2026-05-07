@@ -34,14 +34,11 @@ const PresensiPage = (() => {
         allData      = presRes.data || [];
         filteredData = [...allData];
         isFetched    = true;
-        const ms = document.getElementById('presensi-murid');
-        if (ms && ms.options.length <= 1) {
-          populateDropdowns(
-            muridRes.data  || [],
-            mentorRes.data || [],
-            bukuRes.data   || []
-          );
-        }
+        populateDropdowns(
+          muridRes.data  || [],
+          mentorRes.data || [],
+          bukuRes.data   || []
+        );
         renderTable(allData.slice(-50).reverse());
       }
     } catch(e) {
