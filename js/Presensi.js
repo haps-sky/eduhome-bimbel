@@ -18,7 +18,15 @@ const PresensiPage = (() => {
     }
 
     if (!forceRefresh && isFetched) {
-      renderTable(allData.slice(-50).reverse());
+      // Pastikan _bukuCache terisi meski skip fetch
+      if (Object.keys(_bukuCache).length === 0) {
+        API.buku.getAll().then(r => {
+          _bukuCache = (r.data || []).reduce((acc, b) => { acc[b.id] = b.nama_modul; return acc; }, {});
+          renderTable(allData.slice(-50).reverse());
+        });
+      } else {
+        renderTable(allData.slice(-50).reverse());
+      }
       return;
     }
 
