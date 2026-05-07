@@ -34,11 +34,14 @@ const PresensiPage = (() => {
         allData      = presRes.data || [];
         filteredData = [...allData];
         isFetched    = true;
-        populateDropdowns(
-          muridRes.data  || [],
-          mentorRes.data || [],
-          bukuRes.data   || []
-        );
+        const ms = document.getElementById('presensi-murid');
+        if (ms && ms.options.length <= 1) {
+          populateDropdowns(
+            muridRes.data  || [],
+            mentorRes.data || [],
+            bukuRes.data   || []
+          );
+        }
         renderTable(allData.slice(-50).reverse());
       }
     } catch(e) {
@@ -119,7 +122,10 @@ const PresensiPage = (() => {
         <td><span class="program-tag">${p.program}</span></td>
         <td>${UI.statusBadge(p.status)}</td>
         <td>${p.nama_bab
-          ? `<span style="font-size:0.78rem;color:var(--primary);font-weight:500;">📖 ${p.nama_bab}</span>`
+          ? `<div style="font-size:0.78rem;line-height:1.6;">
+               <div style="color:var(--text-secondary);font-weight:500;">${window.BukuPage ? (window.BukuPage.getData().find(x => x.id === p.id_buku)?.nama_modul || p.id_buku || '') : (p.id_buku || '')}</div>
+               <div style="color:var(--primary);font-weight:600;">📖 ${p.nama_bab}</div>
+             </div>`
           : '<span style="color:var(--text-dim)">-</span>'}</td>
         <td>${p.catatan || '-'}</td>
         <td>${UI.stars(p.bintang)}</td>
