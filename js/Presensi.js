@@ -5,6 +5,7 @@ const PresensiPage = (() => {
   let lastDeletedData = null;
   let lastAction      = null;
   let lastRestoredId  = null;
+  let _bukuCache      = {};
 
   async function load(forceRefresh = false) {
     const tbody = document.getElementById('presensi-tbody');
@@ -34,14 +35,12 @@ const PresensiPage = (() => {
         allData      = presRes.data || [];
         filteredData = [...allData];
         isFetched    = true;
-        const ms = document.getElementById('presensi-murid');
-        if (ms && ms.options.length <= 1) {
-          populateDropdowns(
-            muridRes.data  || [],
-            mentorRes.data || [],
-            bukuRes.data   || []
-          );
-        }
+        _bukuCache   = (bukuRes.data || []).reduce((acc, b) => { acc[b.id] = b.nama_modul; return acc; }, {});
+        populateDropdowns(
+          muridRes.data  || [],
+          mentorRes.data || [],
+          bukuRes.data   || []
+        );
         renderTable(allData.slice(-50).reverse());
       }
     } catch(e) {
@@ -123,7 +122,7 @@ const PresensiPage = (() => {
         <td>${UI.statusBadge(p.status)}</td>
         <td>${p.nama_bab
           ? `<div style="font-size:0.78rem;line-height:1.6;">
-               <div style="color:var(--text-secondary);font-weight:500;">${window.BukuPage ? (window.BukuPage.getData().find(x => x.id === p.id_buku)?.nama_modul || p.id_buku || '') : (p.id_buku || '')}</div>
+               <div style="color:var(--text-secondary);font-weight:500;">${_bukuCache[p.id_buku] || p.id_buku || ''}</div>
                <div style="color:var(--primary);font-weight:600;">📖 ${p.nama_bab}</div>
              </div>`
           : '<span style="color:var(--text-dim)">-</span>'}</td>
