@@ -230,6 +230,8 @@ const SPPPage = (() => {
     for (const p of paketMurid) {
       const s = new Date(p.periode_mulai), e = new Date(p.periode_akhir);
       const mulaiNew = new Date(mulai), akhirNew = new Date(akhir);
+      // Izinkan paket lanjutan (mulai tepat di akhir paket sebelumnya)
+      if (mulaiNew.getTime() === e.getTime()) continue;
       if (mulaiNew < e && akhirNew > s) {
         const fmt = d => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         UI.toast(`Periode tumpang tindih dengan paket ${p.id} (${fmt(p.periode_mulai)} – ${fmt(p.periode_akhir)}).`, 'error');
